@@ -65,6 +65,9 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (TT::Weeks(a), TT::Weeks(b))     => unimplemented!(),
         (TT::Months(a), TT::Months(b))   => unimplemented!(),
         (TT::Years(a), TT::Years(b))     => unimplemented!(),
+        (TT::Addition(a, b), other)      => add(a, b)
+            .map(Box::new)
+            .and_then(|bx| add(bx, Box::new(other))),
         others                           => unimplemented!(),
     }
 }
