@@ -7,6 +7,9 @@ use std::ops::Add;
 use std::ops::Sub;
 
 use result::Result;
+use error::KairosErrorKind as KEK;
+use error::KairosError as KE;
+use error_chain::ChainedError;
 
 /// A Type of Time, currently based on chrono::NaiveDateTime
 #[derive(Debug)]
@@ -71,6 +74,7 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (other, TT::Addition(a, b))      => add(a, b)
             .map(Box::new)
             .and_then(|bx| add(Box::new(other), bx)),
+        (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotAdd(thing, TT::Moment(mom)))),
         others                           => unimplemented!(),
     }
 }
@@ -92,13 +96,18 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (other, TT::Subtraction(a, b))   => sub(a, b)
             .map(Box::new)
             .and_then(|bx| sub(Box::new(other), bx)),
+        (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotSub(thing, TT::Moment(mom)))),
         others                           => unimplemented!(),
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use chrono::NaiveDate;
+
     use super::TimeType as TT;
+
+    use error::KairosErrorKind as KEK;
 
     #[test]
     fn test_addition_of_seconds() {
@@ -1026,6 +1035,32 @@ mod tests {
             TT::Years(8) => assert!(true),
             _ => assert!(false, "Subtraction failed"),
         }
+    }
+
+    #[test]
+    fn test_add_moment_to_seconds() {
+        let a = TT::Seconds(3);
+        let b = TT::Moment(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11));
+
+        let res = (a + b).calculate();
+
+        assert!(res.is_err());
+        let res = res.unwrap_err();
+
+        assert_eq!("Cannot add", res.kind().description());
+    }
+
+    #[test]
+    fn test_subtract_moment_from_seconds() {
+        let a = TT::Seconds(3);
+        let b = TT::Moment(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11));
+
+        let res = (a - b).calculate();
+
+        assert!(res.is_err());
+        let res = res.unwrap_err();
+
+        assert_eq!("Cannot subtract", res.kind().description());
     }
 
 }
