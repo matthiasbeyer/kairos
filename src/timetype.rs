@@ -98,7 +98,11 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
 
 #[cfg(test)]
 mod tests {
+    use chrono::NaiveDate;
+
     use super::TimeType as TT;
+
+    use error::KairosErrorKind as KEK;
 
     #[test]
     fn test_addition_of_seconds() {
@@ -1026,6 +1030,32 @@ mod tests {
             TT::Years(8) => assert!(true),
             _ => assert!(false, "Subtraction failed"),
         }
+    }
+
+    #[test]
+    fn test_add_moment_to_seconds() {
+        let a = TT::Seconds(3);
+        let b = TT::Moment(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11));
+
+        let res = (a + b).calculate();
+
+        assert!(res.is_err());
+        let res = res.unwrap_err();
+
+        assert_eq!("Cannot add", res.kind().description());
+    }
+
+    #[test]
+    fn test_subtract_moment_from_seconds() {
+        let a = TT::Seconds(3);
+        let b = TT::Moment(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11));
+
+        let res = (a - b).calculate();
+
+        assert!(res.is_err());
+        let res = res.unwrap_err();
+
+        assert_eq!("Cannot subtract", res.kind().description());
     }
 
 }
