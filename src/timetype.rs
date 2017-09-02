@@ -75,5 +75,45 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_subtraction_of_seconds() {
+        let a = TT::Seconds(5);
+        let b = TT::Seconds(3);
+
+        let c = a - b;
+
+        match c {
+            TT::Subtraction(a, b) => {
+                match (*a, *b) {
+                    (TT::Seconds(5), TT::Seconds(3)) => assert!(true),
+                    _                                => assert!(false, "Subtraction failed"),
+                }
+            }
+            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+        }
+    }
+
+    #[test]
+    fn test_subtraction_of_seconds_multiple() {
+        let a = TT::Seconds(3);
+        let b = TT::Seconds(2);
+        let c = TT::Seconds(1);
+
+        let d = a - b - c;
+
+        match d {
+            TT::Subtraction(a, b) => {
+                match (*a, *b) {
+                    (TT::Subtraction(c, d), TT::Seconds(1)) => match (*c, *d) {
+                        (TT::Seconds(3), TT::Seconds(2)) => assert!(true),
+                        _                                => assert!(false, "Subtraction failed"),
+                    },
+                    (a, b) => assert!(false, "Subtraction failed: \n a = {:?}\n b = {:?}", a, b),
+                }
+            }
+            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+        }
+    }
+
 }
 
