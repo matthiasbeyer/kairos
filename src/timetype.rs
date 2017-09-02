@@ -3,6 +3,8 @@
 
 use chrono::NaiveDateTime;
 
+use std::ops::Add;
+
 /// A Type of Time, currently based on chrono::NaiveDateTime
 pub enum TimeType {
     Seconds(usize),
@@ -18,6 +20,15 @@ pub enum TimeType {
     Addition(Box<TimeType>, Box<TimeType>),
     Subtraction(Box<TimeType>, Box<TimeType>),
 }
+
+impl Add for TimeType {
+    type Output = TimeType;
+
+    fn add(self, rhs: TimeType) -> Self::Output {
+        TimeType::Addition(Box::new(self), Box::new(rhs))
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
