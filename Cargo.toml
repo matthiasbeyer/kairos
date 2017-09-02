@@ -1,0 +1,15 @@
+[package]
+name = "kairos"
+version = "0.0.0"
+authors = ["Matthias Beyer <mail@beyermatthias.de>"]
+
+description = "A library on top of chrono to calculate times and dates ergonomically"
+
+categories  = [ "date-and-time" ]
+keywords    = ["time", "calc", "parser"]
+readme      = "README.md"
+license     = "MPL-2.0"
+
+repository    = "https://github.com/matthiasbeyer/kairos"
+
+[dependencies]
