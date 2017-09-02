@@ -19,3 +19,27 @@ pub enum TimeType {
     Subtraction(Box<TimeType>, Box<TimeType>),
 }
 
+#[cfg(test)]
+mod tests {
+    use super::TimeType as TT;
+
+    #[test]
+    fn test_addition_of_seconds() {
+        let a = TT::Seconds(0);
+        let b = TT::Seconds(1);
+
+        let c = a + b;
+
+        match c {
+            TT::Addition(a, b) => {
+                match (*a, *b) {
+                    (TT::Seconds(0), TT::Seconds(1)) => assert!(true),
+                    _                                => assert!(false, "Addition failed"),
+                }
+            }
+            _ => assert!(false, "Addition failed, returned non-Addition type"),
+        }
+    }
+
+}
+
