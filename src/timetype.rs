@@ -7,6 +7,9 @@ use std::ops::Add;
 use std::ops::Sub;
 
 use result::Result;
+use error::KairosErrorKind as KEK;
+use error::KairosError as KE;
+use error_chain::ChainedError;
 
 /// A Type of Time, currently based on chrono::NaiveDateTime
 #[derive(Debug)]
@@ -71,6 +74,7 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (other, TT::Addition(a, b))      => add(a, b)
             .map(Box::new)
             .and_then(|bx| add(Box::new(other), bx)),
+        (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotAdd(thing, TT::Moment(mom)))),
         others                           => unimplemented!(),
     }
 }
@@ -92,6 +96,7 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (other, TT::Subtraction(a, b))   => sub(a, b)
             .map(Box::new)
             .and_then(|bx| sub(Box::new(other), bx)),
+        (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotSub(thing, TT::Moment(mom)))),
         others                           => unimplemented!(),
     }
 }
