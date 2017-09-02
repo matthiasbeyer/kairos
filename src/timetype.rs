@@ -124,5 +124,38 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_addition_of_seconds_calculate() {
+        let a = TT::Seconds(0);
+        let b = TT::Seconds(1);
+
+        let c = (a + b).calculate();
+
+        assert!(c.is_ok());
+        let c = c.unwrap();
+
+        match c {
+            TT::Seconds(1) => assert!(true),
+            _ => assert!(false, "Addition failed"),
+        }
+    }
+
+    #[test]
+    fn test_addition_of_seconds_multiple_calculate() {
+        let a = TT::Seconds(0);
+        let b = TT::Seconds(1);
+        let c = TT::Seconds(2);
+
+        let d = (a + b + c).calculate();
+
+        assert!(d.is_ok());
+        let d = d.unwrap();
+
+        match d {
+            TT::Seconds(3) => assert!(true),
+            _ => assert!(false, "Addition failed"),
+        }
+    }
+
 }
 
