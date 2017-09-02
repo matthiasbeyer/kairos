@@ -969,6 +969,59 @@ mod tests {
             _ => assert!(false, "Subtraction failed"),
         }
     }
+
+    #[test]
+    fn test_addition_of_years_multiple_calculate_reverse_order() {
+        let a = TT::Years(0);
+        let b = TT::Years(1);
+        let c = TT::Years(2);
+
+        let d = (a + (b + c)).calculate();
+
+        assert!(d.is_ok());
+        let d = d.unwrap();
+
+        match d {
+            TT::Years(3) => assert!(true),
+            _ => assert!(false, "Addition failed"),
+        }
+    }
+
+    #[test]
+    fn test_subtraction_of_years_multiple_calculate_reverse_order() {
+        let a = TT::Years(3);
+        let b = TT::Years(2);
+        let c = TT::Years(1);
+
+        let d = (a - (b - c)).calculate();
+
+        assert!(d.is_ok());
+        let d = d.unwrap();
+
+        match d {
+            TT::Years(2) => assert!(true),
+            _ => assert!(false, "Subtraction failed"),
+        }
+    }
+
+    #[test]
+    fn test_subtraction_of_years_multiple_calculate_reverse_order_2() {
+        let a = TT::Years(3);
+        let b = TT::Years(2);
+        let c = TT::Years(1);
+        let d = TT::Years(10);
+
+        let e = ((d - c) - (a - b)).calculate();
+
+        assert!(e.is_ok());
+        let e = e.unwrap();
+
+        match e {
+            TT::Years(8) => assert!(true),
+            _ => assert!(false, "Subtraction failed"),
+        }
+    }
+
 }
 
 
