@@ -59,12 +59,12 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
 
     match (*a, *b) {
         (TT::Seconds(a), TT::Seconds(b)) => Ok(TT::Seconds(a + b)),
-        (TT::Minutes(a), TT::Minutes(b)) => unimplemented!(),
-        (TT::Hours(a), TT::Hours(b))     => unimplemented!(),
-        (TT::Days(a), TT::Days(b))       => unimplemented!(),
-        (TT::Weeks(a), TT::Weeks(b))     => unimplemented!(),
-        (TT::Months(a), TT::Months(b))   => unimplemented!(),
-        (TT::Years(a), TT::Years(b))     => unimplemented!(),
+        (TT::Minutes(a), TT::Minutes(b)) => Ok(TT::Minutes(a + b)),
+        (TT::Hours(a), TT::Hours(b))     => Ok(TT::Hours(a + b)),
+        (TT::Days(a), TT::Days(b))       => Ok(TT::Days(a + b)),
+        (TT::Weeks(a), TT::Weeks(b))     => Ok(TT::Weeks(a + b)),
+        (TT::Months(a), TT::Months(b))   => Ok(TT::Months(a + b)),
+        (TT::Years(a), TT::Years(b))     => Ok(TT::Years(a + b)),
         (TT::Addition(a, b), other)      => add(a, b)
             .map(Box::new)
             .and_then(|bx| add(bx, Box::new(other))),
@@ -77,12 +77,12 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
 
     match (*a, *b) {
         (TT::Seconds(a), TT::Seconds(b)) => Ok(TT::Seconds(a - b)),
-        (TT::Minutes(a), TT::Minutes(b)) => unimplemented!(),
-        (TT::Hours(a), TT::Hours(b))     => unimplemented!(),
-        (TT::Days(a), TT::Days(b))       => unimplemented!(),
-        (TT::Weeks(a), TT::Weeks(b))     => unimplemented!(),
-        (TT::Months(a), TT::Months(b))   => unimplemented!(),
-        (TT::Years(a), TT::Years(b))     => unimplemented!(),
+        (TT::Minutes(a), TT::Minutes(b)) => Ok(TT::Minutes(a - b)),
+        (TT::Hours(a), TT::Hours(b))     => Ok(TT::Hours(a - b)),
+        (TT::Days(a), TT::Days(b))       => Ok(TT::Days(a - b)),
+        (TT::Weeks(a), TT::Weeks(b))     => Ok(TT::Weeks(a - b)),
+        (TT::Months(a), TT::Months(b))   => Ok(TT::Months(a - b)),
+        (TT::Years(a), TT::Years(b))     => Ok(TT::Years(a - b)),
         (TT::Subtraction(a, b), other)   => sub(a, b)
             .map(Box::new)
             .and_then(|bx| sub(bx, Box::new(other))),
