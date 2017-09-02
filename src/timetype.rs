@@ -4,6 +4,7 @@
 use chrono::NaiveDateTime;
 
 use std::ops::Add;
+use std::ops::Sub;
 
 /// A Type of Time, currently based on chrono::NaiveDateTime
 #[derive(Debug)]
@@ -27,6 +28,14 @@ impl Add for TimeType {
 
     fn add(self, rhs: TimeType) -> Self::Output {
         TimeType::Addition(Box::new(self), Box::new(rhs))
+    }
+}
+
+impl Sub for TimeType {
+    type Output = TimeType;
+
+    fn sub(self, rhs: TimeType) -> Self::Output {
+        TimeType::Subtraction(Box::new(self), Box::new(rhs))
     }
 }
 
