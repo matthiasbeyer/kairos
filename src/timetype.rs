@@ -6,6 +6,8 @@ use chrono::NaiveDateTime;
 use std::ops::Add;
 use std::ops::Sub;
 
+use result::Result;
+
 /// A Type of Time, currently based on chrono::NaiveDateTime
 #[derive(Debug)]
 pub enum TimeType {
@@ -36,6 +38,34 @@ impl Sub for TimeType {
 
     fn sub(self, rhs: TimeType) -> Self::Output {
         TimeType::Subtraction(Box::new(self), Box::new(rhs))
+    }
+}
+
+impl TimeType {
+
+    fn calculate(self) -> Result<TimeType> {
+        use timetype::TimeType as TT;
+
+        match self {
+            TT::Addition(a, b)    => add(a, b),
+            TT::Subtraction(a, b) => unimplemented!(),
+            x                     => Ok(x)
+        }
+    }
+}
+
+fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match (*a, *b) {
+        (TT::Seconds(a), TT::Seconds(b)) => Ok(TT::Seconds(a + b)),
+        (TT::Minutes(a), TT::Minutes(b)) => unimplemented!(),
+        (TT::Hours(a), TT::Hours(b))     => unimplemented!(),
+        (TT::Days(a), TT::Days(b))       => unimplemented!(),
+        (TT::Weeks(a), TT::Weeks(b))     => unimplemented!(),
+        (TT::Months(a), TT::Months(b))   => unimplemented!(),
+        (TT::Years(a), TT::Years(b))     => unimplemented!(),
+        others                           => unimplemented!(),
     }
 }
 
