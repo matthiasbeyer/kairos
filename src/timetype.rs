@@ -68,6 +68,9 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (TT::Addition(a, b), other)      => add(a, b)
             .map(Box::new)
             .and_then(|bx| add(bx, Box::new(other))),
+        (other, TT::Addition(a, b))      => add(a, b)
+            .map(Box::new)
+            .and_then(|bx| add(Box::new(other), bx)),
         others                           => unimplemented!(),
     }
 }
@@ -86,6 +89,9 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (TT::Subtraction(a, b), other)   => sub(a, b)
             .map(Box::new)
             .and_then(|bx| sub(bx, Box::new(other))),
+        (other, TT::Subtraction(a, b))   => sub(a, b)
+            .map(Box::new)
+            .and_then(|bx| sub(Box::new(other), bx)),
         others                           => unimplemented!(),
     }
 }
