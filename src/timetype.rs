@@ -190,5 +190,37 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_subtraction_of_seconds_calculate() {
+        let a = TT::Seconds(5);
+        let b = TT::Seconds(3);
+
+        let c = (a - b).calculate();
+
+        assert!(c.is_ok());
+        let c = c.unwrap();
+
+        match c {
+            TT::Seconds(2) => assert!(true),
+            _ => assert!(false, "Subtraction failed"),
+        }
+    }
+
+    #[test]
+    fn test_subtraction_of_seconds_multiple_calculate() {
+        let a = TT::Seconds(3);
+        let b = TT::Seconds(2);
+        let c = TT::Seconds(1);
+
+        let d = (a - b - c).calculate();
+
+        assert!(d.is_ok());
+        let d = d.unwrap();
+
+        match d {
+            TT::Seconds(0) => assert!(true),
+            _ => assert!(false, "Subtraction failed"),
+        }
+    }
 }
 
