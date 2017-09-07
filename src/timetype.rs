@@ -4,7 +4,9 @@
 use chrono::NaiveDateTime;
 
 use std::ops::Add;
+use std::ops::AddAssign;
 use std::ops::Sub;
+use std::ops::SubAssign;
 
 use result::Result;
 use error::KairosErrorKind as KEK;
@@ -30,11 +32,23 @@ impl Add for TimeType {
     }
 }
 
+impl AddAssign for TimeType {
+    fn add_assign(&mut self, rhs: TimeType) {
+        *self = TimeType::Addition(Box::new(self.clone()), Box::new(rhs));
+    }
+}
+
 impl Sub for TimeType {
     type Output = TimeType;
 
     fn sub(self, rhs: TimeType) -> Self::Output {
         TimeType::Subtraction(Box::new(self), Box::new(rhs))
+    }
+}
+
+impl SubAssign for TimeType {
+    fn sub_assign(&mut self, rhs: TimeType) {
+        *self = TimeType::Subtraction(Box::new(self.clone()), Box::new(rhs));
     }
 }
 
