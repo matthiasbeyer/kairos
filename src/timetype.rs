@@ -129,13 +129,17 @@ impl TimeType {
     }
 
     fn calculate(self) -> Result<TimeType> {
-        use timetype::TimeType as TT;
+        do_calculate(self)
+    }
+}
 
-        match self {
-            TT::Addition(a, b)    => add(a, b),
-            TT::Subtraction(a, b) => sub(a, b),
-            x                     => Ok(x)
-        }
+fn do_calculate(tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Addition(a, b)    => add(a, b),
+        TT::Subtraction(a, b) => sub(a, b),
+        x                     => Ok(x)
     }
 }
 
@@ -150,6 +154,13 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (other, TT::Addition(a, b))      => add(a, b)
             .map(Box::new)
             .and_then(|bx| add(Box::new(other), bx)),
+        (TT::Subtraction(a, b), other) => sub(a, b)
+            .map(Box::new)
+            .and_then(|bx| add(Box::new(other), bx)),
+        (other, TT::Subtraction(a, b)) => do_calculate(*a)
+            .map(Box::new)
+            .and_then(|bx| add(Box::new(other), bx))
+            .and_then(|rx| sub(Box::new(rx), b)),
         (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotAdd(thing, TT::Moment(mom)))),
         others                           => unimplemented!(),
     }
@@ -166,6 +177,13 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (other, TT::Subtraction(a, b))   => sub(a, b)
             .map(Box::new)
             .and_then(|bx| sub(Box::new(other), bx)),
+        (TT::Addition(a, b), other) => add(a, b)
+            .map(Box::new)
+            .and_then(|bx| sub(bx, Box::new(other))),
+        (other, TT::Addition(a, b)) => do_calculate(*a)
+            .map(Box::new)
+            .and_then(|bx| sub(Box::new(other), bx))
+            .and_then(|rx| add(Box::new(rx), b)),
         (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotSub(thing, TT::Moment(mom)))),
         others                           => unimplemented!(),
     }
@@ -1040,6 +1058,32 @@ mod tests {
         assert_eq!("Cannot subtract", res.kind().description());
     }
 
+}
+
+#[cfg(test)]
+mod test_add_and_sub_mixed {
+    use timetype::TimeType as TT;
+
+    #[test]
+    fn test_add_then_sub() {
+        let a = TT::seconds(0);
+        let b = TT::seconds(1);
+        let c = TT::seconds(1);
+
+        let d = a + b - c;
+
+        assert_eq!(0, d.calculate().unwrap().get_seconds());
+    }
+    #[test]
+    fn test_sub_then_add() {
+        let a = TT::seconds(1);
+        let b = TT::seconds(1);
+        let c = TT::seconds(0);
+
+        let d = a - b + c;
+
+        assert_eq!(0, d.calculate().unwrap().get_seconds());
+    }
 }
 
 
