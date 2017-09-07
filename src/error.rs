@@ -28,6 +28,11 @@ error_chain! {
             display("Cannot subtract: {:?} - {:?}", a, b)
         }
 
+        ArgumentErrorNotAnAmount(tt: TimeType) {
+            description("Argument Error: Not an amount TimeType object")
+            display("The passed argument is not an amount: {:?}", tt)
+        }
+
     }
 
 }

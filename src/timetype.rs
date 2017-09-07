@@ -4,7 +4,9 @@
 use chrono::NaiveDateTime;
 
 use std::ops::Add;
+use std::ops::AddAssign;
 use std::ops::Sub;
+use std::ops::SubAssign;
 
 use result::Result;
 use error::KairosErrorKind as KEK;
@@ -30,11 +32,23 @@ impl Add for TimeType {
     }
 }
 
+impl AddAssign for TimeType {
+    fn add_assign(&mut self, rhs: TimeType) {
+        *self = TimeType::Addition(Box::new(self.clone()), Box::new(rhs));
+    }
+}
+
 impl Sub for TimeType {
     type Output = TimeType;
 
     fn sub(self, rhs: TimeType) -> Self::Output {
         TimeType::Subtraction(Box::new(self), Box::new(rhs))
+    }
+}
+
+impl SubAssign for TimeType {
+    fn sub_assign(&mut self, rhs: TimeType) {
+        *self = TimeType::Subtraction(Box::new(self.clone()), Box::new(rhs));
     }
 }
 
@@ -63,6 +77,34 @@ impl Sub for TimeType {
 /// full month.
 ///
 impl TimeType {
+
+    pub fn is_a_amount(&self) -> bool {
+        match *self {
+            TimeType::Duration(_) => true,
+            _                     => false,
+        }
+    }
+
+    pub fn is_moment(&self) -> bool {
+        match *self {
+            TimeType::Moment(_) => true,
+            _                   => false,
+        }
+    }
+
+    pub fn is_addition(&self) -> bool {
+        match *self {
+            TimeType::Addition(_, _) => true,
+            _                        => false,
+        }
+    }
+
+    pub fn is_subtraction(&self) -> bool {
+        match *self {
+            TimeType::Subtraction(_, _) => true,
+            _                           => false,
+        }
+    }
 
     pub fn seconds(i: i64) -> TimeType {
         TimeType::Duration(::chrono::Duration::seconds(i))
@@ -152,7 +194,7 @@ impl TimeType {
         }
     }
 
-    fn calculate(self) -> Result<TimeType> {
+    pub fn calculate(self) -> Result<TimeType> {
         do_calculate(self)
     }
 }
