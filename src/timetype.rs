@@ -12,15 +12,9 @@ use error::KairosError as KE;
 use error_chain::ChainedError;
 
 /// A Type of Time, currently based on chrono::NaiveDateTime
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TimeType {
-    Seconds(usize),
-    Minutes(usize),
-    Hours(usize),
-    Days(usize),
-    Weeks(usize),
-    Months(usize),
-    Years(usize),
+    Duration(::chrono::Duration),
 
     Moment(NaiveDateTime),
 
@@ -46,6 +40,94 @@ impl Sub for TimeType {
 
 impl TimeType {
 
+    pub fn seconds(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::seconds(i))
+    }
+
+    pub fn minutes(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::minutes(i))
+    }
+
+    pub fn hours(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::hours(i))
+    }
+
+    pub fn days(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::days(i))
+    }
+
+    pub fn weeks(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::weeks(i))
+    }
+
+    pub fn months(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::weeks(i * 4))
+    }
+
+    pub fn years(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::weeks(i * 4 * 12))
+    }
+
+    pub fn moment(ndt: NaiveDateTime) -> TimeType {
+        TimeType::Moment(ndt)
+    }
+
+    /// Get the number of seconds, if the TimeType is not a seconds type, zero is returned
+    pub fn get_seconds(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d)   => d.num_seconds(),
+            _                       => 0
+        }
+    }
+
+    /// Get the number of minutes, if the TimeType is not a minutes type, zero is returned
+    pub fn get_minutes(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d) => d.num_minutes(),
+            _ => 0,
+        }
+    }
+
+    /// Get the number of hours, if the TimeType is not a hours type, zero is returned
+    pub fn get_hours(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d) => d.num_hours(),
+            _ => 0,
+        }
+    }
+
+    /// Get the number of days, if the TimeType is not a days type, zero is returned
+    pub fn get_days(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d) => d.num_days(),
+            _ => 0,
+        }
+    }
+
+    /// Get the number of weeks, if the TimeType is not a weeks type, zero is returned
+    pub fn get_weeks(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d) => d.num_weeks(),
+            _ => 0,
+        }
+    }
+
+    /// Get the number of months, if the TimeType is not a months type, zero is returned
+    pub fn get_months(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d) => d.num_weeks() / 4,
+            _ => 0,
+        }
+    }
+
+    /// Get the number of years, if the TimeType is not a years type, zero is returned
+    pub fn get_years(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d) => d.num_weeks() / 12 / 4,
+            _ => 0,
+        }
+    }
+
     fn calculate(self) -> Result<TimeType> {
         use timetype::TimeType as TT;
 
@@ -61,13 +143,7 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
     match (*a, *b) {
-        (TT::Seconds(a), TT::Seconds(b)) => Ok(TT::Seconds(a + b)),
-        (TT::Minutes(a), TT::Minutes(b)) => Ok(TT::Minutes(a + b)),
-        (TT::Hours(a), TT::Hours(b))     => Ok(TT::Hours(a + b)),
-        (TT::Days(a), TT::Days(b))       => Ok(TT::Days(a + b)),
-        (TT::Weeks(a), TT::Weeks(b))     => Ok(TT::Weeks(a + b)),
-        (TT::Months(a), TT::Months(b))   => Ok(TT::Months(a + b)),
-        (TT::Years(a), TT::Years(b))     => Ok(TT::Years(a + b)),
+        (TT::Duration(a), TT::Duration(b)) => Ok(TT::Duration(a + b)),
         (TT::Addition(a, b), other)      => add(a, b)
             .map(Box::new)
             .and_then(|bx| add(bx, Box::new(other))),
@@ -83,13 +159,7 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
     match (*a, *b) {
-        (TT::Seconds(a), TT::Seconds(b)) => Ok(TT::Seconds(a - b)),
-        (TT::Minutes(a), TT::Minutes(b)) => Ok(TT::Minutes(a - b)),
-        (TT::Hours(a), TT::Hours(b))     => Ok(TT::Hours(a - b)),
-        (TT::Days(a), TT::Days(b))       => Ok(TT::Days(a - b)),
-        (TT::Weeks(a), TT::Weeks(b))     => Ok(TT::Weeks(a - b)),
-        (TT::Months(a), TT::Months(b))   => Ok(TT::Months(a - b)),
-        (TT::Years(a), TT::Years(b))     => Ok(TT::Years(a - b)),
+        (TT::Duration(a), TT::Duration(b)) => Ok(TT::Duration(a - b)),
         (TT::Subtraction(a, b), other)   => sub(a, b)
             .map(Box::new)
             .and_then(|bx| sub(bx, Box::new(other))),
@@ -111,17 +181,15 @@ mod tests {
 
     #[test]
     fn test_addition_of_seconds() {
-        let a = TT::Seconds(0);
-        let b = TT::Seconds(1);
+        let a = TT::seconds(0);
+        let b = TT::seconds(1);
 
         let c = a + b;
 
         match c {
             TT::Addition(a, b) => {
-                match (*a, *b) {
-                    (TT::Seconds(0), TT::Seconds(1)) => assert!(true),
-                    _                                => assert!(false, "Addition failed"),
-                }
+                assert_eq!(0, a.get_seconds());
+                assert_eq!(1, b.get_seconds());
             }
             _ => assert!(false, "Addition failed, returned non-Addition type"),
         }
@@ -129,20 +197,21 @@ mod tests {
 
     #[test]
     fn test_addition_of_seconds_multiple() {
-        let a = TT::Seconds(0);
-        let b = TT::Seconds(1);
-        let c = TT::Seconds(2);
+        let a = TT::seconds(0);
+        let b = TT::seconds(1);
+        let c = TT::seconds(2);
 
         let d = a + b + c;
 
         match d {
-            TT::Addition(a, b) => {
-                match (*a, *b) {
-                    (TT::Addition(c, d), TT::Seconds(2)) => match (*c, *d) {
-                        (TT::Seconds(0), TT::Seconds(1)) => assert!(true),
-                        _                                => assert!(false, "Addition failed"),
+            TT::Addition(add, c) => {
+                match *add {
+                    TT::Addition(ref a, ref b) => {
+                        assert_eq!(0, a.get_seconds());
+                        assert_eq!(1, b.get_seconds());
+                        assert_eq!(2, c.get_seconds());
                     },
-                    (a, b) => assert!(false, "Addition failed: \n a = {:?}\n b = {:?}", a, b),
+                    _ => assert!(false, "Addition failed, returned non-Addition type"),
                 }
             }
             _ => assert!(false, "Addition failed, returned non-Addition type"),
@@ -151,17 +220,15 @@ mod tests {
 
     #[test]
     fn test_subtraction_of_seconds() {
-        let a = TT::Seconds(5);
-        let b = TT::Seconds(3);
+        let a = TT::seconds(5);
+        let b = TT::seconds(3);
 
         let c = a - b;
 
         match c {
             TT::Subtraction(a, b) => {
-                match (*a, *b) {
-                    (TT::Seconds(5), TT::Seconds(3)) => assert!(true),
-                    _                                => assert!(false, "Subtraction failed"),
-                }
+                assert_eq!(5, a.get_seconds());
+                assert_eq!(3, b.get_seconds());
             }
             _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
         }
@@ -169,20 +236,21 @@ mod tests {
 
     #[test]
     fn test_subtraction_of_seconds_multiple() {
-        let a = TT::Seconds(3);
-        let b = TT::Seconds(2);
-        let c = TT::Seconds(1);
+        let a = TT::seconds(3);
+        let b = TT::seconds(2);
+        let c = TT::seconds(1);
 
         let d = a - b - c;
 
         match d {
-            TT::Subtraction(a, b) => {
-                match (*a, *b) {
-                    (TT::Subtraction(c, d), TT::Seconds(1)) => match (*c, *d) {
-                        (TT::Seconds(3), TT::Seconds(2)) => assert!(true),
-                        _                                => assert!(false, "Subtraction failed"),
+            TT::Subtraction(sub, c) => {
+                match *sub {
+                    TT::Subtraction(ref a, ref b) => {
+                        assert_eq!(3, a.get_seconds());
+                        assert_eq!(2, b.get_seconds());
+                        assert_eq!(1, c.get_seconds());
                     },
-                    (a, b) => assert!(false, "Subtraction failed: \n a = {:?}\n b = {:?}", a, b),
+                    _ => assert!(false, "Subtraction failed"),
                 }
             }
             _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
@@ -191,83 +259,69 @@ mod tests {
 
     #[test]
     fn test_addition_of_seconds_calculate() {
-        let a = TT::Seconds(0);
-        let b = TT::Seconds(1);
+        let a = TT::seconds(0);
+        let b = TT::seconds(1);
 
         let c = (a + b).calculate();
 
         assert!(c.is_ok());
         let c = c.unwrap();
 
-        match c {
-            TT::Seconds(1) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(1, c.get_seconds());
     }
 
     #[test]
     fn test_addition_of_seconds_multiple_calculate() {
-        let a = TT::Seconds(0);
-        let b = TT::Seconds(1);
-        let c = TT::Seconds(2);
+        let a = TT::seconds(0);
+        let b = TT::seconds(1);
+        let c = TT::seconds(2);
 
         let d = (a + b + c).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Seconds(3) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(3, d.get_seconds());
     }
 
     #[test]
     fn test_subtraction_of_seconds_calculate() {
-        let a = TT::Seconds(5);
-        let b = TT::Seconds(3);
+        let a = TT::seconds(5);
+        let b = TT::seconds(3);
 
         let c = (a - b).calculate();
 
         assert!(c.is_ok());
         let c = c.unwrap();
 
-        match c {
-            TT::Seconds(2) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(2, c.get_seconds());
     }
 
     #[test]
     fn test_subtraction_of_seconds_multiple_calculate() {
-        let a = TT::Seconds(3);
-        let b = TT::Seconds(2);
-        let c = TT::Seconds(1);
+        let a = TT::seconds(3);
+        let b = TT::seconds(2);
+        let c = TT::seconds(1);
 
         let d = (a - b - c).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Seconds(0) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(0, d.get_seconds());
     }
 
     #[test]
     fn test_addition_of_minutes() {
-        let a = TT::Minutes(0);
-        let b = TT::Minutes(1);
+        let a = TT::minutes(0);
+        let b = TT::minutes(1);
 
         let c = a + b;
 
         match c {
             TT::Addition(a, b) => {
-                match (*a, *b) {
-                    (TT::Minutes(0), TT::Minutes(1)) => assert!(true),
-                    _                                => assert!(false, "Addition failed"),
-                }
+                assert_eq!(0, a.get_minutes());
+                assert_eq!(1, b.get_minutes());
             }
             _ => assert!(false, "Addition failed, returned non-Addition type"),
         }
@@ -275,20 +329,21 @@ mod tests {
 
     #[test]
     fn test_addition_of_minutes_multiple() {
-        let a = TT::Minutes(0);
-        let b = TT::Minutes(1);
-        let c = TT::Minutes(2);
+        let a = TT::minutes(0);
+        let b = TT::minutes(1);
+        let c = TT::minutes(2);
 
         let d = a + b + c;
 
         match d {
-            TT::Addition(a, b) => {
-                match (*a, *b) {
-                    (TT::Addition(c, d), TT::Minutes(2)) => match (*c, *d) {
-                        (TT::Minutes(0), TT::Minutes(1)) => assert!(true),
-                        _                                => assert!(false, "Addition failed"),
+            TT::Addition(ref add, ref c) => {
+                match **add {
+                    TT::Addition(ref a, ref b) => {
+                        assert_eq!(0, a.get_minutes());
+                        assert_eq!(1, b.get_minutes());
+                        assert_eq!(2, c.get_minutes());
                     },
-                    (a, b) => assert!(false, "Addition failed: \n a = {:?}\n b = {:?}", a, b),
+                    _ => assert!(false, "Addition failed, returned non-Addition type"),
                 }
             }
             _ => assert!(false, "Addition failed, returned non-Addition type"),
@@ -297,17 +352,15 @@ mod tests {
 
     #[test]
     fn test_subtraction_of_minutes() {
-        let a = TT::Minutes(5);
-        let b = TT::Minutes(3);
+        let a = TT::minutes(5);
+        let b = TT::minutes(3);
 
         let c = a - b;
 
         match c {
             TT::Subtraction(a, b) => {
-                match (*a, *b) {
-                    (TT::Minutes(5), TT::Minutes(3)) => assert!(true),
-                    _                                => assert!(false, "Subtraction failed"),
-                }
+                assert_eq!(5, a.get_minutes());
+                assert_eq!(3, b.get_minutes());
             }
             _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
         }
@@ -315,20 +368,21 @@ mod tests {
 
     #[test]
     fn test_subtraction_of_minutes_multiple() {
-        let a = TT::Minutes(3);
-        let b = TT::Minutes(2);
-        let c = TT::Minutes(1);
+        let a = TT::minutes(3);
+        let b = TT::minutes(2);
+        let c = TT::minutes(1);
 
         let d = a - b - c;
 
         match d {
-            TT::Subtraction(a, b) => {
-                match (*a, *b) {
-                    (TT::Subtraction(c, d), TT::Minutes(1)) => match (*c, *d) {
-                        (TT::Minutes(3), TT::Minutes(2)) => assert!(true),
-                        _                                => assert!(false, "Subtraction failed"),
+            TT::Subtraction(sub, c) => {
+                match *sub {
+                    TT::Subtraction(ref a, ref b) => {
+                        assert_eq!(3, a.get_minutes());
+                        assert_eq!(2, b.get_minutes());
+                        assert_eq!(1, c.get_minutes());
                     },
-                    (a, b) => assert!(false, "Subtraction failed: \n a = {:?}\n b = {:?}", a, b),
+                    _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
                 }
             }
             _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
@@ -337,83 +391,69 @@ mod tests {
 
     #[test]
     fn test_addition_of_minutes_calculate() {
-        let a = TT::Minutes(0);
-        let b = TT::Minutes(1);
+        let a = TT::minutes(0);
+        let b = TT::minutes(1);
 
         let c = (a + b).calculate();
 
         assert!(c.is_ok());
         let c = c.unwrap();
 
-        match c {
-            TT::Minutes(1) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(1, c.get_minutes());
     }
 
     #[test]
     fn test_addition_of_minutes_multiple_calculate() {
-        let a = TT::Minutes(0);
-        let b = TT::Minutes(1);
-        let c = TT::Minutes(2);
+        let a = TT::minutes(0);
+        let b = TT::minutes(1);
+        let c = TT::minutes(2);
 
         let d = (a + b + c).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Minutes(3) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(3, d.get_minutes());
     }
 
     #[test]
     fn test_subtraction_of_minutes_calculate() {
-        let a = TT::Minutes(5);
-        let b = TT::Minutes(3);
+        let a = TT::minutes(5);
+        let b = TT::minutes(3);
 
         let c = (a - b).calculate();
 
         assert!(c.is_ok());
         let c = c.unwrap();
 
-        match c {
-            TT::Minutes(2) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(2, c.get_minutes());
     }
 
     #[test]
     fn test_subtraction_of_minutes_multiple_calculate() {
-        let a = TT::Minutes(3);
-        let b = TT::Minutes(2);
-        let c = TT::Minutes(1);
+        let a = TT::minutes(3);
+        let b = TT::minutes(2);
+        let c = TT::minutes(1);
 
         let d = (a - b - c).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Minutes(0) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(0, d.get_minutes());
     }
 
     #[test]
     fn test_addition_of_days() {
-        let a = TT::Days(0);
-        let b = TT::Days(1);
+        let a = TT::days(0);
+        let b = TT::days(1);
 
         let c = a + b;
 
         match c {
             TT::Addition(a, b) => {
-                match (*a, *b) {
-                    (TT::Days(0), TT::Days(1)) => assert!(true),
-                    _                                => assert!(false, "Addition failed"),
-                }
+                assert_eq!(0, a.get_days());
+                assert_eq!(1, b.get_days());
             }
             _ => assert!(false, "Addition failed, returned non-Addition type"),
         }
@@ -421,20 +461,21 @@ mod tests {
 
     #[test]
     fn test_addition_of_days_multiple() {
-        let a = TT::Days(0);
-        let b = TT::Days(1);
-        let c = TT::Days(2);
+        let a = TT::days(0);
+        let b = TT::days(1);
+        let c = TT::days(2);
 
         let d = a + b + c;
 
         match d {
-            TT::Addition(a, b) => {
-                match (*a, *b) {
-                    (TT::Addition(c, d), TT::Days(2)) => match (*c, *d) {
-                        (TT::Days(0), TT::Days(1)) => assert!(true),
-                        _                                => assert!(false, "Addition failed"),
+            TT::Addition(add, c) => {
+                match *add {
+                    TT::Addition(ref a, ref b) => {
+                        assert_eq!(0, a.get_days());
+                        assert_eq!(1, b.get_days());
+                        assert_eq!(2, c.get_days());
                     },
-                    (a, b) => assert!(false, "Addition failed: \n a = {:?}\n b = {:?}", a, b),
+                    _ => assert!(false, "Addition failed, wrong type"),
                 }
             }
             _ => assert!(false, "Addition failed, returned non-Addition type"),
@@ -443,17 +484,15 @@ mod tests {
 
     #[test]
     fn test_subtraction_of_days() {
-        let a = TT::Days(5);
-        let b = TT::Days(3);
+        let a = TT::days(5);
+        let b = TT::days(3);
 
         let c = a - b;
 
         match c {
             TT::Subtraction(a, b) => {
-                match (*a, *b) {
-                    (TT::Days(5), TT::Days(3)) => assert!(true),
-                    _                                => assert!(false, "Subtraction failed"),
-                }
+                assert_eq!(5, a.get_days());
+                assert_eq!(3, b.get_days());
             }
             _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
         }
@@ -461,20 +500,21 @@ mod tests {
 
     #[test]
     fn test_subtraction_of_days_multiple() {
-        let a = TT::Days(3);
-        let b = TT::Days(2);
-        let c = TT::Days(1);
+        let a = TT::days(3);
+        let b = TT::days(2);
+        let c = TT::days(1);
 
         let d = a - b - c;
 
         match d {
-            TT::Subtraction(a, b) => {
-                match (*a, *b) {
-                    (TT::Subtraction(c, d), TT::Days(1)) => match (*c, *d) {
-                        (TT::Days(3), TT::Days(2)) => assert!(true),
-                        _                                => assert!(false, "Subtraction failed"),
+            TT::Subtraction(sub, c) => {
+                match *sub {
+                    TT::Subtraction(ref a, ref b) => {
+                        assert_eq!(3, a.get_days());
+                        assert_eq!(2, b.get_days());
+                        assert_eq!(1, c.get_days());
                     },
-                    (a, b) => assert!(false, "Subtraction failed: \n a = {:?}\n b = {:?}", a, b),
+                    _ => assert!(false, "Subtraction failed, wrong type"),
                 }
             }
             _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
@@ -483,83 +523,69 @@ mod tests {
 
     #[test]
     fn test_addition_of_days_calculate() {
-        let a = TT::Days(0);
-        let b = TT::Days(1);
+        let a = TT::days(0);
+        let b = TT::days(1);
 
         let c = (a + b).calculate();
 
         assert!(c.is_ok());
         let c = c.unwrap();
 
-        match c {
-            TT::Days(1) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(1, c.get_days());
     }
 
     #[test]
     fn test_addition_of_days_multiple_calculate() {
-        let a = TT::Days(0);
-        let b = TT::Days(1);
-        let c = TT::Days(2);
+        let a = TT::days(0);
+        let b = TT::days(1);
+        let c = TT::days(2);
 
         let d = (a + b + c).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Days(3) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(3, d.get_days());
     }
 
     #[test]
     fn test_subtraction_of_days_calculate() {
-        let a = TT::Days(5);
-        let b = TT::Days(3);
+        let a = TT::days(5);
+        let b = TT::days(3);
 
         let c = (a - b).calculate();
 
         assert!(c.is_ok());
         let c = c.unwrap();
 
-        match c {
-            TT::Days(2) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(2, c.get_days());
     }
 
     #[test]
     fn test_subtraction_of_days_multiple_calculate() {
-        let a = TT::Days(3);
-        let b = TT::Days(2);
-        let c = TT::Days(1);
+        let a = TT::days(3);
+        let b = TT::days(2);
+        let c = TT::days(1);
 
         let d = (a - b - c).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Days(0) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(0, d.get_days());
     }
 
     #[test]
     fn test_addition_of_weeks() {
-        let a = TT::Weeks(0);
-        let b = TT::Weeks(1);
+        let a = TT::weeks(0);
+        let b = TT::weeks(1);
 
         let c = a + b;
 
         match c {
             TT::Addition(a, b) => {
-                match (*a, *b) {
-                    (TT::Weeks(0), TT::Weeks(1)) => assert!(true),
-                    _                                => assert!(false, "Addition failed"),
-                }
+                assert_eq!(0, a.get_weeks());
+                assert_eq!(1, b.get_weeks());
             }
             _ => assert!(false, "Addition failed, returned non-Addition type"),
         }
@@ -567,20 +593,21 @@ mod tests {
 
     #[test]
     fn test_addition_of_weeks_multiple() {
-        let a = TT::Weeks(0);
-        let b = TT::Weeks(1);
-        let c = TT::Weeks(2);
+        let a = TT::weeks(0);
+        let b = TT::weeks(1);
+        let c = TT::weeks(2);
 
         let d = a + b + c;
 
         match d {
-            TT::Addition(a, b) => {
-                match (*a, *b) {
-                    (TT::Addition(c, d), TT::Weeks(2)) => match (*c, *d) {
-                        (TT::Weeks(0), TT::Weeks(1)) => assert!(true),
-                        _                                => assert!(false, "Addition failed"),
+            TT::Addition(sub, c) => {
+                match *sub {
+                    TT::Addition(ref a, ref b) => {
+                        assert_eq!(0, a.get_weeks());
+                        assert_eq!(1, b.get_weeks());
+                        assert_eq!(2, c.get_weeks());
                     },
-                    (a, b) => assert!(false, "Addition failed: \n a = {:?}\n b = {:?}", a, b),
+                    _ => assert!(false, "Addition failed, wrong type"),
                 }
             }
             _ => assert!(false, "Addition failed, returned non-Addition type"),
@@ -589,17 +616,15 @@ mod tests {
 
     #[test]
     fn test_subtraction_of_weeks() {
-        let a = TT::Weeks(5);
-        let b = TT::Weeks(3);
+        let a = TT::weeks(5);
+        let b = TT::weeks(3);
 
         let c = a - b;
 
         match c {
             TT::Subtraction(a, b) => {
-                match (*a, *b) {
-                    (TT::Weeks(5), TT::Weeks(3)) => assert!(true),
-                    _                                => assert!(false, "Subtraction failed"),
-                }
+                assert_eq!(5, a.get_weeks());
+                assert_eq!(3, b.get_weeks());
             }
             _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
         }
@@ -607,20 +632,21 @@ mod tests {
 
     #[test]
     fn test_subtraction_of_weeks_multiple() {
-        let a = TT::Weeks(3);
-        let b = TT::Weeks(2);
-        let c = TT::Weeks(1);
+        let a = TT::weeks(3);
+        let b = TT::weeks(2);
+        let c = TT::weeks(1);
 
         let d = a - b - c;
 
         match d {
-            TT::Subtraction(a, b) => {
-                match (*a, *b) {
-                    (TT::Subtraction(c, d), TT::Weeks(1)) => match (*c, *d) {
-                        (TT::Weeks(3), TT::Weeks(2)) => assert!(true),
-                        _                                => assert!(false, "Subtraction failed"),
+            TT::Subtraction(sub, c) => {
+                match *sub {
+                    TT::Subtraction(ref a, ref b) => {
+                        assert_eq!(3, a.get_weeks());
+                        assert_eq!(2, b.get_weeks());
+                        assert_eq!(1, c.get_weeks());
                     },
-                    (a, b) => assert!(false, "Subtraction failed: \n a = {:?}\n b = {:?}", a, b),
+                    _ => assert!(false, "Subtraction failed, wrong type"),
                 }
             }
             _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
@@ -629,83 +655,69 @@ mod tests {
 
     #[test]
     fn test_addition_of_weeks_calculate() {
-        let a = TT::Weeks(0);
-        let b = TT::Weeks(1);
+        let a = TT::weeks(0);
+        let b = TT::weeks(1);
 
         let c = (a + b).calculate();
 
         assert!(c.is_ok());
         let c = c.unwrap();
 
-        match c {
-            TT::Weeks(1) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(1, c.get_weeks());
     }
 
     #[test]
     fn test_addition_of_weeks_multiple_calculate() {
-        let a = TT::Weeks(0);
-        let b = TT::Weeks(1);
-        let c = TT::Weeks(2);
+        let a = TT::weeks(0);
+        let b = TT::weeks(1);
+        let c = TT::weeks(2);
 
         let d = (a + b + c).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Weeks(3) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(3, d.get_weeks());
     }
 
     #[test]
     fn test_subtraction_of_weeks_calculate() {
-        let a = TT::Weeks(5);
-        let b = TT::Weeks(3);
+        let a = TT::weeks(5);
+        let b = TT::weeks(3);
 
         let c = (a - b).calculate();
 
         assert!(c.is_ok());
         let c = c.unwrap();
 
-        match c {
-            TT::Weeks(2) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(2, c.get_weeks());
     }
 
     #[test]
     fn test_subtraction_of_weeks_multiple_calculate() {
-        let a = TT::Weeks(3);
-        let b = TT::Weeks(2);
-        let c = TT::Weeks(1);
+        let a = TT::weeks(3);
+        let b = TT::weeks(2);
+        let c = TT::weeks(1);
 
         let d = (a - b - c).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Weeks(0) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(0, d.get_weeks());
     }
 
     #[test]
     fn test_addition_of_months() {
-        let a = TT::Months(0);
-        let b = TT::Months(1);
+        let a = TT::months(0);
+        let b = TT::months(1);
 
         let c = a + b;
 
         match c {
             TT::Addition(a, b) => {
-                match (*a, *b) {
-                    (TT::Months(0), TT::Months(1)) => assert!(true),
-                    _                                => assert!(false, "Addition failed"),
-                }
+                assert_eq!(0, a.get_months());
+                assert_eq!(1, b.get_months());
             }
             _ => assert!(false, "Addition failed, returned non-Addition type"),
         }
@@ -713,20 +725,21 @@ mod tests {
 
     #[test]
     fn test_addition_of_months_multiple() {
-        let a = TT::Months(0);
-        let b = TT::Months(1);
-        let c = TT::Months(2);
+        let a = TT::months(0);
+        let b = TT::months(1);
+        let c = TT::months(2);
 
         let d = a + b + c;
 
         match d {
-            TT::Addition(a, b) => {
-                match (*a, *b) {
-                    (TT::Addition(c, d), TT::Months(2)) => match (*c, *d) {
-                        (TT::Months(0), TT::Months(1)) => assert!(true),
-                        _                                => assert!(false, "Addition failed"),
+            TT::Addition(add, c) => {
+                match *add {
+                    TT::Addition(ref a, ref b) => {
+                        assert_eq!(0, a.get_months());
+                        assert_eq!(1, b.get_months());
+                        assert_eq!(2, c.get_months());
                     },
-                    (a, b) => assert!(false, "Addition failed: \n a = {:?}\n b = {:?}", a, b),
+                    _ => assert!(false, "Addition failed, wrong type"),
                 }
             }
             _ => assert!(false, "Addition failed, returned non-Addition type"),
@@ -735,17 +748,15 @@ mod tests {
 
     #[test]
     fn test_subtraction_of_months() {
-        let a = TT::Months(5);
-        let b = TT::Months(3);
+        let a = TT::months(5);
+        let b = TT::months(3);
 
         let c = a - b;
 
         match c {
             TT::Subtraction(a, b) => {
-                match (*a, *b) {
-                    (TT::Months(5), TT::Months(3)) => assert!(true),
-                    _                                => assert!(false, "Subtraction failed"),
-                }
+                assert_eq!(5, a.get_months());
+                assert_eq!(3, b.get_months());
             }
             _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
         }
@@ -753,20 +764,21 @@ mod tests {
 
     #[test]
     fn test_subtraction_of_months_multiple() {
-        let a = TT::Months(3);
-        let b = TT::Months(2);
-        let c = TT::Months(1);
+        let a = TT::months(3);
+        let b = TT::months(2);
+        let c = TT::months(1);
 
         let d = a - b - c;
 
         match d {
-            TT::Subtraction(a, b) => {
-                match (*a, *b) {
-                    (TT::Subtraction(c, d), TT::Months(1)) => match (*c, *d) {
-                        (TT::Months(3), TT::Months(2)) => assert!(true),
-                        _                                => assert!(false, "Subtraction failed"),
+            TT::Subtraction(sub, c) => {
+                match *sub {
+                    TT::Subtraction(ref a, ref b) => {
+                        assert_eq!(3, a.get_months());
+                        assert_eq!(2, b.get_months());
+                        assert_eq!(1, c.get_months());
                     },
-                    (a, b) => assert!(false, "Subtraction failed: \n a = {:?}\n b = {:?}", a, b),
+                    _ => assert!(false, "Subtraction failed, wrong type"),
                 }
             }
             _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
@@ -775,83 +787,69 @@ mod tests {
 
     #[test]
     fn test_addition_of_months_calculate() {
-        let a = TT::Months(0);
-        let b = TT::Months(1);
+        let a = TT::months(0);
+        let b = TT::months(1);
 
         let c = (a + b).calculate();
 
         assert!(c.is_ok());
         let c = c.unwrap();
 
-        match c {
-            TT::Months(1) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(1, c.get_months());
     }
 
     #[test]
     fn test_addition_of_months_multiple_calculate() {
-        let a = TT::Months(0);
-        let b = TT::Months(1);
-        let c = TT::Months(2);
+        let a = TT::months(0);
+        let b = TT::months(1);
+        let c = TT::months(2);
 
         let d = (a + b + c).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Months(3) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(3, d.get_months());
     }
 
     #[test]
     fn test_subtraction_of_months_calculate() {
-        let a = TT::Months(5);
-        let b = TT::Months(3);
+        let a = TT::months(5);
+        let b = TT::months(3);
 
         let c = (a - b).calculate();
 
         assert!(c.is_ok());
         let c = c.unwrap();
 
-        match c {
-            TT::Months(2) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(2, c.get_months());
     }
 
     #[test]
     fn test_subtraction_of_months_multiple_calculate() {
-        let a = TT::Months(3);
-        let b = TT::Months(2);
-        let c = TT::Months(1);
+        let a = TT::months(3);
+        let b = TT::months(2);
+        let c = TT::months(1);
 
         let d = (a - b - c).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Months(0) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(0, d.get_months());
     }
 
     #[test]
     fn test_addition_of_years() {
-        let a = TT::Years(0);
-        let b = TT::Years(1);
+        let a = TT::years(0);
+        let b = TT::years(1);
 
         let c = a + b;
 
         match c {
             TT::Addition(a, b) => {
-                match (*a, *b) {
-                    (TT::Years(0), TT::Years(1)) => assert!(true),
-                    _                                => assert!(false, "Addition failed"),
-                }
+                assert_eq!(0, a.get_years());
+                assert_eq!(1, b.get_years());
             }
             _ => assert!(false, "Addition failed, returned non-Addition type"),
         }
@@ -859,20 +857,21 @@ mod tests {
 
     #[test]
     fn test_addition_of_years_multiple() {
-        let a = TT::Years(0);
-        let b = TT::Years(1);
-        let c = TT::Years(2);
+        let a = TT::years(0);
+        let b = TT::years(1);
+        let c = TT::years(2);
 
         let d = a + b + c;
 
         match d {
-            TT::Addition(a, b) => {
-                match (*a, *b) {
-                    (TT::Addition(c, d), TT::Years(2)) => match (*c, *d) {
-                        (TT::Years(0), TT::Years(1)) => assert!(true),
-                        _                                => assert!(false, "Addition failed"),
+            TT::Addition(add, c) => {
+                match *add {
+                    TT::Addition(ref a, ref b) => {
+                        assert_eq!(0, a.get_years());
+                        assert_eq!(1, b.get_years());
+                        assert_eq!(2, c.get_years());
                     },
-                    (a, b) => assert!(false, "Addition failed: \n a = {:?}\n b = {:?}", a, b),
+                    _ => assert!(false, "Addition failed, wrong type"),
                 }
             }
             _ => assert!(false, "Addition failed, returned non-Addition type"),
@@ -881,17 +880,15 @@ mod tests {
 
     #[test]
     fn test_subtraction_of_years() {
-        let a = TT::Years(5);
-        let b = TT::Years(3);
+        let a = TT::years(5);
+        let b = TT::years(3);
 
         let c = a - b;
 
         match c {
             TT::Subtraction(a, b) => {
-                match (*a, *b) {
-                    (TT::Years(5), TT::Years(3)) => assert!(true),
-                    _                                => assert!(false, "Subtraction failed"),
-                }
+                assert_eq!(5, a.get_years());
+                assert_eq!(3, b.get_years());
             }
             _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
         }
@@ -899,20 +896,21 @@ mod tests {
 
     #[test]
     fn test_subtraction_of_years_multiple() {
-        let a = TT::Years(3);
-        let b = TT::Years(2);
-        let c = TT::Years(1);
+        let a = TT::years(3);
+        let b = TT::years(2);
+        let c = TT::years(1);
 
         let d = a - b - c;
 
         match d {
-            TT::Subtraction(a, b) => {
-                match (*a, *b) {
-                    (TT::Subtraction(c, d), TT::Years(1)) => match (*c, *d) {
-                        (TT::Years(3), TT::Years(2)) => assert!(true),
-                        _                                => assert!(false, "Subtraction failed"),
+            TT::Subtraction(sub, c) => {
+                match *sub {
+                    TT::Subtraction(ref a, ref b) => {
+                        assert_eq!(3, a.get_years());
+                        assert_eq!(2, b.get_years());
+                        assert_eq!(1, c.get_years());
                     },
-                    (a, b) => assert!(false, "Subtraction failed: \n a = {:?}\n b = {:?}", a, b),
+                    _ => assert!(false, "Subtraction failed, wrong type"),
                 }
             }
             _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
@@ -921,126 +919,105 @@ mod tests {
 
     #[test]
     fn test_addition_of_years_calculate() {
-        let a = TT::Years(0);
-        let b = TT::Years(1);
+        let a = TT::years(0);
+        let b = TT::years(1);
 
         let c = (a + b).calculate();
 
         assert!(c.is_ok());
         let c = c.unwrap();
 
-        match c {
-            TT::Years(1) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(1, c.get_years());
     }
 
     #[test]
     fn test_addition_of_years_multiple_calculate() {
-        let a = TT::Years(0);
-        let b = TT::Years(1);
-        let c = TT::Years(2);
+        let a = TT::years(0);
+        let b = TT::years(1);
+        let c = TT::years(2);
 
         let d = (a + b + c).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Years(3) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(3, d.get_years());
     }
 
     #[test]
     fn test_subtraction_of_years_calculate() {
-        let a = TT::Years(5);
-        let b = TT::Years(3);
+        let a = TT::years(5);
+        let b = TT::years(3);
 
         let c = (a - b).calculate();
 
         assert!(c.is_ok());
         let c = c.unwrap();
 
-        match c {
-            TT::Years(2) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(2, c.get_years());
     }
 
     #[test]
     fn test_subtraction_of_years_multiple_calculate() {
-        let a = TT::Years(3);
-        let b = TT::Years(2);
-        let c = TT::Years(1);
+        let a = TT::years(3);
+        let b = TT::years(2);
+        let c = TT::years(1);
 
         let d = (a - b - c).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Years(0) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(0, d.get_years());
     }
 
     #[test]
     fn test_addition_of_years_multiple_calculate_reverse_order() {
-        let a = TT::Years(0);
-        let b = TT::Years(1);
-        let c = TT::Years(2);
+        let a = TT::years(0);
+        let b = TT::years(1);
+        let c = TT::years(2);
 
         let d = (a + (b + c)).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Years(3) => assert!(true),
-            _ => assert!(false, "Addition failed"),
-        }
+        assert_eq!(3, d.get_years());
     }
 
     #[test]
     fn test_subtraction_of_years_multiple_calculate_reverse_order() {
-        let a = TT::Years(3);
-        let b = TT::Years(2);
-        let c = TT::Years(1);
+        let a = TT::years(3);
+        let b = TT::years(2);
+        let c = TT::years(1);
 
         let d = (a - (b - c)).calculate();
 
         assert!(d.is_ok());
         let d = d.unwrap();
 
-        match d {
-            TT::Years(2) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(2, d.get_years());
     }
 
     #[test]
     fn test_subtraction_of_years_multiple_calculate_reverse_order_2() {
-        let a = TT::Years(3);
-        let b = TT::Years(2);
-        let c = TT::Years(1);
-        let d = TT::Years(10);
+        let a = TT::years(3);
+        let b = TT::years(2);
+        let c = TT::years(1);
+        let d = TT::years(10);
 
         let e = ((d - c) - (a - b)).calculate();
 
         assert!(e.is_ok());
         let e = e.unwrap();
 
-        match e {
-            TT::Years(8) => assert!(true),
-            _ => assert!(false, "Subtraction failed"),
-        }
+        assert_eq!(8, e.get_years());
     }
 
     #[test]
     fn test_add_moment_to_seconds() {
-        let a = TT::Seconds(3);
-        let b = TT::Moment(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11));
+        let a = TT::seconds(3);
+        let b = TT::moment(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11));
 
         let res = (a + b).calculate();
 
@@ -1052,8 +1029,8 @@ mod tests {
 
     #[test]
     fn test_subtract_moment_from_seconds() {
-        let a = TT::Seconds(3);
-        let b = TT::Moment(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11));
+        let a = TT::seconds(3);
+        let b = TT::moment(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11));
 
         let res = (a - b).calculate();
 
