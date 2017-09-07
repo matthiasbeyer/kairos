@@ -78,6 +78,34 @@ impl SubAssign for TimeType {
 ///
 impl TimeType {
 
+    pub fn is_a_amount(&self) -> bool {
+        match *self {
+            TimeType::Duration(_) => true,
+            _                     => false,
+        }
+    }
+
+    pub fn is_moment(&self) -> bool {
+        match *self {
+            TimeType::Moment(_) => true,
+            _                   => false,
+        }
+    }
+
+    pub fn is_addition(&self) -> bool {
+        match *self {
+            TimeType::Addition(_, _) => true,
+            _                        => false,
+        }
+    }
+
+    pub fn is_subtraction(&self) -> bool {
+        match *self {
+            TimeType::Subtraction(_, _) => true,
+            _                           => false,
+        }
+    }
+
     pub fn seconds(i: i64) -> TimeType {
         TimeType::Duration(::chrono::Duration::seconds(i))
     }
