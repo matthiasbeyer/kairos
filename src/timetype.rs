@@ -1042,4 +1042,30 @@ mod tests {
 
 }
 
+#[cfg(test)]
+mod test_add_and_sub_mixed {
+    use timetype::TimeType as TT;
+
+    #[test]
+    fn test_add_then_sub() {
+        let a = TT::seconds(0);
+        let b = TT::seconds(1);
+        let c = TT::seconds(1);
+
+        let d = a + b - c;
+
+        assert_eq!(0, d.calculate().unwrap().get_seconds());
+    }
+    #[test]
+    fn test_sub_then_add() {
+        let a = TT::seconds(1);
+        let b = TT::seconds(1);
+        let c = TT::seconds(0);
+
+        let d = a - b + c;
+
+        assert_eq!(0, d.calculate().unwrap().get_seconds());
+    }
+}
+
 
