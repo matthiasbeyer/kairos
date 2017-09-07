@@ -14,13 +14,7 @@ use error_chain::ChainedError;
 /// A Type of Time, currently based on chrono::NaiveDateTime
 #[derive(Debug, Clone)]
 pub enum TimeType {
-    Seconds(usize),
-    Minutes(usize),
-    Hours(usize),
-    Days(usize),
-    Weeks(usize),
-    Months(usize),
-    Years(usize),
+    Duration(::chrono::Duration),
 
     Moment(NaiveDateTime),
 
@@ -46,6 +40,94 @@ impl Sub for TimeType {
 
 impl TimeType {
 
+    pub fn seconds(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::seconds(i))
+    }
+
+    pub fn minutes(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::minutes(i))
+    }
+
+    pub fn hours(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::hours(i))
+    }
+
+    pub fn days(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::days(i))
+    }
+
+    pub fn weeks(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::weeks(i))
+    }
+
+    pub fn months(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::weeks(i * 4))
+    }
+
+    pub fn years(i: i64) -> TimeType {
+        TimeType::Duration(::chrono::Duration::weeks(i * 4 * 12))
+    }
+
+    pub fn moment(ndt: NaiveDateTime) -> TimeType {
+        TimeType::Moment(ndt)
+    }
+
+    /// Get the number of seconds, if the TimeType is not a seconds type, zero is returned
+    pub fn get_seconds(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d)   => d.num_seconds(),
+            _                       => 0
+        }
+    }
+
+    /// Get the number of minutes, if the TimeType is not a minutes type, zero is returned
+    pub fn get_minutes(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d) => d.num_minutes(),
+            _ => 0,
+        }
+    }
+
+    /// Get the number of hours, if the TimeType is not a hours type, zero is returned
+    pub fn get_hours(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d) => d.num_hours(),
+            _ => 0,
+        }
+    }
+
+    /// Get the number of days, if the TimeType is not a days type, zero is returned
+    pub fn get_days(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d) => d.num_days(),
+            _ => 0,
+        }
+    }
+
+    /// Get the number of weeks, if the TimeType is not a weeks type, zero is returned
+    pub fn get_weeks(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d) => d.num_weeks(),
+            _ => 0,
+        }
+    }
+
+    /// Get the number of months, if the TimeType is not a months type, zero is returned
+    pub fn get_months(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d) => d.num_weeks() / 4,
+            _ => 0,
+        }
+    }
+
+    /// Get the number of years, if the TimeType is not a years type, zero is returned
+    pub fn get_years(&self) -> i64 {
+        match *self {
+            TimeType::Duration(d) => d.num_weeks() / 12 / 4,
+            _ => 0,
+        }
+    }
+
     fn calculate(self) -> Result<TimeType> {
         use timetype::TimeType as TT;
 
@@ -61,13 +143,7 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
     match (*a, *b) {
-        (TT::Seconds(a), TT::Seconds(b)) => Ok(TT::Seconds(a + b)),
-        (TT::Minutes(a), TT::Minutes(b)) => Ok(TT::Minutes(a + b)),
-        (TT::Hours(a), TT::Hours(b))     => Ok(TT::Hours(a + b)),
-        (TT::Days(a), TT::Days(b))       => Ok(TT::Days(a + b)),
-        (TT::Weeks(a), TT::Weeks(b))     => Ok(TT::Weeks(a + b)),
-        (TT::Months(a), TT::Months(b))   => Ok(TT::Months(a + b)),
-        (TT::Years(a), TT::Years(b))     => Ok(TT::Years(a + b)),
+        (TT::Duration(a), TT::Duration(b)) => Ok(TT::Duration(a + b)),
         (TT::Addition(a, b), other)      => add(a, b)
             .map(Box::new)
             .and_then(|bx| add(bx, Box::new(other))),
@@ -83,13 +159,7 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
     match (*a, *b) {
-        (TT::Seconds(a), TT::Seconds(b)) => Ok(TT::Seconds(a - b)),
-        (TT::Minutes(a), TT::Minutes(b)) => Ok(TT::Minutes(a - b)),
-        (TT::Hours(a), TT::Hours(b))     => Ok(TT::Hours(a - b)),
-        (TT::Days(a), TT::Days(b))       => Ok(TT::Days(a - b)),
-        (TT::Weeks(a), TT::Weeks(b))     => Ok(TT::Weeks(a - b)),
-        (TT::Months(a), TT::Months(b))   => Ok(TT::Months(a - b)),
-        (TT::Years(a), TT::Years(b))     => Ok(TT::Years(a - b)),
+        (TT::Duration(a), TT::Duration(b)) => Ok(TT::Duration(a - b)),
         (TT::Subtraction(a, b), other)   => sub(a, b)
             .map(Box::new)
             .and_then(|bx| sub(bx, Box::new(other))),
