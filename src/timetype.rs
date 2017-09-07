@@ -194,7 +194,7 @@ impl TimeType {
         }
     }
 
-    fn calculate(self) -> Result<TimeType> {
+    pub fn calculate(self) -> Result<TimeType> {
         do_calculate(self)
     }
 }
