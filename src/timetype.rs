@@ -38,6 +38,30 @@ impl Sub for TimeType {
     }
 }
 
+/// The TimeType type
+///
+/// # Warning
+///
+/// If the TimeType is _larger_ than the queried type (E.G. querying a "minutes" on a "month"),
+/// the following rules are applied:
+///
+/// * 60 Seconds make a Minute
+/// * 60 Minutes make a Hour
+/// * 24 Hours make a Day
+/// * 7 Days make a Week
+/// * 4 Weeks make a Month
+/// * 12 Months make a Year
+///
+/// Whether these may be correct or not in the current year. The return value of the function
+/// is calculated appropriately. So, calling the `get_seconds()` function on 5 minutes returns
+/// `60 * 5`.
+///
+/// If the TimeType is _smaller_ than the queried type (E.G. querying a "month" on a
+/// "minutes"), zero is returned.
+///
+/// Also, if the TimeType is "5 weeks", querying a month returns `1`, as 5 weeks contain one
+/// full month.
+///
 impl TimeType {
 
     pub fn seconds(i: i64) -> TimeType {
@@ -72,7 +96,7 @@ impl TimeType {
         TimeType::Moment(ndt)
     }
 
-    /// Get the number of seconds, if the TimeType is not a seconds type, zero is returned
+    /// Get the number of seconds, if the TimeType is not a duration type, zero is returned
     pub fn get_seconds(&self) -> i64 {
         match *self {
             TimeType::Duration(d)   => d.num_seconds(),
@@ -80,7 +104,7 @@ impl TimeType {
         }
     }
 
-    /// Get the number of minutes, if the TimeType is not a minutes type, zero is returned
+    /// Get the number of minutes, if the TimeType is not a duration type, zero is returned
     pub fn get_minutes(&self) -> i64 {
         match *self {
             TimeType::Duration(d) => d.num_minutes(),
@@ -88,7 +112,7 @@ impl TimeType {
         }
     }
 
-    /// Get the number of hours, if the TimeType is not a hours type, zero is returned
+    /// Get the number of hours, if the TimeType is not a duration type, zero is returned
     pub fn get_hours(&self) -> i64 {
         match *self {
             TimeType::Duration(d) => d.num_hours(),
@@ -96,7 +120,7 @@ impl TimeType {
         }
     }
 
-    /// Get the number of days, if the TimeType is not a days type, zero is returned
+    /// Get the number of days, if the TimeType is not a duration type, zero is returned
     pub fn get_days(&self) -> i64 {
         match *self {
             TimeType::Duration(d) => d.num_days(),
@@ -104,7 +128,7 @@ impl TimeType {
         }
     }
 
-    /// Get the number of weeks, if the TimeType is not a weeks type, zero is returned
+    /// Get the number of weeks, if the TimeType is not a duration type, zero is returned
     pub fn get_weeks(&self) -> i64 {
         match *self {
             TimeType::Duration(d) => d.num_weeks(),
@@ -112,7 +136,7 @@ impl TimeType {
         }
     }
 
-    /// Get the number of months, if the TimeType is not a months type, zero is returned
+    /// Get the number of months, if the TimeType is not a duration type, zero is returned
     pub fn get_months(&self) -> i64 {
         match *self {
             TimeType::Duration(d) => d.num_weeks() / 4,
@@ -120,7 +144,7 @@ impl TimeType {
         }
     }
 
-    /// Get the number of years, if the TimeType is not a years type, zero is returned
+    /// Get the number of years, if the TimeType is not a duration type, zero is returned
     pub fn get_years(&self) -> i64 {
         match *self {
             TimeType::Duration(d) => d.num_weeks() / 12 / 4,
@@ -1042,4 +1066,100 @@ mod tests {
 
 }
 
+#[cfg(test)]
+mod timetype_value_tests {
+    use super::TimeType as TT;
 
+    #[test]
+    fn test_set_seconds_get_others() {
+        let t = TT::seconds(59);
+
+        assert_eq!(59, t.get_seconds());
+        assert_eq!(0, t.get_minutes());
+        assert_eq!(0, t.get_hours());
+        assert_eq!(0, t.get_days());
+        assert_eq!(0, t.get_weeks());
+        assert_eq!(0, t.get_months());
+        assert_eq!(0, t.get_years());
+    }
+
+    #[test]
+    fn test_set_minutes_get_others() {
+        let t = TT::minutes(59);
+
+        assert_eq!(59 * 60, t.get_seconds());
+        assert_eq!(59, t.get_minutes());
+        assert_eq!(0, t.get_hours());
+        assert_eq!(0, t.get_days());
+        assert_eq!(0, t.get_weeks());
+        assert_eq!(0, t.get_months());
+        assert_eq!(0, t.get_years());
+    }
+
+    #[test]
+    fn test_set_hours_get_others() {
+        let t = TT::hours(59);
+
+        assert_eq!(59 * 60 * 60, t.get_seconds());
+        assert_eq!(59 * 60, t.get_minutes());
+        assert_eq!(59, t.get_hours());
+        assert_eq!(2, t.get_days());
+        assert_eq!(0, t.get_weeks());
+        assert_eq!(0, t.get_months());
+        assert_eq!(0, t.get_years());
+    }
+
+    #[test]
+    fn test_set_days_get_others() {
+        let t = TT::days(59);
+
+        assert_eq!(59 * 24 * 60 * 60, t.get_seconds());
+        assert_eq!(59 * 24 * 60, t.get_minutes());
+        assert_eq!(59 * 24, t.get_hours());
+        assert_eq!(59, t.get_days());
+        assert_eq!(8, t.get_weeks());
+        assert_eq!(2, t.get_months());
+        assert_eq!(0, t.get_years());
+    }
+
+    #[test]
+    fn test_set_weeks_get_others() {
+        let t = TT::weeks(59);
+
+        assert_eq!(59 * 7 * 24 * 60 * 60, t.get_seconds());
+        assert_eq!(59 * 7 * 24 * 60, t.get_minutes());
+        assert_eq!(59 * 7 * 24, t.get_hours());
+        assert_eq!(59 * 7, t.get_days());
+        assert_eq!(59, t.get_weeks());
+        assert_eq!(14, t.get_months());
+        assert_eq!(1, t.get_years());
+    }
+
+    #[test]
+    fn test_set_months_get_others() {
+        let t = TT::months(59);
+
+        assert_eq!(59 * 4 * 7 * 24 * 60 * 60, t.get_seconds());
+        assert_eq!(59 * 4 * 7 * 24 * 60, t.get_minutes());
+        assert_eq!(59 * 4 * 7 * 24, t.get_hours());
+        assert_eq!(59 * 4 * 7, t.get_days());
+        assert_eq!(59 * 4, t.get_weeks());
+        assert_eq!(59, t.get_months());
+        assert_eq!(4, t.get_years());
+    }
+
+    #[test]
+    fn test_set_years_get_others() {
+        let t = TT::years(59);
+
+        assert_eq!(59 * 12 * 4 * 7 * 24 * 60 * 60, t.get_seconds());
+        assert_eq!(59 * 12 * 4 * 7 * 24 * 60, t.get_minutes());
+        assert_eq!(59 * 12 * 4 * 7 * 24, t.get_hours());
+        assert_eq!(59 * 12 * 4 * 7, t.get_days());
+        assert_eq!(59 * 12 * 4, t.get_weeks());
+        assert_eq!(59 * 12, t.get_months());
+        assert_eq!(59, t.get_years());
+    }
+
+
+}
