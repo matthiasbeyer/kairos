@@ -1,0 +1,35 @@
+sudo: false
+os:
+  - linux
+
+dist:
+  - trusty
+
+language: rust
+
+rust:
+  - 1.15.0
+  - 1.16.0
+  - 1.17.0
+  - 1.18.0
+  - 1.19.0
+  - stable
+  - beta
+  - nightly
+
+matrix:
+  allow_failures:
+    - rust: nightly
+
+cache:
+  cargo: true
+
+notifications:
+  email:
+    on_success: never
+  irc:
+    channels:
+      - chat.freenode.net#imag
+    template:
+      - "%{repository_name} (%{branch} @ %{commit} by %{author}): %{result}"
+
