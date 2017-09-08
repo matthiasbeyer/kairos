@@ -1249,3 +1249,40 @@ mod timetype_value_tests {
 
 
 }
+
+#[cfg(test)]
+mod moment_plus_amount_tests {
+    use super::TimeType as TT;
+    use chrono::NaiveDate;
+    use chrono::Timelike;
+    use chrono::Datelike;
+
+    macro_rules! generate_test_moment_plus_amount {
+        {
+            name     = $name:ident;
+            base     = $base:expr;
+            amount   = $amount:expr;
+            expected = $exp:expr;
+        } => {
+            #[test]
+            fn $name() {
+                let base = TT::moment($base);
+                let result = (base + ($amount)).calculate();
+                assert!(result.is_ok(), "Adding failed: {:?}", result);
+                let result = result.unwrap();
+                let expected = ($exp);
+
+                assert_eq!(expected, *result.get_moment().unwrap());
+            }
+        }
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_zero_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(0);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+    }
+
+}
+
