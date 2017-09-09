@@ -468,6 +468,32 @@ fn add_to_years(amount: i64, tt: TimeType) -> Result<TimeType> {
     }
 }
 
+#[inline]
+fn adjust_times_add(mut y: i64, mut mo: i64, mut d: i64, mut h: i64, mut mi: i64, mut s: i64)
+    -> (i64, i64, i64, i64, i64, i64)
+{
+    macro_rules! fix {
+        {
+            $base:ident,
+            $border:expr,
+            $next:ident
+        } => {
+            while $base >= $border {
+                $next += 1;
+                $base -= $border;
+            }
+        }
+    }
+
+    fix! { s , 60, mi }
+    fix! { mi, 60, h  }
+    fix! { h , 24, d  }
+    fix! { d , 30, mo }
+    fix! { mo, 12, y  }
+
+    (y, mo, d, h, mi, s)
+}
+
 fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
@@ -479,6 +505,9 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
             let h  = mom.hour() as i64;
             let mi = mom.minute() as i64;
             let s  = mom.second() as i64 + a;
+
+            let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
+
             let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
@@ -490,6 +519,9 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
             let h  = mom.hour() as i64;
             let mi = mom.minute() as i64 + a;
             let s  = mom.second() as i64;
+
+            let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
+
             let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
@@ -501,6 +533,9 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
             let h  = mom.hour() as i64 + a;
             let mi = mom.minute() as i64;
             let s  = mom.second() as i64;
+
+            let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
+
             let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
@@ -512,6 +547,9 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
             let h  = mom.hour() as i64;
             let mi = mom.minute() as i64;
             let s  = mom.second() as i64;
+
+            let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
+
             let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
@@ -523,6 +561,9 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
             let h  = mom.hour() as i64;
             let mi = mom.minute() as i64;
             let s  = mom.second() as i64;
+
+            let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
+
             let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
@@ -534,6 +575,9 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
             let h  = mom.hour() as i64;
             let mi = mom.minute() as i64;
             let s  = mom.second() as i64;
+
+            let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
+
             let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
@@ -682,17 +726,45 @@ fn sub_from_years(amount: i64, tt: TimeType) -> Result<TimeType> {
     }
 }
 
+#[inline]
+fn adjust_times_sub(mut y: i64, mut mo: i64, mut d: i64, mut h: i64, mut mi: i64, mut s: i64)
+    -> (i64, i64, i64, i64, i64, i64)
+{
+    macro_rules! fix {
+        {
+            $base:ident,
+            $next:ident
+        } => {
+            if $base < 0 {
+                $next += $base;
+                $base = 0;
+            }
+        }
+    }
+
+    fix! { s , mi }
+    fix! { mi, h  }
+    fix! { h , d  }
+    fix! { d , mo }
+    fix! { mo, y  }
+
+    (y, mo, d, h, mi, s)
+}
+
 fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
     match tt {
         TT::Seconds(a)        => {
             let y  = mom.year() as i64;
-            let mo = mom.month();
+            let mo = mom.month() as i64;
             let d  = mom.day() as i64;
-            let h  = mom.hour();
+            let h  = mom.hour() as i64;
             let mi = mom.minute() as i64;
             let s  = mom.second() as i64 - a;
+
+            let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
+
             let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
@@ -704,6 +776,9 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
             let h  = mom.hour() as i64;
             let mi = mom.minute() as i64 - a;
             let s  = mom.second() as i64;
+
+            let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
+
             let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
@@ -715,6 +790,9 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
             let h  = mom.hour() as i64 - a;
             let mi = mom.minute() as i64;
             let s  = mom.second() as i64;
+
+            let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
+
             let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
@@ -726,6 +804,9 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
             let h  = mom.hour() as i64;
             let mi = mom.minute() as i64;
             let s  = mom.second() as i64;
+
+            let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
+
             let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
@@ -737,6 +818,9 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
             let h  = mom.hour() as i64;
             let mi = mom.minute() as i64;
             let s  = mom.second() as i64;
+
+            let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
+
             let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
@@ -748,6 +832,9 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
             let h  = mom.hour() as i64;
             let mi = mom.minute() as i64;
             let s  = mom.second() as i64;
+
+            let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
+
             let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
@@ -1695,10 +1782,24 @@ mod moment_plus_amount_tests {
     }
 
     generate_test_moment_plus_amount! {
+        name     = test_moment_plus_too_much_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(62);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 2);
+    }
+
+    generate_test_moment_plus_amount! {
         name     = test_moment_plus_minutes;
         base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
         amount   = TT::minutes(2);
         expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 2, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_too_much_minutes;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(65);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 5, 0);
     }
 
     generate_test_moment_plus_amount! {
@@ -1709,10 +1810,138 @@ mod moment_plus_amount_tests {
     }
 
     generate_test_moment_plus_amount! {
+        name     = test_moment_plus_months;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::months(14);
+        expected = NaiveDate::from_ymd(2001, 3, 1).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
         name     = test_moment_plus_years;
         base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
         amount   = TT::years(62);
         expected = NaiveDate::from_ymd(2062, 1, 1).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_minus_amount! {
+        name     = test_moment_minus_nothing;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(0);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_minus_amount! {
+        name     = test_moment_minus_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(1);
+        expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(23, 59, 59);
+    }
+
+}
+
+#[cfg(test)]
+mod test_time_adjustments {
+    use super::adjust_times_add;
+    use super::adjust_times_sub;
+
+    macro_rules! generate_test_add {
+        {
+            y : $y  :expr => $then_y  :expr;
+            mo: $mo :expr => $then_mo :expr;
+            d : $d  :expr => $then_d  :expr;
+            h : $h  :expr => $then_h  :expr;
+            m : $m  :expr => $then_m  :expr;
+            s : $s  :expr => $then_s  :expr;
+        } => {
+            let (y, mo, d, h, mi, s) = adjust_times_add($y, $mo, $d, $h, $m, $s);
+
+            assert_eq!($then_y , y );
+            assert_eq!($then_mo, mo);
+            assert_eq!($then_d , d );
+            assert_eq!($then_h , h );
+            assert_eq!($then_m , mi);
+            assert_eq!($then_s , s );
+        }
+    }
+
+    macro_rules! generate_test_sub {
+        {
+            y : $y  :expr => $then_y  :expr;
+            mo: $mo :expr => $then_mo :expr;
+            d : $d  :expr => $then_d  :expr;
+            h : $h  :expr => $then_h  :expr;
+            m : $m  :expr => $then_m  :expr;
+            s : $s  :expr => $then_s  :expr;
+        } => {
+            let (y, mo, d, h, mi, s) = adjust_times_sub($y, $mo, $d, $h, $m, $s);
+
+            assert_eq!($then_y , y );
+            assert_eq!($then_mo, mo);
+            assert_eq!($then_d , d );
+            assert_eq!($then_h , h );
+            assert_eq!($then_m , mi);
+            assert_eq!($then_s , s );
+        }
+    }
+
+    #[test]
+    fn test_adjust_times_add_seconds() {
+        generate_test_add! {
+            y  :  0 =>  0;
+            mo :  0 =>  0;
+            d  :  0 =>  0;
+            h  :  0 =>  0;
+            m  :  0 =>  1;
+            s  : 62 =>  2;
+        }
+    }
+
+    #[test]
+    fn test_adjust_times_add_minutes() {
+        generate_test_add! {
+            y  :  0 =>  0;
+            mo :  0 =>  0;
+            d  :  0 =>  0;
+            h  :  0 =>  1;
+            m  : 62 =>  2;
+            s  :  0 =>  0;
+        }
+    }
+
+    #[test]
+    fn test_adjust_times_add_hours() {
+        generate_test_add! {
+            y  :  0 =>  0;
+            mo :  0 =>  0;
+            d  :  0 =>  1;
+            h  : 26 =>  2;
+            m  :  0 =>  0;
+            s  :  0 =>  0;
+        }
+    }
+
+    #[test]
+    fn test_adjust_times_add_days() {
+        generate_test_add! {
+            y  :  0 =>  0;
+            mo :  0 =>  1;
+            d  : 32 =>  2;
+            h  :  0 =>  0;
+            m  :  0 =>  0;
+            s  :  0 =>  0;
+        }
+    }
+
+    #[test]
+    fn test_adjust_times_add_months() {
+        generate_test_add! {
+            y  :  0 =>  1;
+            mo : 14 =>  2;
+            d  :  0 =>  0;
+            h  :  0 =>  0;
+            m  :  0 =>  0;
+            s  :  0 =>  0;
+        }
     }
 
 }
