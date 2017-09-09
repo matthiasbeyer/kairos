@@ -2,6 +2,9 @@
 //!
 
 use chrono::NaiveDateTime;
+use chrono::NaiveDate;
+use chrono::Datelike;
+use chrono::Timelike;
 
 use std::ops::Add;
 use std::ops::AddAssign;
@@ -16,7 +19,12 @@ use error_chain::ChainedError;
 /// A Type of Time, currently based on chrono::NaiveDateTime
 #[derive(Debug, Clone)]
 pub enum TimeType {
-    Duration(::chrono::Duration),
+    Seconds(i64),
+    Minutes(i64),
+    Hours(i64),
+    Days(i64),
+    Months(i64),
+    Years(i64),
 
     Moment(NaiveDateTime),
 
@@ -80,8 +88,13 @@ impl TimeType {
 
     pub fn is_a_amount(&self) -> bool {
         match *self {
-            TimeType::Duration(_) => true,
-            _                     => false,
+            TimeType::Seconds(_) |
+            TimeType::Minutes(_) |
+            TimeType::Hours(_)   |
+            TimeType::Days(_)    |
+            TimeType::Months(_)  |
+            TimeType::Years(_)   => true,
+            _                    => false,
         }
     }
 
@@ -107,31 +120,32 @@ impl TimeType {
     }
 
     pub fn seconds(i: i64) -> TimeType {
-        TimeType::Duration(::chrono::Duration::seconds(i))
+        TimeType::Seconds(i)
     }
 
     pub fn minutes(i: i64) -> TimeType {
-        TimeType::Duration(::chrono::Duration::minutes(i))
+        TimeType::Minutes(i)
     }
 
     pub fn hours(i: i64) -> TimeType {
-        TimeType::Duration(::chrono::Duration::hours(i))
+        TimeType::Hours(i)
     }
 
     pub fn days(i: i64) -> TimeType {
-        TimeType::Duration(::chrono::Duration::days(i))
+        TimeType::Days(i)
     }
 
+    /// Helper for `TimeType::days(i * 7)`
     pub fn weeks(i: i64) -> TimeType {
-        TimeType::Duration(::chrono::Duration::weeks(i))
+        TimeType::Days(i * 7)
     }
 
     pub fn months(i: i64) -> TimeType {
-        TimeType::Duration(::chrono::Duration::weeks(i * 4))
+        TimeType::Months(i)
     }
 
     pub fn years(i: i64) -> TimeType {
-        TimeType::Duration(::chrono::Duration::weeks(i * 4 * 12))
+        TimeType::Years(i)
     }
 
     pub fn moment(ndt: NaiveDateTime) -> TimeType {
@@ -139,58 +153,158 @@ impl TimeType {
     }
 
     /// Get the number of seconds, if the TimeType is not a duration type, zero is returned
+    ///
+    /// # Warning
+    ///
+    /// If the type is actually a smaller one (eg. calling get_minutes() on a seconds instance) the
+    /// following rules are applied:
+    ///
+    /// * A minute is 60 seconds
+    /// * A hour is 60 minutes
+    /// * A day is 24 hours
+    /// * A month is 30 days
+    /// * A year is 12 months
+    ///
+    /// Which might not be always correct.
     pub fn get_seconds(&self) -> i64 {
         match *self {
-            TimeType::Duration(d)   => d.num_seconds(),
-            _                       => 0
+            TimeType::Seconds(d) => d,
+            TimeType::Minutes(d) => d * 60,
+            TimeType::Hours(d)   => d * 60 * 60,
+            TimeType::Days(d)    => d * 60 * 60 * 24,
+            TimeType::Months(d)  => d * 60 * 60 * 24 * 30,
+            TimeType::Years(d)   => d * 60 * 60 * 24 * 30 * 12,
+            _                    => 0
         }
     }
 
     /// Get the number of minutes, if the TimeType is not a duration type, zero is returned
+    ///
+    /// # Warning
+    ///
+    /// If the type is actually a smaller one (eg. calling get_minutes() on a seconds instance) the
+    /// following rules are applied:
+    ///
+    /// * A minute is 60 seconds
+    /// * A hour is 60 minutes
+    /// * A day is 24 hours
+    /// * A month is 30 days
+    /// * A year is 12 months
+    ///
+    /// Which might not be always correct.
     pub fn get_minutes(&self) -> i64 {
         match *self {
-            TimeType::Duration(d) => d.num_minutes(),
-            _ => 0,
+            TimeType::Seconds(s) => s / 60,
+            TimeType::Minutes(d) => d,
+            TimeType::Hours(d)   => d * 60,
+            TimeType::Days(d)    => d * 60 * 24,
+            TimeType::Months(d)  => d * 60 * 24 * 30,
+            TimeType::Years(d)   => d * 60 * 24 * 30 * 12,
+            _ => 0
         }
     }
 
     /// Get the number of hours, if the TimeType is not a duration type, zero is returned
+    ///
+    /// # Warning
+    ///
+    /// If the type is actually a smaller one (eg. calling get_minutes() on a seconds instance) the
+    /// following rules are applied:
+    ///
+    /// * A minute is 60 seconds
+    /// * A hour is 60 minutes
+    /// * A day is 24 hours
+    /// * A month is 30 days
+    /// * A year is 12 months
+    ///
+    /// Which might not be always correct.
     pub fn get_hours(&self) -> i64 {
         match *self {
-            TimeType::Duration(d) => d.num_hours(),
-            _ => 0,
+            TimeType::Seconds(s) => s / 60 / 60,
+            TimeType::Minutes(d) => d / 60,
+            TimeType::Hours(d)   => d,
+            TimeType::Days(d)    => d * 24,
+            TimeType::Months(d)  => d * 24 * 30,
+            TimeType::Years(d)   => d * 24 * 30 * 12,
+            _ => 0
         }
     }
 
     /// Get the number of days, if the TimeType is not a duration type, zero is returned
+    ///
+    /// # Warning
+    ///
+    /// If the type is actually a smaller one (eg. calling get_minutes() on a seconds instance) the
+    /// following rules are applied:
+    ///
+    /// * A minute is 60 seconds
+    /// * A hour is 60 minutes
+    /// * A day is 24 hours
+    /// * A month is 30 days
+    /// * A year is 12 months
+    ///
+    /// Which might not be always correct.
     pub fn get_days(&self) -> i64 {
         match *self {
-            TimeType::Duration(d) => d.num_days(),
-            _ => 0,
-        }
-    }
-
-    /// Get the number of weeks, if the TimeType is not a duration type, zero is returned
-    pub fn get_weeks(&self) -> i64 {
-        match *self {
-            TimeType::Duration(d) => d.num_weeks(),
-            _ => 0,
+            TimeType::Seconds(s) => s / 24 / 60 / 60,
+            TimeType::Minutes(d) => d / 24 / 60,
+            TimeType::Hours(d)   => d / 24,
+            TimeType::Days(d)    => d,
+            TimeType::Months(d)  => d * 30,
+            TimeType::Years(d)   => d * 30 * 12,
+            _ => 0
         }
     }
 
     /// Get the number of months, if the TimeType is not a duration type, zero is returned
+    ///
+    /// # Warning
+    ///
+    /// If the type is actually a smaller one (eg. calling get_minutes() on a seconds instance) the
+    /// following rules are applied:
+    ///
+    /// * A minute is 60 seconds
+    /// * A hour is 60 minutes
+    /// * A day is 24 hours
+    /// * A month is 30 days
+    /// * A year is 12 months
+    ///
+    /// Which might not be always correct.
     pub fn get_months(&self) -> i64 {
         match *self {
-            TimeType::Duration(d) => d.num_weeks() / 4,
-            _ => 0,
+            TimeType::Seconds(s) => s / 30 / 24 / 60 / 60,
+            TimeType::Minutes(d) => d / 30 / 24 / 60,
+            TimeType::Hours(d)   => d / 30 / 24,
+            TimeType::Days(d)    => d / 30,
+            TimeType::Months(d)  => d,
+            TimeType::Years(d)   => d * 12,
+            _ => 0
         }
     }
 
     /// Get the number of years, if the TimeType is not a duration type, zero is returned
+    ///
+    /// # Warning
+    ///
+    /// If the type is actually a smaller one (eg. calling get_minutes() on a seconds instance) the
+    /// following rules are applied:
+    ///
+    /// * A minute is 60 seconds
+    /// * A hour is 60 minutes
+    /// * A day is 24 hours
+    /// * A month is 30 days
+    /// * A year is 12 months
+    ///
+    /// Which might not be always correct.
     pub fn get_years(&self) -> i64 {
         match *self {
-            TimeType::Duration(d) => d.num_weeks() / 12 / 4,
-            _ => 0,
+            TimeType::Seconds(s) => s / 12 / 30 / 24 / 60 / 60,
+            TimeType::Minutes(d) => d / 12 / 30 / 24 / 60,
+            TimeType::Hours(d)   => d / 12 / 30 / 24,
+            TimeType::Days(d)    => d / 12 / 30,
+            TimeType::Months(d)  => d / 12,
+            TimeType::Years(d)   => d,
+            _ => 0
         }
     }
 
@@ -220,7 +334,24 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
     match (*a, *b) {
-        (TT::Duration(a), TT::Duration(b)) => Ok(TT::Duration(a + b)),
+        (TT::Seconds(a), other) => add_to_seconds(a, other),
+        (other, TT::Seconds(a)) => add_to_seconds(a, other),
+
+        (TT::Minutes(a), other) => add_to_minutes(a, other),
+        (other, TT::Minutes(a)) => add_to_minutes(a, other),
+
+        (TT::Hours(a), other)   => add_to_hours(a, other),
+        (other, TT::Hours(a))   => add_to_hours(a, other),
+
+        (TT::Days(a), other)    => add_to_days(a, other),
+        (other, TT::Days(a))    => add_to_days(a, other),
+
+        (TT::Months(a), other)  => add_to_months(a, other),
+        (other, TT::Months(a))  => add_to_months(a, other),
+
+        (TT::Years(a), other)   => add_to_years(a, other),
+        (other, TT::Years(a))   => add_to_years(a, other),
+
         (TT::Addition(a, b), other)      => add(a, b)
             .map(Box::new)
             .and_then(|bx| add(bx, Box::new(other))),
@@ -240,11 +371,172 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
     }
 }
 
+fn add_to_seconds(amount: i64, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => Ok(TT::Seconds(a + amount)),
+        TT::Minutes(a)        => Ok(TT::Seconds(a * 60 + amount)),
+        TT::Hours(a)          => Ok(TT::Seconds(a * 60 * 60 + amount)),
+        TT::Days(a)           => Ok(TT::Seconds(a * 60 * 60 * 24 + amount)),
+        TT::Months(a)         => Ok(TT::Seconds(a * 60 * 60 * 24 * 30 + amount)),
+        TT::Years(a)          => Ok(TT::Seconds(a * 60 * 60 * 24 * 30 * 12 + amount)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Seconds(amount), TT::Moment(m)))),
+        TT::Addition(b, c)    => add_to_seconds(amount, try!(add(b, c))),
+        TT::Subtraction(b, c) => add_to_seconds(amount, try!(sub(b, c))),
+    }
+}
+
+fn add_to_minutes(amount: i64, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => Ok(TT::Seconds(a + amount * 60)),
+        TT::Minutes(a)        => Ok(TT::Minutes(a + amount)),
+        TT::Hours(a)          => Ok(TT::Minutes(a * 60 + amount)),
+        TT::Days(a)           => Ok(TT::Minutes(a * 60 * 24 + amount)),
+        TT::Months(a)         => Ok(TT::Minutes(a * 60 * 24 * 30 + amount)),
+        TT::Years(a)          => Ok(TT::Minutes(a * 60 * 24 * 30 * 12 + amount)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::Moment(m)))),
+        TT::Addition(b, c)    => add_to_minutes(amount, try!(add(b, c))),
+        TT::Subtraction(b, c) => add_to_minutes(amount, try!(sub(b, c))),
+    }
+}
+
+fn add_to_hours(amount: i64, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => Ok(TT::Seconds(a + amount * 60 * 60)),
+        TT::Minutes(a)        => Ok(TT::Minutes(a + amount * 60)),
+        TT::Hours(a)          => Ok(TT::Hours(  a + amount)),
+        TT::Days(a)           => Ok(TT::Hours(  a * 24 + amount)),
+        TT::Months(a)         => Ok(TT::Hours(  a * 24 * 30 + amount)),
+        TT::Years(a)          => Ok(TT::Hours(  a * 24 * 30 * 12 + amount)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Hours(amount), TT::Moment(m)))),
+        TT::Addition(b, c)    => add_to_hours(amount, try!(add(b, c))),
+        TT::Subtraction(b, c) => add_to_hours(amount, try!(sub(b, c))),
+    }
+}
+
+fn add_to_days(amount: i64, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => Ok(TT::Seconds(a + amount * 24 * 60 * 60)),
+        TT::Minutes(a)        => Ok(TT::Minutes(a + amount * 24 * 60)),
+        TT::Hours(a)          => Ok(TT::Hours(  a + amount * 24)),
+        TT::Days(a)           => Ok(TT::Days(   a + amount)),
+        TT::Months(a)         => Ok(TT::Days(   a * 30 + amount)),
+        TT::Years(a)          => Ok(TT::Days(   a * 30 * 12 + amount)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Days(amount), TT::Moment(m)))),
+        TT::Addition(b, c)    => add_to_days(amount, try!(add(b, c))),
+        TT::Subtraction(b, c) => add_to_days(amount, try!(sub(b, c))),
+    }
+}
+
+fn add_to_months(amount: i64, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => Ok(TT::Seconds(a + amount * 30 * 24 * 60 * 60)),
+        TT::Minutes(a)        => Ok(TT::Minutes(a + amount * 30 * 24 * 60)),
+        TT::Hours(a)          => Ok(TT::Hours(  a + amount * 30 * 24)),
+        TT::Days(a)           => Ok(TT::Days(   a + amount * 30)),
+        TT::Months(a)         => Ok(TT::Months( a + amount)),
+        TT::Years(a)          => Ok(TT::Months( a * 12 + amount)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Months(amount), TT::Moment(m)))),
+        TT::Addition(b, c)    => add_to_months(amount, try!(add(b, c))),
+        TT::Subtraction(b, c) => add_to_months(amount, try!(sub(b, c))),
+    }
+}
+
+fn add_to_years(amount: i64, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => Ok(TT::Seconds(a + amount * 12 * 30 * 24 * 60 * 60)),
+        TT::Minutes(a)        => Ok(TT::Minutes(a + amount * 12 * 30 * 24 * 60)),
+        TT::Hours(a)          => Ok(TT::Hours(  a + amount * 12 * 30 * 24)),
+        TT::Days(a)           => Ok(TT::Days(   a + amount * 12 * 30)),
+        TT::Months(a)         => Ok(TT::Months( a + amount * 12)),
+        TT::Years(a)          => Ok(TT::Years(  a + amount)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Years(amount), TT::Moment(m)))),
+        TT::Addition(b, c)    => add_to_years(amount, try!(add(b, c))),
+        TT::Subtraction(b, c) => add_to_years(amount, try!(sub(b, c))),
+    }
+}
+
 fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
     match tt {
-        TT::Duration(dur)     => Ok(TT::Moment(mom + dur)),
+        TT::Seconds(a)        => {
+            let y  = mom.year() as i64;
+            let mo = mom.month() as i64;
+            let d  = mom.day() as i64;
+            let h  = mom.hour() as i64;
+            let mi = mom.minute() as i64;
+            let s  = mom.second() as i64 + a;
+            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
+                  .and_hms(h as u32, mi as u32, s as u32);
+            Ok(TimeType::moment(tt))
+        },
+        TT::Minutes(a)        => {
+            let y  = mom.year() as i64;
+            let mo = mom.month() as i64;
+            let d  = mom.day() as i64;
+            let h  = mom.hour() as i64;
+            let mi = mom.minute() as i64 + a;
+            let s  = mom.second() as i64;
+            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
+                  .and_hms(h as u32, mi as u32, s as u32);
+            Ok(TimeType::moment(tt))
+        },
+        TT::Hours(a)          => {
+            let y  = mom.year() as i64;
+            let mo = mom.month() as i64;
+            let d  = mom.day() as i64;
+            let h  = mom.hour() as i64 + a;
+            let mi = mom.minute() as i64;
+            let s  = mom.second() as i64;
+            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
+                  .and_hms(h as u32, mi as u32, s as u32);
+            Ok(TimeType::moment(tt))
+        },
+        TT::Days(a)           => {
+            let y  = mom.year() as i64;
+            let mo = mom.month() as i64;
+            let d  = mom.day() as i64 + a;
+            let h  = mom.hour() as i64;
+            let mi = mom.minute() as i64;
+            let s  = mom.second() as i64;
+            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
+                  .and_hms(h as u32, mi as u32, s as u32);
+            Ok(TimeType::moment(tt))
+        },
+        TT::Months(a)         => {
+            let y  = mom.year() as i64;
+            let mo = mom.month() as i64 + a;
+            let d  = mom.day() as i64;
+            let h  = mom.hour() as i64;
+            let mi = mom.minute() as i64;
+            let s  = mom.second() as i64;
+            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
+                  .and_hms(h as u32, mi as u32, s as u32);
+            Ok(TimeType::moment(tt))
+        },
+        TT::Years(a)          => {
+            let y  = mom.year() as i64 + a;
+            let mo = mom.month() as i64;
+            let d  = mom.day() as i64;
+            let h  = mom.hour() as i64;
+            let mi = mom.minute() as i64;
+            let s  = mom.second() as i64;
+            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
+                  .and_hms(h as u32, mi as u32, s as u32);
+            Ok(TimeType::moment(tt))
+        },
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::Moment(m)))),
         TT::Addition(a, b)    => add_to_moment(mom, try!(add(a, b))),
         TT::Subtraction(a, b) => add_to_moment(mom, try!(sub(a, b))),
@@ -255,7 +547,24 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
     match (*a, *b) {
-        (TT::Duration(a), TT::Duration(b)) => Ok(TT::Duration(a - b)),
+        (TT::Seconds(a), other) => sub_from_seconds(a, other),
+        (other, TT::Seconds(a)) => sub_from_seconds(a, other),
+
+        (TT::Minutes(a), other) => sub_from_minutes(a, other),
+        (other, TT::Minutes(a)) => sub_from_minutes(a, other),
+
+        (TT::Hours(a), other)   => sub_from_hours(a, other),
+        (other, TT::Hours(a))   => sub_from_hours(a, other),
+
+        (TT::Days(a), other)    => sub_from_days(a, other),
+        (other, TT::Days(a))    => sub_from_days(a, other),
+
+        (TT::Months(a), other)  => sub_from_months(a, other),
+        (other, TT::Months(a))  => sub_from_months(a, other),
+
+        (TT::Years(a), other)   => sub_from_years(a, other),
+        (other, TT::Years(a))   => sub_from_years(a, other),
+
         (TT::Subtraction(a, b), other)   => sub(a, b)
             .map(Box::new)
             .and_then(|bx| sub(bx, Box::new(other))),
@@ -271,6 +580,178 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
             .and_then(|rx| add(Box::new(rx), b)),
         (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotSub(thing, TT::Moment(mom)))),
         others                           => unimplemented!(),
+    }
+}
+
+fn sub_from_seconds(amount: i64, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => Ok(TT::Seconds(amount - a)),
+        TT::Minutes(a)        => Ok(TT::Seconds(amount - a * 60)),
+        TT::Hours(a)          => Ok(TT::Seconds(amount - a * 60 * 60)),
+        TT::Days(a)           => Ok(TT::Seconds(amount - a * 60 * 60 * 24)),
+        TT::Months(a)         => Ok(TT::Seconds(amount - a * 60 * 60 * 24 * 30)),
+        TT::Years(a)          => Ok(TT::Seconds(amount - a * 60 * 60 * 24 * 30 * 12)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Seconds(amount), TT::Moment(m)))),
+        TT::Addition(b, c)    => sub_from_seconds(amount, try!(add(b, c))),
+        TT::Subtraction(b, c) => sub_from_seconds(amount, try!(sub(b, c))),
+    }
+}
+
+fn sub_from_minutes(amount: i64, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => Ok(TT::Seconds(amount * 60 - a)),
+        TT::Minutes(a)        => Ok(TT::Minutes(amount - a)),
+        TT::Hours(a)          => Ok(TT::Minutes(amount - a * 60)),
+        TT::Days(a)           => Ok(TT::Minutes(amount - a * 60 * 24)),
+        TT::Months(a)         => Ok(TT::Minutes(amount - a * 60 * 24 * 30)),
+        TT::Years(a)          => Ok(TT::Minutes(amount - a * 60 * 24 * 30 * 12)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::Moment(m)))),
+        TT::Addition(b, c)    => sub_from_minutes(amount, try!(add(b, c))),
+        TT::Subtraction(b, c) => sub_from_minutes(amount, try!(sub(b, c))),
+    }
+}
+
+fn sub_from_hours(amount: i64, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => Ok(TT::Seconds(amount * 60 * 60 - a)),
+        TT::Minutes(a)        => Ok(TT::Minutes(amount * 60 - a)),
+        TT::Hours(a)          => Ok(TT::Hours(amount -   a)),
+        TT::Days(a)           => Ok(TT::Hours(amount -   a * 24)),
+        TT::Months(a)         => Ok(TT::Hours(amount -   a * 24 * 30)),
+        TT::Years(a)          => Ok(TT::Hours(amount -   a * 24 * 30 * 12)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Hours(amount), TT::Moment(m)))),
+        TT::Addition(b, c)    => sub_from_hours(amount, try!(add(b, c))),
+        TT::Subtraction(b, c) => sub_from_hours(amount, try!(sub(b, c))),
+    }
+}
+
+fn sub_from_days(amount: i64, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => Ok(TT::Seconds(amount * 24 * 60 * 60 - a)),
+        TT::Minutes(a)        => Ok(TT::Minutes(amount * 24 * 60 - a)),
+        TT::Hours(a)          => Ok(TT::Hours(amount * 24 -   a)),
+        TT::Days(a)           => Ok(TT::Days(amount -    a)),
+        TT::Months(a)         => Ok(TT::Days(amount -    a * 30)),
+        TT::Years(a)          => Ok(TT::Days(amount -    a * 30 * 12)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Days(amount), TT::Moment(m)))),
+        TT::Addition(b, c)    => sub_from_days(amount, try!(add(b, c))),
+        TT::Subtraction(b, c) => sub_from_days(amount, try!(sub(b, c))),
+    }
+}
+
+fn sub_from_months(amount: i64, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => Ok(TT::Seconds(amount * 30 * 24 * 60 * 60 - a)),
+        TT::Minutes(a)        => Ok(TT::Minutes(amount * 30 * 24 * 60 - a)),
+        TT::Hours(a)          => Ok(TT::Hours(amount * 30 * 24 -   a)),
+        TT::Days(a)           => Ok(TT::Days(amount * 30 -    a)),
+        TT::Months(a)         => Ok(TT::Months(amount -  a)),
+        TT::Years(a)          => Ok(TT::Months(amount -  a * 12)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Months(amount), TT::Moment(m)))),
+        TT::Addition(b, c)    => sub_from_months(amount, try!(add(b, c))),
+        TT::Subtraction(b, c) => sub_from_months(amount, try!(sub(b, c))),
+    }
+}
+
+fn sub_from_years(amount: i64, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => Ok(TT::Seconds(amount * 12 * 30 * 24 * 60 * 60 - a)),
+        TT::Minutes(a)        => Ok(TT::Minutes(amount * 12 * 30 * 24 * 60 - a)),
+        TT::Hours(a)          => Ok(TT::Hours(amount * 12 * 30 * 24 -   a)),
+        TT::Days(a)           => Ok(TT::Days(amount * 12 * 30 -    a)),
+        TT::Months(a)         => Ok(TT::Months(amount * 12 -  a)),
+        TT::Years(a)          => Ok(TT::Years(amount -   a)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Years(amount), TT::Moment(m)))),
+        TT::Addition(b, c)    => sub_from_years(amount, try!(add(b, c))),
+        TT::Subtraction(b, c) => sub_from_years(amount, try!(sub(b, c))),
+    }
+}
+
+fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Seconds(a)        => {
+            let y  = mom.year() as i64;
+            let mo = mom.month();
+            let d  = mom.day() as i64;
+            let h  = mom.hour();
+            let mi = mom.minute() as i64;
+            let s  = mom.second() as i64 - a;
+            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
+                  .and_hms(h as u32, mi as u32, s as u32);
+            Ok(TimeType::moment(tt))
+        },
+        TT::Minutes(a)        => {
+            let y  = mom.year() as i64;
+            let mo = mom.month() as i64;
+            let d  = mom.day() as i64;
+            let h  = mom.hour() as i64;
+            let mi = mom.minute() as i64 - a;
+            let s  = mom.second() as i64;
+            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
+                  .and_hms(h as u32, mi as u32, s as u32);
+            Ok(TimeType::moment(tt))
+        },
+        TT::Hours(a)          => {
+            let y  = mom.year() as i64;
+            let mo = mom.month() as i64;
+            let d  = mom.day() as i64;
+            let h  = mom.hour() as i64 - a;
+            let mi = mom.minute() as i64;
+            let s  = mom.second() as i64;
+            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
+                  .and_hms(h as u32, mi as u32, s as u32);
+            Ok(TimeType::moment(tt))
+        },
+        TT::Days(a)           => {
+            let y  = mom.year() as i64;
+            let mo = mom.month() as i64;
+            let d  = mom.day() as i64 - a;
+            let h  = mom.hour() as i64;
+            let mi = mom.minute() as i64;
+            let s  = mom.second() as i64;
+            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
+                  .and_hms(h as u32, mi as u32, s as u32);
+            Ok(TimeType::moment(tt))
+        },
+        TT::Months(a)         => {
+            let y  = mom.year() as i64;
+            let mo = mom.month() as i64 - a;
+            let d  = mom.day() as i64;
+            let h  = mom.hour() as i64;
+            let mi = mom.minute() as i64;
+            let s  = mom.second() as i64;
+            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
+                  .and_hms(h as u32, mi as u32, s as u32);
+            Ok(TimeType::moment(tt))
+        },
+        TT::Years(a)          => {
+            let y  = mom.year() as i64 - a;
+            let mo = mom.month() as i64;
+            let d  = mom.day() as i64;
+            let h  = mom.hour() as i64;
+            let mi = mom.minute() as i64;
+            let s  = mom.second() as i64;
+            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
+                  .and_hms(h as u32, mi as u32, s as u32);
+            Ok(TimeType::moment(tt))
+        },
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::Moment(m)))),
+        TT::Addition(a, b)    => sub_from_moment(mom, try!(add(a, b))),
+        TT::Subtraction(a, b) => sub_from_moment(mom, try!(sub(a, b))),
     }
 }
 
@@ -679,138 +1160,6 @@ mod tests {
     }
 
     #[test]
-    fn test_addition_of_weeks() {
-        let a = TT::weeks(0);
-        let b = TT::weeks(1);
-
-        let c = a + b;
-
-        match c {
-            TT::Addition(a, b) => {
-                assert_eq!(0, a.get_weeks());
-                assert_eq!(1, b.get_weeks());
-            }
-            _ => assert!(false, "Addition failed, returned non-Addition type"),
-        }
-    }
-
-    #[test]
-    fn test_addition_of_weeks_multiple() {
-        let a = TT::weeks(0);
-        let b = TT::weeks(1);
-        let c = TT::weeks(2);
-
-        let d = a + b + c;
-
-        match d {
-            TT::Addition(sub, c) => {
-                match *sub {
-                    TT::Addition(ref a, ref b) => {
-                        assert_eq!(0, a.get_weeks());
-                        assert_eq!(1, b.get_weeks());
-                        assert_eq!(2, c.get_weeks());
-                    },
-                    _ => assert!(false, "Addition failed, wrong type"),
-                }
-            }
-            _ => assert!(false, "Addition failed, returned non-Addition type"),
-        }
-    }
-
-    #[test]
-    fn test_subtraction_of_weeks() {
-        let a = TT::weeks(5);
-        let b = TT::weeks(3);
-
-        let c = a - b;
-
-        match c {
-            TT::Subtraction(a, b) => {
-                assert_eq!(5, a.get_weeks());
-                assert_eq!(3, b.get_weeks());
-            }
-            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
-        }
-    }
-
-    #[test]
-    fn test_subtraction_of_weeks_multiple() {
-        let a = TT::weeks(3);
-        let b = TT::weeks(2);
-        let c = TT::weeks(1);
-
-        let d = a - b - c;
-
-        match d {
-            TT::Subtraction(sub, c) => {
-                match *sub {
-                    TT::Subtraction(ref a, ref b) => {
-                        assert_eq!(3, a.get_weeks());
-                        assert_eq!(2, b.get_weeks());
-                        assert_eq!(1, c.get_weeks());
-                    },
-                    _ => assert!(false, "Subtraction failed, wrong type"),
-                }
-            }
-            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
-        }
-    }
-
-    #[test]
-    fn test_addition_of_weeks_calculate() {
-        let a = TT::weeks(0);
-        let b = TT::weeks(1);
-
-        let c = (a + b).calculate();
-
-        assert!(c.is_ok());
-        let c = c.unwrap();
-
-        assert_eq!(1, c.get_weeks());
-    }
-
-    #[test]
-    fn test_addition_of_weeks_multiple_calculate() {
-        let a = TT::weeks(0);
-        let b = TT::weeks(1);
-        let c = TT::weeks(2);
-
-        let d = (a + b + c).calculate();
-
-        assert!(d.is_ok());
-        let d = d.unwrap();
-
-        assert_eq!(3, d.get_weeks());
-    }
-
-    #[test]
-    fn test_subtraction_of_weeks_calculate() {
-        let a = TT::weeks(5);
-        let b = TT::weeks(3);
-
-        let c = (a - b).calculate();
-
-        assert!(c.is_ok());
-        let c = c.unwrap();
-
-        assert_eq!(2, c.get_weeks());
-    }
-
-    #[test]
-    fn test_subtraction_of_weeks_multiple_calculate() {
-        let a = TT::weeks(3);
-        let b = TT::weeks(2);
-        let c = TT::weeks(1);
-
-        let d = (a - b - c).calculate();
-
-        assert!(d.is_ok());
-        let d = d.unwrap();
-
-        assert_eq!(0, d.get_weeks());
-    }
-
-    #[test]
     fn test_addition_of_months() {
         let a = TT::months(0);
         let b = TT::months(1);
@@ -1183,7 +1532,6 @@ mod timetype_value_tests {
         assert_eq!(0, t.get_minutes());
         assert_eq!(0, t.get_hours());
         assert_eq!(0, t.get_days());
-        assert_eq!(0, t.get_weeks());
         assert_eq!(0, t.get_months());
         assert_eq!(0, t.get_years());
     }
@@ -1196,7 +1544,6 @@ mod timetype_value_tests {
         assert_eq!(59, t.get_minutes());
         assert_eq!(0, t.get_hours());
         assert_eq!(0, t.get_days());
-        assert_eq!(0, t.get_weeks());
         assert_eq!(0, t.get_months());
         assert_eq!(0, t.get_years());
     }
@@ -1209,7 +1556,6 @@ mod timetype_value_tests {
         assert_eq!(59 * 60, t.get_minutes());
         assert_eq!(59, t.get_hours());
         assert_eq!(2, t.get_days());
-        assert_eq!(0, t.get_weeks());
         assert_eq!(0, t.get_months());
         assert_eq!(0, t.get_years());
     }
@@ -1222,8 +1568,7 @@ mod timetype_value_tests {
         assert_eq!(59 * 24 * 60, t.get_minutes());
         assert_eq!(59 * 24, t.get_hours());
         assert_eq!(59, t.get_days());
-        assert_eq!(8, t.get_weeks());
-        assert_eq!(2, t.get_months());
+        assert_eq!(1, t.get_months());
         assert_eq!(0, t.get_years());
     }
 
@@ -1235,8 +1580,7 @@ mod timetype_value_tests {
         assert_eq!(59 * 7 * 24 * 60, t.get_minutes());
         assert_eq!(59 * 7 * 24, t.get_hours());
         assert_eq!(59 * 7, t.get_days());
-        assert_eq!(59, t.get_weeks());
-        assert_eq!(14, t.get_months());
+        assert_eq!(13, t.get_months());
         assert_eq!(1, t.get_years());
     }
 
@@ -1244,11 +1588,10 @@ mod timetype_value_tests {
     fn test_set_months_get_others() {
         let t = TT::months(59);
 
-        assert_eq!(59 * 4 * 7 * 24 * 60 * 60, t.get_seconds());
-        assert_eq!(59 * 4 * 7 * 24 * 60, t.get_minutes());
-        assert_eq!(59 * 4 * 7 * 24, t.get_hours());
-        assert_eq!(59 * 4 * 7, t.get_days());
-        assert_eq!(59 * 4, t.get_weeks());
+        assert_eq!(59 * 30 * 24 * 60 * 60, t.get_seconds());
+        assert_eq!(59 * 30 * 24 * 60, t.get_minutes());
+        assert_eq!(59 * 30 * 24, t.get_hours());
+        assert_eq!(59 * 30, t.get_days());
         assert_eq!(59, t.get_months());
         assert_eq!(4, t.get_years());
     }
@@ -1257,11 +1600,10 @@ mod timetype_value_tests {
     fn test_set_years_get_others() {
         let t = TT::years(59);
 
-        assert_eq!(59 * 12 * 4 * 7 * 24 * 60 * 60, t.get_seconds());
-        assert_eq!(59 * 12 * 4 * 7 * 24 * 60, t.get_minutes());
-        assert_eq!(59 * 12 * 4 * 7 * 24, t.get_hours());
-        assert_eq!(59 * 12 * 4 * 7, t.get_days());
-        assert_eq!(59 * 12 * 4, t.get_weeks());
+        assert_eq!(59 * 12 * 30 * 24 * 60 * 60, t.get_seconds());
+        assert_eq!(59 * 12 * 30 * 24 * 60, t.get_minutes());
+        assert_eq!(59 * 12 * 30 * 24, t.get_hours());
+        assert_eq!(59 * 12 * 30, t.get_days());
         assert_eq!(59 * 12, t.get_months());
         assert_eq!(59, t.get_years());
     }
