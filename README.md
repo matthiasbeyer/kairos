@@ -2,6 +2,10 @@
 
 Calculate times with chrono "plain text like" in Rust.
 
+[![Build Status](https://travis-ci.org/matthiasbeyer/kairos.svg?branch=master)](https://travis-ci.org/matthiasbeyer/kairos)
+[![license](https://img.shields.io/github/license/matthiasbeyer/kairos.svg?maxAge=2592000?style=flat-square)]()
+[![Tokei](https://tokei.rs/b1/github/matthiasbeyer/kairos)](https://github.com/matthiasbeyer/kairos)
+
 From Wikipedia:
 
 > Kairos (καιρός) is an Ancient Greek word meaning the right, critical or
