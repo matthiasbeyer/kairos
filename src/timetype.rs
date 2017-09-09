@@ -472,70 +472,28 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
     match tt {
         TT::Seconds(a)        => {
-            let y  = mom.year() as i64;
-            let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
-            let mi = mom.minute() as i64;
-            let s  = mom.second() as i64 + a;
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
-            Ok(TimeType::moment(tt))
+            let ts = NaiveDateTime::from_timestamp(mom.timestamp() + a, 0);
+            Ok(TimeType::moment(ts))
         },
         TT::Minutes(a)        => {
-            let y  = mom.year() as i64;
-            let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
-            let mi = mom.minute() as i64 + a;
-            let s  = mom.second() as i64;
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
-            Ok(TimeType::moment(tt))
+            let ts = NaiveDateTime::from_timestamp(mom.timestamp() + a * 60, 0);
+            Ok(TimeType::moment(ts))
         },
         TT::Hours(a)          => {
-            let y  = mom.year() as i64;
-            let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64 + a;
-            let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
-            Ok(TimeType::moment(tt))
+            let ts = NaiveDateTime::from_timestamp(mom.timestamp() + a * 60 * 60, 0);
+            Ok(TimeType::moment(ts))
         },
         TT::Days(a)           => {
-            let y  = mom.year() as i64;
-            let mo = mom.month() as i64;
-            let d  = mom.day() as i64 + a;
-            let h  = mom.hour() as i64;
-            let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
-            Ok(TimeType::moment(tt))
+            let ts = NaiveDateTime::from_timestamp(mom.timestamp() + a * 60 * 60 * 24, 0);
+            Ok(TimeType::moment(ts))
         },
         TT::Months(a)         => {
-            let y  = mom.year() as i64;
-            let mo = mom.month() as i64 + a;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
-            let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
-            Ok(TimeType::moment(tt))
+            let ts = NaiveDateTime::from_timestamp(mom.timestamp() + a * 60 * 60 * 24 * 30, 0);
+            Ok(TimeType::moment(ts))
         },
         TT::Years(a)          => {
-            let y  = mom.year() as i64 + a;
-            let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
-            let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
-            Ok(TimeType::moment(tt))
+            let ts = NaiveDateTime::from_timestamp(mom.timestamp() + a * 60 * 60 * 24 * 30 * 12, 0);
+            Ok(TimeType::moment(ts))
         },
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::Moment(m)))),
         TT::Addition(a, b)    => add_to_moment(mom, try!(add(a, b))),
@@ -684,70 +642,28 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
     match tt {
         TT::Seconds(a)        => {
-            let y  = mom.year() as i64;
-            let mo = mom.month();
-            let d  = mom.day() as i64;
-            let h  = mom.hour();
-            let mi = mom.minute() as i64;
-            let s  = mom.second() as i64 - a;
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
-            Ok(TimeType::moment(tt))
+            let ts = NaiveDateTime::from_timestamp(mom.timestamp() - a, 0);
+            Ok(TimeType::moment(ts))
         },
         TT::Minutes(a)        => {
-            let y  = mom.year() as i64;
-            let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
-            let mi = mom.minute() as i64 - a;
-            let s  = mom.second() as i64;
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
-            Ok(TimeType::moment(tt))
+            let ts = NaiveDateTime::from_timestamp(mom.timestamp() - a * 60, 0);
+            Ok(TimeType::moment(ts))
         },
         TT::Hours(a)          => {
-            let y  = mom.year() as i64;
-            let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64 - a;
-            let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
-            Ok(TimeType::moment(tt))
+            let ts = NaiveDateTime::from_timestamp(mom.timestamp() - a * 60 * 60, 0);
+            Ok(TimeType::moment(ts))
         },
         TT::Days(a)           => {
-            let y  = mom.year() as i64;
-            let mo = mom.month() as i64;
-            let d  = mom.day() as i64 - a;
-            let h  = mom.hour() as i64;
-            let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
-            Ok(TimeType::moment(tt))
+            let ts = NaiveDateTime::from_timestamp(mom.timestamp() - a * 60 * 60 * 24, 0);
+            Ok(TimeType::moment(ts))
         },
         TT::Months(a)         => {
-            let y  = mom.year() as i64;
-            let mo = mom.month() as i64 - a;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
-            let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
-            Ok(TimeType::moment(tt))
+            let ts = NaiveDateTime::from_timestamp(mom.timestamp() - a * 60 * 60 * 24 * 30, 0);
+            Ok(TimeType::moment(ts))
         },
         TT::Years(a)          => {
-            let y  = mom.year() as i64 - a;
-            let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
-            let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
-            Ok(TimeType::moment(tt))
+            let ts = NaiveDateTime::from_timestamp(mom.timestamp() - a * 60 * 60 * 24 * 30 * 12, 0);
+            Ok(TimeType::moment(ts))
         },
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::Moment(m)))),
         TT::Addition(a, b)    => sub_from_moment(mom, try!(add(a, b))),
