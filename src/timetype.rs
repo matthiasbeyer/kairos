@@ -334,6 +334,9 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
     match (*a, *b) {
+        (TT::Moment(mom), thing) => add_to_moment(mom, thing),
+        (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotAdd(thing, TT::Moment(mom)))),
+
         (TT::Seconds(a), other) => add_to_seconds(a, other),
         (other, TT::Seconds(a)) => add_to_seconds(a, other),
 
@@ -365,8 +368,6 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
             .map(Box::new)
             .and_then(|bx| add(Box::new(other), bx))
             .and_then(|rx| sub(Box::new(rx), b)),
-        (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotAdd(thing, TT::Moment(mom)))),
-        (TT::Moment(mom), thing) => add_to_moment(mom, thing),
         others                           => unimplemented!(),
     }
 }
@@ -505,6 +506,9 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
     match (*a, *b) {
+        (TT::Moment(mom), thing) => sub_from_moment(mom, thing),
+        (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotSub(thing, TT::Moment(mom)))),
+
         (TT::Seconds(a), other) => sub_from_seconds(a, other),
         (other, TT::Seconds(a)) => sub_from_seconds(a, other),
 
@@ -536,7 +540,6 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
             .map(Box::new)
             .and_then(|bx| sub(Box::new(other), bx))
             .and_then(|rx| add(Box::new(rx), b)),
-        (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotSub(thing, TT::Moment(mom)))),
         others                           => unimplemented!(),
     }
 }
