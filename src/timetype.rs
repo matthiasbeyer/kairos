@@ -235,7 +235,19 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
             .and_then(|bx| add(Box::new(other), bx))
             .and_then(|rx| sub(Box::new(rx), b)),
         (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotAdd(thing, TT::Moment(mom)))),
+        (TT::Moment(mom), thing) => add_to_moment(mom, thing),
         others                           => unimplemented!(),
+    }
+}
+
+fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match tt {
+        TT::Duration(dur)     => Ok(TT::Moment(mom + dur)),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::Moment(m)))),
+        TT::Addition(a, b)    => add_to_moment(mom, try!(add(a, b))),
+        TT::Subtraction(a, b) => add_to_moment(mom, try!(sub(a, b))),
     }
 }
 
