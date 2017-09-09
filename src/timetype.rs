@@ -194,6 +194,13 @@ impl TimeType {
         }
     }
 
+    pub fn get_moment(&self) -> Option<&NaiveDateTime> {
+        match *self {
+            TimeType::Moment(ref m) => Some(&m),
+            _                   => None,
+        }
+    }
+
     pub fn calculate(self) -> Result<TimeType> {
         do_calculate(self)
     }
