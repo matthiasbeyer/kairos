@@ -1944,5 +1944,17 @@ mod test_time_adjustments {
         }
     }
 
+    #[test]
+    fn test_adjust_times_sub_seconds() {
+        generate_test_sub! {
+            y  :  1 -  0 =>  0;
+            mo :  0 -  1 => 11;
+            d  :  0 -  0 =>  0;
+            h  :  0 -  0 =>  0;
+            m  :  0 -  0 =>  0;
+            s  :  0 -  0 =>  0;
+        }
+    }
+
 }
 
