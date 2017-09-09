@@ -1342,5 +1342,33 @@ mod moment_plus_amount_tests {
         expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
     }
 
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(1);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 1);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_minutes;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(2);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 2, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_minutes_in_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(62);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 2);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_years;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::years(62);
+        expected = NaiveDate::from_ymd(2062, 1, 1).and_hms(0, 0, 0);
+    }
+
 }
 
