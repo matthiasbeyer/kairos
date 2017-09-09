@@ -1276,6 +1276,27 @@ mod moment_plus_amount_tests {
     use chrono::Timelike;
     use chrono::Datelike;
 
+    macro_rules! generate_test_moment_operator_amount{
+        {
+            name     = $name:ident;
+            base     = $base:expr;
+            amount   = $amount:expr;
+            expected = $exp:expr;
+            operator = $op:expr;
+        } => {
+            #[test]
+            fn $name() {
+                let base = TT::moment($base);
+                let result = $op(base, $amount).calculate();
+                assert!(result.is_ok(), "Operation failed: {:?}", result);
+                let result = result.unwrap();
+                let expected = $exp;
+
+                assert_eq!(expected, *result.get_moment().unwrap());
+            }
+        }
+    }
+
     macro_rules! generate_test_moment_plus_amount {
         {
             name     = $name:ident;
@@ -1283,18 +1304,36 @@ mod moment_plus_amount_tests {
             amount   = $amount:expr;
             expected = $exp:expr;
         } => {
-            #[test]
-            fn $name() {
-                let base = TT::moment($base);
-                let result = (base + ($amount)).calculate();
-                assert!(result.is_ok(), "Adding failed: {:?}", result);
-                let result = result.unwrap();
-                let expected = ($exp);
-
-                assert_eq!(expected, *result.get_moment().unwrap());
+            generate_test_moment_operator_amount! {
+                name     = $name;
+                base     = $base;
+                amount   = $amount;
+                expected = $exp;
+                operator = |base, amount| base + amount;
             }
         }
     }
+
+    macro_rules! generate_test_moment_minus_amount {
+        {
+            name     = $name:ident;
+            base     = $base:expr;
+            amount   = $amount:expr;
+            expected = $exp:expr;
+        } => {
+            generate_test_moment_operator_amount! {
+                name     = $name;
+                base     = $base;
+                amount   = $amount;
+                expected = $exp;
+                operator = |base, amount| base - amount;
+            }
+        }
+    }
+
+    //
+    // tests
+    //
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_zero_seconds;
