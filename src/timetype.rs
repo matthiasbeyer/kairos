@@ -1893,12 +1893,12 @@ mod test_time_adjustments {
         } => {
             let (y, mo, d, h, mi, s) = adjust_times_add($y, $mo, $d, $h, $m, $s);
 
-            assert_eq!($then_y , y );
-            assert_eq!($then_mo, mo);
-            assert_eq!($then_d , d );
-            assert_eq!($then_h , h );
-            assert_eq!($then_m , mi);
-            assert_eq!($then_s , s );
+            assert_eq!($then_y , y , "Failed: y  should be {} but is {}", $then_y , y );
+            assert_eq!($then_mo, mo, "Failed: mo should be {} but is {}", $then_mo, mo);
+            assert_eq!($then_d , d , "Failed: d  should be {} but is {}", $then_d , d );
+            assert_eq!($then_h , h , "Failed: h  should be {} but is {}", $then_h , h );
+            assert_eq!($then_m , mi, "Failed: m  should be {} but is {}", $then_m , mi);
+            assert_eq!($then_s , s , "Failed: s  should be {} but is {}", $then_s , s );
         }
     }
 
