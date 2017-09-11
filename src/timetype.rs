@@ -488,7 +488,13 @@ fn adjust_times_add(mut y: i64, mut mo: i64, mut d: i64, mut h: i64, mut mi: i64
     fix! { s , 60, mi }
     fix! { mi, 60, h  }
     fix! { h , 24, d  }
-    fix! { d , 30, mo }
+
+    if mo == 1 || mo == 3 || mo == 5 || mo == 7 || mo == 8 || mo == 10 || mo == 12 {
+        fix! { d , 31, mo }
+    } else {
+        fix! { d , 30, mo }
+    }
+
     fix! { mo, 12, y  }
 
     (y, mo, d, h, mi, s)
