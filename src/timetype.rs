@@ -1926,8 +1926,8 @@ mod test_time_adjustments {
     fn test_adjust_times_add_seconds() {
         generate_test_add! {
             y  :  0 =>  0;
-            mo :  0 =>  0;
-            d  :  0 =>  0;
+            mo :  1 =>  1;
+            d  :  1 =>  1;
             h  :  0 =>  0;
             m  :  0 =>  1;
             s  : 62 =>  2;
@@ -1938,8 +1938,8 @@ mod test_time_adjustments {
     fn test_adjust_times_add_minutes() {
         generate_test_add! {
             y  :  0 =>  0;
-            mo :  0 =>  0;
-            d  :  0 =>  0;
+            mo :  1 =>  1;
+            d  :  1 =>  1;
             h  :  0 =>  1;
             m  : 62 =>  2;
             s  :  0 =>  0;
@@ -1950,8 +1950,8 @@ mod test_time_adjustments {
     fn test_adjust_times_add_hours() {
         generate_test_add! {
             y  :  0 =>  0;
-            mo :  0 =>  0;
-            d  :  0 =>  1;
+            mo :  1 =>  1;
+            d  :  1 =>  2;
             h  : 26 =>  2;
             m  :  0 =>  0;
             s  :  0 =>  0;
@@ -1962,8 +1962,8 @@ mod test_time_adjustments {
     fn test_adjust_times_add_days() {
         generate_test_add! {
             y  :  0 =>  0;
-            mo :  0 =>  1;
-            d  : 32 =>  2;
+            mo :  1 =>  2;
+            d  : 32 =>  1;
             h  :  0 =>  0;
             m  :  0 =>  0;
             s  :  0 =>  0;
@@ -1975,7 +1975,7 @@ mod test_time_adjustments {
         generate_test_add! {
             y  :  0 =>  1;
             mo : 14 =>  2;
-            d  :  0 =>  0;
+            d  :  1 =>  1;
             h  :  0 =>  0;
             m  :  0 =>  0;
             s  :  0 =>  0;
@@ -1986,8 +1986,8 @@ mod test_time_adjustments {
     fn test_adjust_times_sub_seconds() {
         generate_test_sub! {
             y  :  1 -  0 =>  0;
-            mo :  0 -  1 => 11;
-            d  :  0 -  0 =>  0;
+            mo :  1 -  1 => 12;
+            d  :  1 -  0 =>  1;
             h  :  0 -  0 =>  0;
             m  :  0 -  0 =>  0;
             s  :  0 -  0 =>  0;
