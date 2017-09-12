@@ -1887,6 +1887,13 @@ mod moment_plus_amount_tests {
         expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(23, 59, 59);
     }
 
+    generate_test_moment_minus_amount! {
+        name     = test_moment_minus_months;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::months(12);
+        expected = NaiveDate::from_ymd(1999, 1, 1).and_hms(0, 0, 0);
+    }
+
 }
 
 #[cfg(test)]
