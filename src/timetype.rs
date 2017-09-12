@@ -1873,6 +1873,46 @@ mod moment_plus_amount_tests {
         expected = NaiveDate::from_ymd(2062, 1, 1).and_hms(0, 0, 0);
     }
 
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_year;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::years(1) + TT::months(1);
+        expected = NaiveDate::from_ymd(2001, 2, 1).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_month;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+
+        // As we calculate 1 month + 1 day first, we end up adding 31 days to the base
+        amount   = TT::months(1) + TT::days(1);
+
+        // and therefor this results in the date 2000-02-01
+        // This is not that inuitive, of course.
+        expected = NaiveDate::from_ymd(2000, 2, 1).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_day;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::days(1) + TT::hours(1);
+        expected = NaiveDate::from_ymd(2000, 1, 2).and_hms(1, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_hour;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::hours(1) + TT::minutes(1);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 1, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_minute;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(1) + TT::seconds(1);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 1);
+    }
+
     generate_test_moment_minus_amount! {
         name     = test_moment_minus_nothing;
         base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
