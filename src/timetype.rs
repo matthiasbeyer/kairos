@@ -602,22 +602,34 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (thing, TT::Moment(mom)) => Err(KE::from_kind(KEK::CannotSub(thing, TT::Moment(mom)))),
 
         (TT::Seconds(a), other) => sub_from_seconds(a, other),
-        (other, TT::Seconds(a)) => sub_from_seconds(a, other),
+        (other, TT::Seconds(a)) => do_calculate(other)
+            .map(Box::new)
+            .and_then(|br| sub(br, Box::new(TT::Seconds(a)))), // recurses into match branch above
 
         (TT::Minutes(a), other) => sub_from_minutes(a, other),
-        (other, TT::Minutes(a)) => sub_from_minutes(a, other),
+        (other, TT::Minutes(a)) => do_calculate(other)
+            .map(Box::new)
+            .and_then(|br| sub(br, Box::new(TT::Minutes(a)))), // recurses into match branch above
 
         (TT::Hours(a), other)   => sub_from_hours(a, other),
-        (other, TT::Hours(a))   => sub_from_hours(a, other),
+        (other, TT::Hours(a))   => do_calculate(other)
+            .map(Box::new)
+            .and_then(|br| sub(br, Box::new(TT::Hours(a)))), // recurses into match branch above
 
         (TT::Days(a), other)    => sub_from_days(a, other),
-        (other, TT::Days(a))    => sub_from_days(a, other),
+        (other, TT::Days(a))    => do_calculate(other)
+            .map(Box::new)
+            .and_then(|br| sub(br, Box::new(TT::Days(a)))), // recurses into match branch above
 
         (TT::Months(a), other)  => sub_from_months(a, other),
-        (other, TT::Months(a))  => sub_from_months(a, other),
+        (other, TT::Months(a))  => do_calculate(other)
+            .map(Box::new)
+            .and_then(|br| sub(br, Box::new(TT::Months(a)))), // recurses into match branch above
 
         (TT::Years(a), other)   => sub_from_years(a, other),
-        (other, TT::Years(a))   => sub_from_years(a, other),
+        (other, TT::Years(a))   => do_calculate(other)
+            .map(Box::new)
+            .and_then(|br| sub(br, Box::new(TT::Years(a)))), // recurses into match branch above
 
         (TT::Subtraction(a, b), other)   => sub(a, b)
             .map(Box::new)
