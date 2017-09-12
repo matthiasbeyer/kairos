@@ -1913,6 +1913,41 @@ mod moment_plus_amount_tests {
         expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 1);
     }
 
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_invalid_months;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::months(13);
+        expected = NaiveDate::from_ymd(2001, 2, 1).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_invalid_days;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::days(31);
+        expected = NaiveDate::from_ymd(2000, 2, 1).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_invalid_hours;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::hours(25);
+        expected = NaiveDate::from_ymd(2000, 1, 2).and_hms(1, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_invalid_minutes;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(61);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 1, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_invalid_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(61);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 1);
+    }
+
     generate_test_moment_minus_amount! {
         name     = test_moment_minus_nothing;
         base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
