@@ -2147,3 +2147,222 @@ mod test_time_adjustments {
 
 }
 
+#[cfg(test)]
+mod test_end_of_year {
+    use super::TimeType as TT;
+    use chrono::NaiveDate;
+    use chrono::Timelike;
+    use chrono::Datelike;
+
+    macro_rules! generate_test_moment_operator_amount_and_end_of_year {
+        {
+            name     = $name:ident;
+            base     = $base:expr;
+            amount   = $amount:expr;
+            expected = $exp:expr;
+            operator = $op:expr;
+        } => {
+            #[test]
+            fn $name() {
+                let base = TT::moment($base);
+                let result = $op(base, $amount).end_of_year().calculate();
+                assert!(result.is_ok(), "Operation failed: {:?}", result);
+                let result = result.unwrap();
+                let expected = $exp;
+
+                assert_eq!(expected, *result.get_moment().unwrap());
+            }
+        }
+    }
+
+    macro_rules! generate_test_moment_plus_amount_and_end_of_year {
+        {
+            name     = $name:ident;
+            base     = $base:expr;
+            amount   = $amount:expr;
+            expected = $exp:expr;
+        } => {
+            generate_test_moment_operator_amount_and_end_of_year! {
+                name     = $name;
+                base     = $base;
+                amount   = $amount;
+                expected = $exp;
+                operator = |base, amount| base + amount;
+            }
+        }
+    }
+
+    macro_rules! generate_test_moment_minus_amount_and_end_of_year {
+        {
+            name     = $name:ident;
+            base     = $base:expr;
+            amount   = $amount:expr;
+            expected = $exp:expr;
+        } => {
+            generate_test_moment_operator_amount_and_end_of_year! {
+                name     = $name;
+                base     = $base;
+                amount   = $amount;
+                expected = $exp;
+                operator = |base, amount| base - amount;
+            }
+        }
+    }
+
+    //
+    // tests
+    //
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_zero_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(0);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(1);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_too_much_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(62);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_minutes;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(2);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_too_much_minutes;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(65);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_minutes_in_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(62);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_months;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::months(14);
+        expected = NaiveDate::from_ymd(2001, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_years;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::years(62);
+        expected = NaiveDate::from_ymd(2062, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_more_than_one_year;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::years(1) + TT::months(1);
+        expected = NaiveDate::from_ymd(2001, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_more_than_one_month;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+
+        // As we calculate 1 month + 1 day first, we end up adding 31 days to the base
+        amount   = TT::months(1) + TT::days(1);
+
+        // and therefor this results in the date 2000-02-01
+        // This is not that inuitive, of course.
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_more_than_one_day;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::days(1) + TT::hours(1);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_more_than_one_hour;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::hours(1) + TT::minutes(1);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_more_than_one_minute;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(1) + TT::seconds(1);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_invalid_months;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::months(13);
+        expected = NaiveDate::from_ymd(2001, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_invalid_days;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::days(31);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_invalid_hours;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::hours(25);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_invalid_minutes;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(61);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_year! {
+        name     = test_moment_plus_invalid_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(61);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_minus_amount_and_end_of_year! {
+        name     = test_moment_minus_nothing;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(0);
+        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_minus_amount_and_end_of_year! {
+        name     = test_moment_minus_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(1);
+        expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(00, 00, 00);
+    }
+
+    generate_test_moment_minus_amount_and_end_of_year! {
+        name     = test_moment_minus_months;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::months(12);
+        expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(0, 0, 0);
+    }
+
+}
