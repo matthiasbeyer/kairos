@@ -33,6 +33,11 @@ error_chain! {
             display("The passed argument is not an amount: {:?}", tt)
         }
 
+        CannotCalculateEndOfYearOn(tt: TimeType) {
+            description("Argument Error: Cannot calculate end-of-year")
+            display("Argument Error: Cannot calculate end-of-year on a {:?}", tt)
+        }
+
     }
 
 }
