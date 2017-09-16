@@ -15,6 +15,7 @@ use result::Result;
 use error::KairosErrorKind as KEK;
 use error::KairosError as KE;
 use error_chain::ChainedError;
+use indicator::{Day, Month};
 use util::*;
 
 /// A Type of Time, currently based on chrono::NaiveDateTime
@@ -385,6 +386,50 @@ impl TimeType {
         match *self {
             TimeType::Moment(ref m) => Some(&m),
             _                   => None,
+        }
+    }
+
+    /// Check whether a `TimeType::Moment` is a certain weekday. Returns an error if TimeType is
+    /// not a `TimeType::Moment`.
+    pub fn is_a(&self, d: Day) -> Result<bool> {
+        use self::TimeType as TT;
+
+        match *self {
+            TT::Moment(m) => Ok(m.weekday() == d.into()),
+            _             => Err(KE::from_kind(KEK::CannotCompareDayTo(self.name()))),
+        }
+    }
+
+    /// Check whether a `TimeType::Moment` is in a certain month. Returns an error if the TimeType
+    /// is not a `TimeType::Moment`.
+    pub fn is_in(&self, month: Month) -> Result<bool> {
+        use self::TimeType as TT;
+
+        match *self {
+            TT::Moment(m) => Ok(m.month() == month.into()),
+            _             => Err(KE::from_kind(KEK::CannotCompareMonthTo(self.name()))),
+        }
+    }
+
+    /// Get a string representation of the variant of the `TimeType` instance.
+    pub fn name(&self) -> &'static str {
+        use self::TimeType as TT;
+
+        match *self {
+            TT::Addition(..)    => "Addition",
+            TT::Days(..)        => "Days",
+            TT::EndOfDay(..)    => "EndOfDay",
+            TT::EndOfHour(..)   => "EndOfHour",
+            TT::EndOfMinute(..) => "EndOfMinute",
+            TT::EndOfMonth(..)  => "EndOfMonth",
+            TT::EndOfYear(..)   => "EndOfYear",
+            TT::Hours(..)       => "Hours",
+            TT::Minutes(..)     => "Minutes",
+            TT::Moment(..)      => "Moment",
+            TT::Months(..)      => "Months",
+            TT::Seconds(..)     => "Seconds",
+            TT::Subtraction(..) => "Subtraction",
+            TT::Years(..)       => "Years",
         }
     }
 

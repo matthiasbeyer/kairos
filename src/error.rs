@@ -43,6 +43,16 @@ error_chain! {
             display("Argument Error: Cannot calculate end-of-month on a {:?}", tt)
         }
 
+        CannotCompareDayTo(tt_rep: &'static str) {
+            description("Cannot compare Day to non-Moment TimeType")
+            display("Cannot compare Day to non-Moment TimeType: {:?}", tt_rep)
+        }
+
+        CannotCompareMonthTo(tt_rep: &'static str) {
+            description("Cannot compare Month to non-Moment TimeType")
+            display("Cannot compare Month to non-Moment TimeType: {:?}", tt_rep)
+        }
+
     }
 
 }

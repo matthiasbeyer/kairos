@@ -6,5 +6,6 @@ pub mod error;
 pub mod iter;
 pub mod result;
 pub mod timetype;
+pub mod indicator;
 mod util;
 
