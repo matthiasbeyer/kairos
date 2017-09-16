@@ -93,6 +93,11 @@ impl SubAssign for TimeType {
 ///
 impl TimeType {
 
+    /// Alias for `TimeType::moment(::chrono::offset::Local::now().naive_local())`
+    pub fn today() -> TimeType {
+        TimeType::moment(::chrono::offset::Local::now().naive_local())
+    }
+
     pub fn is_a_amount(&self) -> bool {
         match *self {
             TimeType::Seconds(_) |
