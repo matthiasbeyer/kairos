@@ -15,6 +15,7 @@ use result::Result;
 use error::KairosErrorKind as KEK;
 use error::KairosError as KE;
 use error_chain::ChainedError;
+use util::*;
 
 /// A Type of Time, currently based on chrono::NaiveDateTime
 #[derive(Debug, Clone)]
@@ -32,6 +33,7 @@ pub enum TimeType {
     Subtraction(Box<TimeType>, Box<TimeType>),
 
     EndOfYear(Box<TimeType>),
+    EndOfMonth(Box<TimeType>),
 }
 
 impl Add for TimeType {
@@ -163,6 +165,16 @@ impl TimeType {
     ///
     pub fn end_of_year(self) -> TimeType {
         TimeType::EndOfYear(Box::new(self))
+    }
+
+    /// Calculate the end of the month based on the current TimeType
+    ///
+    /// # Warning
+    ///
+    /// If the current TimeType does _not_ evaluate to a `TimeType::Moment`, calculating the end of
+    /// the month will fail
+    pub fn end_of_month(self) -> TimeType {
+        TimeType::EndOfMonth(Box::new(self))
     }
 
     /// Get the number of seconds, if the TimeType is not a duration type, zero is returned
@@ -340,6 +352,7 @@ fn do_calculate(tt: TimeType) -> Result<TimeType> {
         TT::Addition(a, b)    => add(a, b),
         TT::Subtraction(a, b) => sub(a, b),
         TT::EndOfYear(inner)  => end_of_year(*inner),
+        TT::EndOfMonth(inner) => end_of_month(*inner),
         x                     => Ok(x)
     }
 }
@@ -362,6 +375,32 @@ fn end_of_year(tt: TimeType) -> Result<TimeType> {
         els @ TT::Subtraction(_, _) => Err(KE::from_kind(KEK::CannotCalculateEndOfYearOn(els))),
         TT::Moment(m)    => Ok(TT::moment(NaiveDate::from_ymd(m.year(), 12, 31).and_hms(0, 0, 0))),
         TT::EndOfYear(e) => do_calculate(*e),
+        TT::EndOfMonth(e) => do_calculate(*e),
+    }
+}
+
+/// Evaluates the passed argument and if it is a `TT::Moment` it adjust its to the end of the month
+/// else returns an error
+///
+/// Calling a end-of-month on a end-of-month yields end-of-month applied only once.
+fn end_of_month(tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match try!(do_calculate(tt)) {
+        els @ TT::Seconds(_)        |
+        els @ TT::Minutes(_)        |
+        els @ TT::Hours(_)          |
+        els @ TT::Days(_)           |
+        els @ TT::Months(_)         |
+        els @ TT::Years(_)          |
+        els @ TT::Addition(_, _)    |
+        els @ TT::Subtraction(_, _) => Err(KE::from_kind(KEK::CannotCalculateEndOfMonthOn(els))),
+        TT::Moment(m)    => {
+            let last_day = get_num_of_days_in_month(m.year() as i64, m.month() as i64) as u32;
+            Ok(TT::moment(NaiveDate::from_ymd(m.year(), m.month(), last_day).and_hms(0, 0, 0)))
+        },
+        TT::EndOfYear(e) => do_calculate(*e),
+        TT::EndOfMonth(e) => do_calculate(*e),
     }
 }
 
@@ -407,6 +446,9 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (TT::EndOfYear(e), other) => Err(KE::from_kind(KEK::CannotAdd(other, TT::EndOfYear(e)))),
         (other, TT::EndOfYear(e)) => Err(KE::from_kind(KEK::CannotAdd(other, TT::EndOfYear(e)))),
 
+        (TT::EndOfMonth(e), other) => Err(KE::from_kind(KEK::CannotAdd(other, TT::EndOfMonth(e)))),
+        (other, TT::EndOfMonth(e)) => Err(KE::from_kind(KEK::CannotAdd(other, TT::EndOfMonth(e)))),
+
         others                           => unimplemented!(),
     }
 }
@@ -423,6 +465,7 @@ fn add_to_seconds(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Years(a)          => Ok(TT::Seconds(a * 60 * 60 * 24 * 30 * 12 + amount)),
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Seconds(amount), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Seconds(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Seconds(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => add_to_seconds(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => add_to_seconds(amount, try!(sub(b, c))),
     }
@@ -440,6 +483,7 @@ fn add_to_minutes(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Years(a)          => Ok(TT::Minutes(a * 60 * 24 * 30 * 12 + amount)),
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => add_to_minutes(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => add_to_minutes(amount, try!(sub(b, c))),
     }
@@ -457,6 +501,7 @@ fn add_to_hours(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Years(a)          => Ok(TT::Hours(  a * 24 * 30 * 12 + amount)),
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Hours(amount), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Hours(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Hours(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => add_to_hours(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => add_to_hours(amount, try!(sub(b, c))),
     }
@@ -474,6 +519,7 @@ fn add_to_days(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Years(a)          => Ok(TT::Days(   a * 30 * 12 + amount)),
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Days(amount), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Days(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Days(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => add_to_days(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => add_to_days(amount, try!(sub(b, c))),
     }
@@ -491,6 +537,7 @@ fn add_to_months(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Years(a)          => Ok(TT::Months( a * 12 + amount)),
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Months(amount), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Months(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Months(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => add_to_months(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => add_to_months(amount, try!(sub(b, c))),
     }
@@ -508,41 +555,10 @@ fn add_to_years(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Years(a)          => Ok(TT::Years(  a + amount)),
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Years(amount), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Years(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Years(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => add_to_years(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => add_to_years(amount, try!(sub(b, c))),
     }
-}
-
-#[inline]
-fn adjust_times_add(mut y: i64, mut mo: i64, mut d: i64, mut h: i64, mut mi: i64, mut s: i64)
-    -> (i64, i64, i64, i64, i64, i64)
-{
-    macro_rules! fix {
-        {
-            $base:ident,
-            $border:expr,
-            $next:ident
-        } => {
-            while $base >= $border {
-                $next += 1;
-                $base -= $border;
-            }
-        }
-    }
-
-    fix! { s , 60, mi }
-    fix! { mi, 60, h  }
-    fix! { h , 24, d  }
-
-    if mo == 1 || mo == 3 || mo == 5 || mo == 7 || mo == 8 || mo == 10 || mo == 12 {
-        fix! { d , 31, mo }
-    } else {
-        fix! { d , 30, mo }
-    }
-
-    fix! { mo, 12, y  }
-
-    (y, mo, d, h, mi, s)
 }
 
 fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
@@ -635,6 +651,7 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
         },
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::EndOfMonth(e)))),
         TT::Addition(a, b)    => add_to_moment(mom, try!(add(a, b))),
         TT::Subtraction(a, b) => add_to_moment(mom, try!(sub(a, b))),
     }
@@ -694,6 +711,10 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (TT::EndOfYear(e), other) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfYear(e)))),
         (other, TT::EndOfYear(e)) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfYear(e)))),
 
+        (TT::EndOfMonth(e), other) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfMonth(e)))),
+        (other, TT::EndOfMonth(e)) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfMonth(e)))),
+
+
         others                           => unimplemented!(),
     }
 }
@@ -708,8 +729,9 @@ fn sub_from_seconds(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Days(a)           => Ok(TT::Seconds(amount - a * 60 * 60 * 24)),
         TT::Months(a)         => Ok(TT::Seconds(amount - a * 60 * 60 * 24 * 30)),
         TT::Years(a)          => Ok(TT::Seconds(amount - a * 60 * 60 * 24 * 30 * 12)),
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Seconds(amount), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Seconds(amount), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Seconds(amount), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Seconds(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotSub(TT::Seconds(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => sub_from_seconds(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_seconds(amount, try!(sub(b, c))),
     }
@@ -725,8 +747,9 @@ fn sub_from_minutes(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Days(a)           => Ok(TT::Minutes(amount - a * 60 * 24)),
         TT::Months(a)         => Ok(TT::Minutes(amount - a * 60 * 24 * 30)),
         TT::Years(a)          => Ok(TT::Minutes(amount - a * 60 * 24 * 30 * 12)),
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Minutes(amount), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Minutes(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotSub(TT::Minutes(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => sub_from_minutes(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_minutes(amount, try!(sub(b, c))),
     }
@@ -742,8 +765,9 @@ fn sub_from_hours(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Days(a)           => Ok(TT::Hours(amount -   a * 24)),
         TT::Months(a)         => Ok(TT::Hours(amount -   a * 24 * 30)),
         TT::Years(a)          => Ok(TT::Hours(amount -   a * 24 * 30 * 12)),
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Hours(amount), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Hours(amount), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Hours(amount), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Hours(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotSub(TT::Hours(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => sub_from_hours(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_hours(amount, try!(sub(b, c))),
     }
@@ -759,8 +783,9 @@ fn sub_from_days(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Days(a)           => Ok(TT::Days(amount -    a)),
         TT::Months(a)         => Ok(TT::Days(amount -    a * 30)),
         TT::Years(a)          => Ok(TT::Days(amount -    a * 30 * 12)),
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Days(amount), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Days(amount), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Days(amount), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Days(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Days(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => sub_from_days(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_days(amount, try!(sub(b, c))),
     }
@@ -776,8 +801,9 @@ fn sub_from_months(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Days(a)           => Ok(TT::Days(amount * 30 -    a)),
         TT::Months(a)         => Ok(TT::Months(amount -  a)),
         TT::Years(a)          => Ok(TT::Months(amount -  a * 12)),
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Months(amount), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Months(amount), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Months(amount), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Months(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Months(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => sub_from_months(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_months(amount, try!(sub(b, c))),
     }
@@ -793,68 +819,12 @@ fn sub_from_years(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Days(a)           => Ok(TT::Days(amount * 12 * 30 -    a)),
         TT::Months(a)         => Ok(TT::Months(amount * 12 -  a)),
         TT::Years(a)          => Ok(TT::Years(amount -   a)),
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Years(amount), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Years(amount), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Years(amount), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Years(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Months(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => sub_from_years(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_years(amount, try!(sub(b, c))),
     }
-}
-
-#[inline]
-fn adjust_times_sub(mut y: i64, mut mo: i64, mut d: i64, mut h: i64, mut mi: i64, mut s: i64)
-    -> (i64, i64, i64, i64, i64, i64)
-{
-
-    println!("s < 0  -> = {}", s);
-    if s < 0 {
-        println!("mi -= {}", (s.abs() / 60) + 1);
-        println!("s   = {}", (60 - (0 - s).abs()));
-
-        mi -= (s.abs() / 60) + 1;
-        s   = 60 - (0 - s).abs();
-    }
-    println!("");
-
-    println!("mi < 0  -> = {}", mi);
-    if mi < 0 {
-        println!("h -= {}", (mi.abs() / 60) + 1);
-        println!("mi = {}", (60 - (0 - mi).abs()));
-
-        h -= (mi.abs() / 60) + 1;
-        mi = 60 - (0 - mi).abs();
-    }
-    println!("");
-
-    println!("h < 0  -> = {}", h);
-    if h < 0 {
-        println!("d -= {}", (h.abs() / 24) + 1);
-        println!("h  = {}", (24 - (0 - h).abs()));
-
-        d -= (h.abs() / 24) + 1;
-        h  = 24 - (0 - h).abs();
-    }
-    println!("");
-
-    println!("d < 1  -> = {}", d);
-    if d < 1 {
-        println!("mo -= {}", (d.abs() / 32) + 1);
-        println!("d   = {}", (31 - (0 - d).abs()));
-
-        mo -= (d.abs() / 32) + 1;
-        d   = 31 - (0 - d).abs();
-    }
-    println!("");
-
-    println!("mo < 1  -> = {}", mo);
-    if mo < 1 {
-        println!("y -= {}", (mo.abs() / 13) + 1);
-        println!("mo = {}", (12 - (0 - mo).abs()));
-
-        y -= (mo.abs() / 13) + 1;
-        mo = 12 - (0 - mo).abs();
-    }
-
-    (y, mo, d, h, mi, s)
 }
 
 fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
@@ -945,8 +915,9 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
         },
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Moment(mom), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Moment(mom), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotSub(TT::Moment(mom), TT::EndOfMonth(e)))),
         TT::Addition(a, b)    => sub_from_moment(mom, try!(add(a, b))),
         TT::Subtraction(a, b) => sub_from_moment(mom, try!(sub(a, b))),
     }
@@ -2145,6 +2116,54 @@ mod test_time_adjustments {
         }
     }
 
+    #[test]
+    fn test_adjust_times_month_border() {
+        generate_test_add! {
+            y  : 2000 +  0 => 2000;
+            mo :    1 +  0 =>    2;
+            d  :   22 + 14 =>    5;
+            h  :    0 +  0 =>    0;
+            m  :    0 +  0 =>    0;
+            s  :    0 +  0 =>    0;
+        }
+
+        generate_test_add! {
+            y  : 2000 +  0 => 2000;
+            mo :    1 +  0 =>    2;
+            d  :   22 + 28 =>   19;
+            h  :    0 +  0 =>    0;
+            m  :    0 +  0 =>    0;
+            s  :    0 +  0 =>    0;
+        }
+
+        generate_test_add! {
+            y  : 2000 +  0 => 2000;
+            mo :    2 +  0 =>    3;
+            d  :   22 + 14 =>    7;
+            h  :    0 +  0 =>    0;
+            m  :    0 +  0 =>    0;
+            s  :    0 +  0 =>    0;
+        }
+
+        generate_test_add! {
+            y  : 2000 +  0 => 2000;
+            mo :    2 +  0 =>    3;
+            d  :   22 + 28 =>   21;
+            h  :    0 +  0 =>    0;
+            m  :    0 +  0 =>    0;
+            s  :    0 +  0 =>    0;
+        }
+
+        generate_test_add! {
+            y  : 2000 +  0 => 2000;
+            mo :    3 +  0 =>    4;
+            d  :   22 + 14 =>    5;
+            h  :    0 +  0 =>    0;
+            m  :    0 +  0 =>    0;
+            s  :    0 +  0 =>    0;
+        }
+    }
+
 }
 
 #[cfg(test)]
@@ -2363,6 +2382,226 @@ mod test_end_of_year {
         base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
         amount   = TT::months(12);
         expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(0, 0, 0);
+    }
+
+}
+
+#[cfg(test)]
+mod test_end_of_month {
+    use super::TimeType as TT;
+    use chrono::NaiveDate;
+    use chrono::Timelike;
+    use chrono::Datelike;
+
+    macro_rules! generate_test_moment_operator_amount_and_end_of_month {
+        {
+            name     = $name:ident;
+            base     = $base:expr;
+            amount   = $amount:expr;
+            expected = $exp:expr;
+            operator = $op:expr;
+        } => {
+            #[test]
+            fn $name() {
+                let base = TT::moment($base);
+                let result = $op(base, $amount).end_of_month().calculate();
+                assert!(result.is_ok(), "Operation failed: {:?}", result);
+                let result = result.unwrap();
+                let expected = $exp;
+
+                assert_eq!(expected, *result.get_moment().unwrap());
+            }
+        }
+    }
+
+    macro_rules! generate_test_moment_plus_amount_and_end_of_month {
+        {
+            name     = $name:ident;
+            base     = $base:expr;
+            amount   = $amount:expr;
+            expected = $exp:expr;
+        } => {
+            generate_test_moment_operator_amount_and_end_of_month! {
+                name     = $name;
+                base     = $base;
+                amount   = $amount;
+                expected = $exp;
+                operator = |base, amount| base + amount;
+            }
+        }
+    }
+
+    macro_rules! generate_test_moment_minus_amount_and_end_of_month {
+        {
+            name     = $name:ident;
+            base     = $base:expr;
+            amount   = $amount:expr;
+            expected = $exp:expr;
+        } => {
+            generate_test_moment_operator_amount_and_end_of_month! {
+                name     = $name;
+                base     = $base;
+                amount   = $amount;
+                expected = $exp;
+                operator = |base, amount| base - amount;
+            }
+        }
+    }
+
+    //
+    // tests
+    //
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_zero_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(0);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(1);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_too_much_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(62);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_minutes;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(2);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_too_much_minutes;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(65);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_minutes_in_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(62);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_months;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::months(14);
+        expected = NaiveDate::from_ymd(2001, 3, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_years;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::years(62);
+        expected = NaiveDate::from_ymd(2062, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_more_than_one_year;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::years(1) + TT::months(1);
+        expected = NaiveDate::from_ymd(2001, 2, 28).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_more_than_one_month;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+
+        // As we calculate 1 month + 1 day first, we end up adding 31 days to the base
+        amount   = TT::months(1) + TT::days(1);
+
+        // and therefor this results in the date 2000-02-01
+        // This is not that inuitive, of course.
+        expected = NaiveDate::from_ymd(2000, 2, 29).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_more_than_one_day;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::days(1) + TT::hours(1);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_more_than_one_hour;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::hours(1) + TT::minutes(1);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_more_than_one_minute;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(1) + TT::seconds(1);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_invalid_months;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::months(13);
+        expected = NaiveDate::from_ymd(2001, 2, 28).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_invalid_days;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::days(31);
+        expected = NaiveDate::from_ymd(2000, 2, 29).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_invalid_hours;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::hours(25);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_invalid_minutes;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(61);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount_and_end_of_month! {
+        name     = test_moment_plus_invalid_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(61);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_minus_amount_and_end_of_month! {
+        name     = test_moment_minus_nothing;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(0);
+        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_minus_amount_and_end_of_month! {
+        name     = test_moment_minus_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(1);
+        expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(00, 00, 00);
+    }
+
+    generate_test_moment_minus_amount_and_end_of_month! {
+        name     = test_moment_minus_months;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::months(12);
+        expected = NaiveDate::from_ymd(1999, 1, 31).and_hms(0, 0, 0);
     }
 
 }
