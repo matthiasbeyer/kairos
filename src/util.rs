@@ -94,3 +94,71 @@ fn test_is_leap_year() {
     }
 
 }
+
+#[test]
+fn test_get_num_of_days_in_month() {
+    assert_eq!(31, get_num_of_days_in_month(2000, 01));
+    assert_eq!(29, get_num_of_days_in_month(2000, 02));
+    assert_eq!(31, get_num_of_days_in_month(2000, 03));
+    assert_eq!(30, get_num_of_days_in_month(2000, 04));
+    assert_eq!(31, get_num_of_days_in_month(2000, 05));
+    assert_eq!(30, get_num_of_days_in_month(2000, 06));
+    assert_eq!(31, get_num_of_days_in_month(2000, 07));
+    assert_eq!(31, get_num_of_days_in_month(2000, 08));
+    assert_eq!(30, get_num_of_days_in_month(2000, 09));
+    assert_eq!(31, get_num_of_days_in_month(2000, 10));
+    assert_eq!(30, get_num_of_days_in_month(2000, 11));
+    assert_eq!(31, get_num_of_days_in_month(2000, 12));
+
+    assert_eq!(31, get_num_of_days_in_month(2001, 01));
+    assert_eq!(28, get_num_of_days_in_month(2001, 02));
+    assert_eq!(31, get_num_of_days_in_month(2001, 03));
+    assert_eq!(30, get_num_of_days_in_month(2001, 04));
+    assert_eq!(31, get_num_of_days_in_month(2001, 05));
+    assert_eq!(30, get_num_of_days_in_month(2001, 06));
+    assert_eq!(31, get_num_of_days_in_month(2001, 07));
+    assert_eq!(31, get_num_of_days_in_month(2001, 08));
+    assert_eq!(30, get_num_of_days_in_month(2001, 09));
+    assert_eq!(31, get_num_of_days_in_month(2001, 10));
+    assert_eq!(30, get_num_of_days_in_month(2001, 11));
+    assert_eq!(31, get_num_of_days_in_month(2001, 12));
+
+    assert_eq!(31, get_num_of_days_in_month(2002, 01));
+    assert_eq!(28, get_num_of_days_in_month(2002, 02));
+    assert_eq!(31, get_num_of_days_in_month(2002, 03));
+    assert_eq!(30, get_num_of_days_in_month(2002, 04));
+    assert_eq!(31, get_num_of_days_in_month(2002, 05));
+    assert_eq!(30, get_num_of_days_in_month(2002, 06));
+    assert_eq!(31, get_num_of_days_in_month(2002, 07));
+    assert_eq!(31, get_num_of_days_in_month(2002, 08));
+    assert_eq!(30, get_num_of_days_in_month(2002, 09));
+    assert_eq!(31, get_num_of_days_in_month(2002, 10));
+    assert_eq!(30, get_num_of_days_in_month(2002, 11));
+    assert_eq!(31, get_num_of_days_in_month(2002, 12));
+
+    assert_eq!(31, get_num_of_days_in_month(2003, 01));
+    assert_eq!(28, get_num_of_days_in_month(2003, 02));
+    assert_eq!(31, get_num_of_days_in_month(2003, 03));
+    assert_eq!(30, get_num_of_days_in_month(2003, 04));
+    assert_eq!(31, get_num_of_days_in_month(2003, 05));
+    assert_eq!(30, get_num_of_days_in_month(2003, 06));
+    assert_eq!(31, get_num_of_days_in_month(2003, 07));
+    assert_eq!(31, get_num_of_days_in_month(2003, 08));
+    assert_eq!(30, get_num_of_days_in_month(2003, 09));
+    assert_eq!(31, get_num_of_days_in_month(2003, 10));
+    assert_eq!(30, get_num_of_days_in_month(2003, 11));
+    assert_eq!(31, get_num_of_days_in_month(2003, 12));
+
+    assert_eq!(31, get_num_of_days_in_month(2004, 01));
+    assert_eq!(29, get_num_of_days_in_month(2004, 02));
+    assert_eq!(31, get_num_of_days_in_month(2004, 03));
+    assert_eq!(30, get_num_of_days_in_month(2004, 04));
+    assert_eq!(31, get_num_of_days_in_month(2004, 05));
+    assert_eq!(30, get_num_of_days_in_month(2004, 06));
+    assert_eq!(31, get_num_of_days_in_month(2004, 07));
+    assert_eq!(31, get_num_of_days_in_month(2004, 08));
+    assert_eq!(30, get_num_of_days_in_month(2004, 09));
+    assert_eq!(31, get_num_of_days_in_month(2004, 10));
+    assert_eq!(30, get_num_of_days_in_month(2004, 11));
+    assert_eq!(31, get_num_of_days_in_month(2004, 12));
+}
