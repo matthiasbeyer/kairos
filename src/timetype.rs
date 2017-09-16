@@ -166,6 +166,8 @@ impl TimeType {
 
     /// Calculate the end of the year based on the current TimeType
     ///
+    /// The end of a year is considered to be the last day of the year, not the last second.
+    ///
     /// # Warning
     ///
     /// If the current TimeType does _not_ evaluate to a `TimeType::Moment`, calculating the end of
@@ -177,6 +179,8 @@ impl TimeType {
 
     /// Calculate the end of the month based on the current TimeType
     ///
+    /// The end of a month is considered to be the last day of the month, not the last second.
+    ///
     /// # Warning
     ///
     /// If the current TimeType does _not_ evaluate to a `TimeType::Moment`, calculating the end of
@@ -186,6 +190,8 @@ impl TimeType {
     }
 
     /// Calculate the end of the day based on the current TimeType
+    ///
+    /// The end of a day is considered the last second of the day
     ///
     /// # Warning
     ///
@@ -197,6 +203,8 @@ impl TimeType {
 
     /// Calculate the end of the hour based on the current TimeType
     ///
+    /// The end of a hour is considered the last second of a hour
+    ///
     /// # Warning
     ///
     /// If the current TimeType does _not_ evaluate to a `TimeType::Moment`, calculating the end of
@@ -206,6 +214,8 @@ impl TimeType {
     }
 
     /// Calculate the end of the minute based on the current TimeType
+    ///
+    /// The end of a minute is considered to be the last second of a minute
     ///
     /// # Warning
     ///
