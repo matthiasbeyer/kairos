@@ -19,11 +19,8 @@ pub fn adjust_times_add(mut y: i64, mut mo: i64, mut d: i64, mut h: i64, mut mi:
     fix! { mi, 60, h  }
     fix! { h , 24, d  }
 
-    if mo == 1 || mo == 3 || mo == 5 || mo == 7 || mo == 8 || mo == 10 || mo == 12 {
-        fix! { d , 31, mo }
-    } else {
-        fix! { d , 30, mo }
-    }
+    let adjust = get_num_of_days_in_month(y, mo);
+    fix! { d , adjust, mo }
 
     fix! { mo, 12, y  }
 
@@ -63,11 +60,11 @@ pub fn adjust_times_sub(mut y: i64, mut mo: i64, mut d: i64, mut h: i64, mut mi:
 }
 
 #[inline]
-pub fn get_num_of_days_in_month(y: i32, m: u32) -> u32 {
+pub fn get_num_of_days_in_month(y: i64, m: i64) -> i64 {
     if m == 1 || m == 3 || m == 5 || m == 7 || m == 8 || m == 10 || m == 12 {
         31
     } else if m == 2 {
-        if is_leap_year(y) {
+        if is_leap_year(y as i32) {
             29
         } else {
             28

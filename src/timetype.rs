@@ -396,7 +396,7 @@ fn end_of_month(tt: TimeType) -> Result<TimeType> {
         els @ TT::Addition(_, _)    |
         els @ TT::Subtraction(_, _) => Err(KE::from_kind(KEK::CannotCalculateEndOfMonthOn(els))),
         TT::Moment(m)    => {
-            let last_day = get_num_of_days_in_month(m.year(), m.month());
+            let last_day = get_num_of_days_in_month(m.year() as i64, m.month() as i64) as u32;
             Ok(TT::moment(NaiveDate::from_ymd(m.year(), m.month(), last_day).and_hms(0, 0, 0)))
         },
         TT::EndOfYear(e) => do_calculate(*e),
