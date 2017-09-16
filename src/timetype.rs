@@ -2116,6 +2116,54 @@ mod test_time_adjustments {
         }
     }
 
+    #[test]
+    fn test_adjust_times_month_border() {
+        generate_test_add! {
+            y  : 2000 +  0 => 2000;
+            mo :    1 +  0 =>    2;
+            d  :   22 + 14 =>    5;
+            h  :    0 +  0 =>    0;
+            m  :    0 +  0 =>    0;
+            s  :    0 +  0 =>    0;
+        }
+
+        generate_test_add! {
+            y  : 2000 +  0 => 2000;
+            mo :    1 +  0 =>    2;
+            d  :   22 + 28 =>   19;
+            h  :    0 +  0 =>    0;
+            m  :    0 +  0 =>    0;
+            s  :    0 +  0 =>    0;
+        }
+
+        generate_test_add! {
+            y  : 2000 +  0 => 2000;
+            mo :    2 +  0 =>    3;
+            d  :   22 + 14 =>    7;
+            h  :    0 +  0 =>    0;
+            m  :    0 +  0 =>    0;
+            s  :    0 +  0 =>    0;
+        }
+
+        generate_test_add! {
+            y  : 2000 +  0 => 2000;
+            mo :    2 +  0 =>    3;
+            d  :   22 + 28 =>   21;
+            h  :    0 +  0 =>    0;
+            m  :    0 +  0 =>    0;
+            s  :    0 +  0 =>    0;
+        }
+
+        generate_test_add! {
+            y  : 2000 +  0 => 2000;
+            mo :    3 +  0 =>    4;
+            d  :   22 + 14 =>    5;
+            h  :    0 +  0 =>    0;
+            m  :    0 +  0 =>    0;
+            s  :    0 +  0 =>    0;
+        }
+    }
+
 }
 
 #[cfg(test)]
