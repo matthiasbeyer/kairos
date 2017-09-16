@@ -561,38 +561,6 @@ fn add_to_years(amount: i64, tt: TimeType) -> Result<TimeType> {
     }
 }
 
-#[inline]
-fn adjust_times_add(mut y: i64, mut mo: i64, mut d: i64, mut h: i64, mut mi: i64, mut s: i64)
-    -> (i64, i64, i64, i64, i64, i64)
-{
-    macro_rules! fix {
-        {
-            $base:ident,
-            $border:expr,
-            $next:ident
-        } => {
-            while $base >= $border {
-                $next += 1;
-                $base -= $border;
-            }
-        }
-    }
-
-    fix! { s , 60, mi }
-    fix! { mi, 60, h  }
-    fix! { h , 24, d  }
-
-    if mo == 1 || mo == 3 || mo == 5 || mo == 7 || mo == 8 || mo == 10 || mo == 12 {
-        fix! { d , 31, mo }
-    } else {
-        fix! { d , 30, mo }
-    }
-
-    fix! { mo, 12, y  }
-
-    (y, mo, d, h, mi, s)
-}
-
 fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
@@ -857,63 +825,6 @@ fn sub_from_years(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Addition(b, c)    => sub_from_years(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_years(amount, try!(sub(b, c))),
     }
-}
-
-#[inline]
-fn adjust_times_sub(mut y: i64, mut mo: i64, mut d: i64, mut h: i64, mut mi: i64, mut s: i64)
-    -> (i64, i64, i64, i64, i64, i64)
-{
-
-    println!("s < 0  -> = {}", s);
-    if s < 0 {
-        println!("mi -= {}", (s.abs() / 60) + 1);
-        println!("s   = {}", (60 - (0 - s).abs()));
-
-        mi -= (s.abs() / 60) + 1;
-        s   = 60 - (0 - s).abs();
-    }
-    println!("");
-
-    println!("mi < 0  -> = {}", mi);
-    if mi < 0 {
-        println!("h -= {}", (mi.abs() / 60) + 1);
-        println!("mi = {}", (60 - (0 - mi).abs()));
-
-        h -= (mi.abs() / 60) + 1;
-        mi = 60 - (0 - mi).abs();
-    }
-    println!("");
-
-    println!("h < 0  -> = {}", h);
-    if h < 0 {
-        println!("d -= {}", (h.abs() / 24) + 1);
-        println!("h  = {}", (24 - (0 - h).abs()));
-
-        d -= (h.abs() / 24) + 1;
-        h  = 24 - (0 - h).abs();
-    }
-    println!("");
-
-    println!("d < 1  -> = {}", d);
-    if d < 1 {
-        println!("mo -= {}", (d.abs() / 32) + 1);
-        println!("d   = {}", (31 - (0 - d).abs()));
-
-        mo -= (d.abs() / 32) + 1;
-        d   = 31 - (0 - d).abs();
-    }
-    println!("");
-
-    println!("mo < 1  -> = {}", mo);
-    if mo < 1 {
-        println!("y -= {}", (mo.abs() / 13) + 1);
-        println!("mo = {}", (12 - (0 - mo).abs()));
-
-        y -= (mo.abs() / 13) + 1;
-        mo = 12 - (0 - mo).abs();
-    }
-
-    (y, mo, d, h, mi, s)
 }
 
 fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
