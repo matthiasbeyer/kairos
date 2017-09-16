@@ -15,6 +15,7 @@ use result::Result;
 use error::KairosErrorKind as KEK;
 use error::KairosError as KE;
 use error_chain::ChainedError;
+use util::*;
 
 /// A Type of Time, currently based on chrono::NaiveDateTime
 #[derive(Debug, Clone)]
@@ -32,6 +33,7 @@ pub enum TimeType {
     Subtraction(Box<TimeType>, Box<TimeType>),
 
     EndOfYear(Box<TimeType>),
+    EndOfMonth(Box<TimeType>),
 }
 
 impl Add for TimeType {
@@ -163,6 +165,16 @@ impl TimeType {
     ///
     pub fn end_of_year(self) -> TimeType {
         TimeType::EndOfYear(Box::new(self))
+    }
+
+    /// Calculate the end of the month based on the current TimeType
+    ///
+    /// # Warning
+    ///
+    /// If the current TimeType does _not_ evaluate to a `TimeType::Moment`, calculating the end of
+    /// the month will fail
+    pub fn end_of_month(self) -> TimeType {
+        TimeType::EndOfMonth(Box::new(self))
     }
 
     /// Get the number of seconds, if the TimeType is not a duration type, zero is returned
@@ -340,6 +352,7 @@ fn do_calculate(tt: TimeType) -> Result<TimeType> {
         TT::Addition(a, b)    => add(a, b),
         TT::Subtraction(a, b) => sub(a, b),
         TT::EndOfYear(inner)  => end_of_year(*inner),
+        TT::EndOfMonth(inner) => end_of_month(*inner),
         x                     => Ok(x)
     }
 }
@@ -362,6 +375,32 @@ fn end_of_year(tt: TimeType) -> Result<TimeType> {
         els @ TT::Subtraction(_, _) => Err(KE::from_kind(KEK::CannotCalculateEndOfYearOn(els))),
         TT::Moment(m)    => Ok(TT::moment(NaiveDate::from_ymd(m.year(), 12, 31).and_hms(0, 0, 0))),
         TT::EndOfYear(e) => do_calculate(*e),
+        TT::EndOfMonth(e) => do_calculate(*e),
+    }
+}
+
+/// Evaluates the passed argument and if it is a `TT::Moment` it adjust its to the end of the month
+/// else returns an error
+///
+/// Calling a end-of-month on a end-of-month yields end-of-month applied only once.
+fn end_of_month(tt: TimeType) -> Result<TimeType> {
+    use timetype::TimeType as TT;
+
+    match try!(do_calculate(tt)) {
+        els @ TT::Seconds(_)        |
+        els @ TT::Minutes(_)        |
+        els @ TT::Hours(_)          |
+        els @ TT::Days(_)           |
+        els @ TT::Months(_)         |
+        els @ TT::Years(_)          |
+        els @ TT::Addition(_, _)    |
+        els @ TT::Subtraction(_, _) => Err(KE::from_kind(KEK::CannotCalculateEndOfMonthOn(els))),
+        TT::Moment(m)    => {
+            let last_day = get_num_of_days_in_month(m.year(), m.month());
+            Ok(TT::moment(NaiveDate::from_ymd(m.year(), m.month(), last_day).and_hms(0, 0, 0)))
+        },
+        TT::EndOfYear(e) => do_calculate(*e),
+        TT::EndOfMonth(e) => do_calculate(*e),
     }
 }
 
@@ -407,6 +446,9 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (TT::EndOfYear(e), other) => Err(KE::from_kind(KEK::CannotAdd(other, TT::EndOfYear(e)))),
         (other, TT::EndOfYear(e)) => Err(KE::from_kind(KEK::CannotAdd(other, TT::EndOfYear(e)))),
 
+        (TT::EndOfMonth(e), other) => Err(KE::from_kind(KEK::CannotAdd(other, TT::EndOfMonth(e)))),
+        (other, TT::EndOfMonth(e)) => Err(KE::from_kind(KEK::CannotAdd(other, TT::EndOfMonth(e)))),
+
         others                           => unimplemented!(),
     }
 }
@@ -423,6 +465,7 @@ fn add_to_seconds(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Years(a)          => Ok(TT::Seconds(a * 60 * 60 * 24 * 30 * 12 + amount)),
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Seconds(amount), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Seconds(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Seconds(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => add_to_seconds(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => add_to_seconds(amount, try!(sub(b, c))),
     }
@@ -440,6 +483,7 @@ fn add_to_minutes(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Years(a)          => Ok(TT::Minutes(a * 60 * 24 * 30 * 12 + amount)),
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => add_to_minutes(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => add_to_minutes(amount, try!(sub(b, c))),
     }
@@ -457,6 +501,7 @@ fn add_to_hours(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Years(a)          => Ok(TT::Hours(  a * 24 * 30 * 12 + amount)),
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Hours(amount), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Hours(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Hours(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => add_to_hours(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => add_to_hours(amount, try!(sub(b, c))),
     }
@@ -474,6 +519,7 @@ fn add_to_days(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Years(a)          => Ok(TT::Days(   a * 30 * 12 + amount)),
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Days(amount), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Days(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Days(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => add_to_days(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => add_to_days(amount, try!(sub(b, c))),
     }
@@ -491,6 +537,7 @@ fn add_to_months(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Years(a)          => Ok(TT::Months( a * 12 + amount)),
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Months(amount), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Months(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Months(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => add_to_months(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => add_to_months(amount, try!(sub(b, c))),
     }
@@ -508,6 +555,7 @@ fn add_to_years(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Years(a)          => Ok(TT::Years(  a + amount)),
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Years(amount), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Years(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Years(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => add_to_years(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => add_to_years(amount, try!(sub(b, c))),
     }
@@ -635,6 +683,7 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
         },
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::Moment(m)))),
         TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::EndOfMonth(e)))),
         TT::Addition(a, b)    => add_to_moment(mom, try!(add(a, b))),
         TT::Subtraction(a, b) => add_to_moment(mom, try!(sub(a, b))),
     }
@@ -694,6 +743,10 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (TT::EndOfYear(e), other) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfYear(e)))),
         (other, TT::EndOfYear(e)) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfYear(e)))),
 
+        (TT::EndOfMonth(e), other) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfMonth(e)))),
+        (other, TT::EndOfMonth(e)) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfMonth(e)))),
+
+
         others                           => unimplemented!(),
     }
 }
@@ -708,8 +761,9 @@ fn sub_from_seconds(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Days(a)           => Ok(TT::Seconds(amount - a * 60 * 60 * 24)),
         TT::Months(a)         => Ok(TT::Seconds(amount - a * 60 * 60 * 24 * 30)),
         TT::Years(a)          => Ok(TT::Seconds(amount - a * 60 * 60 * 24 * 30 * 12)),
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Seconds(amount), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Seconds(amount), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Seconds(amount), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Seconds(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotSub(TT::Seconds(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => sub_from_seconds(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_seconds(amount, try!(sub(b, c))),
     }
@@ -725,8 +779,9 @@ fn sub_from_minutes(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Days(a)           => Ok(TT::Minutes(amount - a * 60 * 24)),
         TT::Months(a)         => Ok(TT::Minutes(amount - a * 60 * 24 * 30)),
         TT::Years(a)          => Ok(TT::Minutes(amount - a * 60 * 24 * 30 * 12)),
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Minutes(amount), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Minutes(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotSub(TT::Minutes(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => sub_from_minutes(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_minutes(amount, try!(sub(b, c))),
     }
@@ -742,8 +797,9 @@ fn sub_from_hours(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Days(a)           => Ok(TT::Hours(amount -   a * 24)),
         TT::Months(a)         => Ok(TT::Hours(amount -   a * 24 * 30)),
         TT::Years(a)          => Ok(TT::Hours(amount -   a * 24 * 30 * 12)),
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Hours(amount), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Hours(amount), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Hours(amount), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Hours(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotSub(TT::Hours(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => sub_from_hours(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_hours(amount, try!(sub(b, c))),
     }
@@ -759,8 +815,9 @@ fn sub_from_days(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Days(a)           => Ok(TT::Days(amount -    a)),
         TT::Months(a)         => Ok(TT::Days(amount -    a * 30)),
         TT::Years(a)          => Ok(TT::Days(amount -    a * 30 * 12)),
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Days(amount), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Days(amount), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Days(amount), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Days(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Days(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => sub_from_days(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_days(amount, try!(sub(b, c))),
     }
@@ -776,8 +833,9 @@ fn sub_from_months(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Days(a)           => Ok(TT::Days(amount * 30 -    a)),
         TT::Months(a)         => Ok(TT::Months(amount -  a)),
         TT::Years(a)          => Ok(TT::Months(amount -  a * 12)),
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Months(amount), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Months(amount), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Months(amount), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Months(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Months(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => sub_from_months(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_months(amount, try!(sub(b, c))),
     }
@@ -793,8 +851,9 @@ fn sub_from_years(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::Days(a)           => Ok(TT::Days(amount * 12 * 30 -    a)),
         TT::Months(a)         => Ok(TT::Months(amount * 12 -  a)),
         TT::Years(a)          => Ok(TT::Years(amount -   a)),
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Years(amount), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Years(amount), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Years(amount), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Years(amount), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Months(amount), TT::EndOfMonth(e)))),
         TT::Addition(b, c)    => sub_from_years(amount, try!(add(b, c))),
         TT::Subtraction(b, c) => sub_from_years(amount, try!(sub(b, c))),
     }
@@ -945,8 +1004,9 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
                   .and_hms(h as u32, mi as u32, s as u32);
             Ok(TimeType::moment(tt))
         },
-        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::Moment(m)))),
-        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::EndOfYear(e)))),
+        TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Moment(mom), TT::Moment(m)))),
+        TT::EndOfYear(e)      => Err(KE::from_kind(KEK::CannotSub(TT::Moment(mom), TT::EndOfYear(e)))),
+        TT::EndOfMonth(e)     => Err(KE::from_kind(KEK::CannotSub(TT::Moment(mom), TT::EndOfMonth(e)))),
         TT::Addition(a, b)    => sub_from_moment(mom, try!(add(a, b))),
         TT::Subtraction(a, b) => sub_from_moment(mom, try!(sub(a, b))),
     }

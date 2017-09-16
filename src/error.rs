@@ -38,6 +38,11 @@ error_chain! {
             display("Argument Error: Cannot calculate end-of-year on a {:?}", tt)
         }
 
+        CannotCalculateEndOfMonthOn(tt: TimeType) {
+            description("Argument Error: Cannot calculate end-of-month")
+            display("Argument Error: Cannot calculate end-of-month on a {:?}", tt)
+        }
+
     }
 
 }
