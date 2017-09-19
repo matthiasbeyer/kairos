@@ -3562,3 +3562,86 @@ mod test_is_a {
 
 }
 
+#[cfg(test)]
+mod test_is_in {
+    use super::TimeType as TT;
+    use chrono::NaiveDate as ND;
+    use indicator::Month;
+
+    fn ymd(y: i32, m: u32, d: u32) -> TT {
+        TT::moment(ND::from_ymd(y, m, d).and_hms(0, 0, 0))
+    }
+
+    #[test]
+    fn test_is_in_1() {
+        assert!(ymd(2000, 1, 1).is_in(Month::January).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_in_2() {
+        assert!(ymd(2000, 1, 1).is_in(Month::February).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_in_3() {
+        assert!(ymd(2000, 1, 1).is_in(Month::March).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_in_4() {
+        assert!(ymd(2000, 1, 1).is_in(Month::April).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_in_5() {
+        assert!(ymd(2000, 1, 1).is_in(Month::May).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_in_6() {
+        assert!(ymd(2000, 1, 1).is_in(Month::June).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_in_7() {
+        assert!(ymd(2000, 1, 1).is_in(Month::July).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_in_8() {
+        assert!(ymd(2000, 1, 1).is_in(Month::August).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_in_9() {
+        assert!(ymd(2000, 1, 1).is_in(Month::September).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_in_10() {
+        assert!(ymd(2000, 1, 1).is_in(Month::October).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_in_11() {
+        assert!(ymd(2000, 1, 1).is_in(Month::November).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_in_12() {
+        assert!(ymd(2000, 1, 1).is_in(Month::December).unwrap());
+    }
+
+}
+
