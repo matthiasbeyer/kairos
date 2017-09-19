@@ -3509,3 +3509,56 @@ mod test_end_of_minute {
 
 }
 
+#[cfg(test)]
+mod test_is_a {
+    use super::TimeType as TT;
+    use chrono::NaiveDate as ND;
+    use indicator::Day;
+
+    fn ymd(y: i32, m: u32, d: u32) -> TT {
+        TT::moment(ND::from_ymd(y, m, d).and_hms(0, 0, 0))
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_a_1() {
+        assert!(ymd(2000, 1, 1).is_a(Day::Monday).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_a_2() {
+        assert!(ymd(2000, 1, 1).is_a(Day::Tuesday).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_a_3() {
+        assert!(ymd(2000, 1, 1).is_a(Day::Wednesday).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_a_4() {
+        assert!(ymd(2000, 1, 1).is_a(Day::Thursday).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_a_5() {
+        assert!(ymd(2000, 1, 1).is_a(Day::Friday).unwrap());
+    }
+
+    #[test]
+    fn test_is_a_6() {
+        assert!(ymd(2000, 1, 1).is_a(Day::Saturday).unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn test_is_a_7() {
+        assert!(ymd(2000, 1, 1).is_a(Day::Sunday).unwrap());
+    }
+
+}
+
