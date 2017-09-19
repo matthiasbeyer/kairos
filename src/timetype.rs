@@ -19,7 +19,7 @@ use indicator::{Day, Month};
 use util::*;
 
 /// A Type of Time, currently based on chrono::NaiveDateTime
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TimeType {
     Seconds(i64),
     Minutes(i64),
