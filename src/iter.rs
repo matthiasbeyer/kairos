@@ -239,9 +239,8 @@ pub mod extensions {
             TT::moment(ND::from_ymd(y, m, d).and_hms(h, mi, s))
         }
 
-
         #[test]
-        fn test_simple() {
+        fn test_minutely() {
             let minutes = ymd_hms(2000, 1, 1, 0, 0, 0)
                 .minutely(1)
                 .unwrap()
@@ -254,6 +253,70 @@ pub mod extensions {
             assert_eq!(ymd_hms(2000, 1, 1, 0, 3, 0), *minutes[2].as_ref().unwrap());
             assert_eq!(ymd_hms(2000, 1, 1, 0, 4, 0), *minutes[3].as_ref().unwrap());
             assert_eq!(ymd_hms(2000, 1, 1, 0, 5, 0), *minutes[4].as_ref().unwrap());
+        }
+
+        #[test]
+        fn test_hourly() {
+            let minutes = ymd_hms(2000, 1, 1, 0, 0, 0)
+                .hourly(1)
+                .unwrap()
+                .calculate()
+                .take(5)
+                .collect::<Vec<_>>();
+
+            assert_eq!(ymd_hms(2000, 1, 1, 1, 0, 0), *minutes[0].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 2, 0, 0), *minutes[1].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 3, 0, 0), *minutes[2].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 4, 0, 0), *minutes[3].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 5, 0, 0), *minutes[4].as_ref().unwrap());
+        }
+
+        #[test]
+        fn test_weekly() {
+            let minutes = ymd_hms(2000, 1, 1, 1, 0, 0)
+                .weekly(1)
+                .unwrap()
+                .calculate()
+                .take(5)
+                .collect::<Vec<_>>();
+
+            assert_eq!(ymd_hms(2000, 1, 8, 1, 0, 0), *minutes[0].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1,15, 1, 0, 0), *minutes[1].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1,22, 1, 0, 0), *minutes[2].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1,29, 1, 0, 0), *minutes[3].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 2, 5, 1, 0, 0), *minutes[4].as_ref().unwrap());
+        }
+
+        #[test]
+        fn test_monthly() {
+            let minutes = ymd_hms(2000, 1, 1, 0, 0, 0)
+                .monthly(1)
+                .unwrap()
+                .calculate()
+                .take(5)
+                .collect::<Vec<_>>();
+
+            assert_eq!(ymd_hms(2000, 2, 1, 0, 0, 0), *minutes[0].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 3, 1, 0, 0, 0), *minutes[1].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 4, 1, 0, 0, 0), *minutes[2].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 5, 1, 0, 0, 0), *minutes[3].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 6, 1, 0, 0, 0), *minutes[4].as_ref().unwrap());
+        }
+
+        #[test]
+        fn test_yearly() {
+            let minutes = ymd_hms(2000, 1, 1, 0, 0, 0)
+                .yearly(1)
+                .unwrap()
+                .calculate()
+                .take(5)
+                .collect::<Vec<_>>();
+
+            assert_eq!(ymd_hms(2001, 1, 1, 0, 0, 0), *minutes[0].as_ref().unwrap());
+            assert_eq!(ymd_hms(2002, 1, 1, 0, 0, 0), *minutes[1].as_ref().unwrap());
+            assert_eq!(ymd_hms(2003, 1, 1, 0, 0, 0), *minutes[2].as_ref().unwrap());
+            assert_eq!(ymd_hms(2004, 1, 1, 0, 0, 0), *minutes[3].as_ref().unwrap());
+            assert_eq!(ymd_hms(2005, 1, 1, 0, 0, 0), *minutes[4].as_ref().unwrap());
         }
 
     }
