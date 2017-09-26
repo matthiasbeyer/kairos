@@ -39,13 +39,24 @@ impl Iter {
     }
 
     /// Skip one `next()` call
-    pub fn skip(&mut self) {
+    pub fn skip(&mut self) -> Result<()> {
         self.base += self.increment.clone();
+        self.recalculate()
     }
 
     /// Redo the latest `next()` call with the next `next()` call
-    pub fn rollback(&mut self) {
+    pub fn rollback(&mut self) -> Result<()> {
         self.base -= self.increment.clone();
+        self.recalculate()
+    }
+
+    fn recalculate(&mut self) -> Result<()> {
+        self.base
+            .clone()
+            .calculate()
+            .map(|res| {
+                self.base = res;
+            })
     }
 
 }
@@ -61,49 +72,12 @@ impl Iter {
 /// Be warned.
 ///
 impl Iterator for Iter {
-    type Item = TimeType;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.skip();
-        Some(self.base.clone())
-    }
-
-}
-
-/// An iterator type that calls `calculate()` on the `TimeType` instances which are yielded by its
-/// inner iterator type.
-pub struct CalculatingIter<I>(I)
-    where I: Iterator<Item = TimeType>;
-
-impl<I> CalculatingIter<I>
-    where I: Iterator<Item = TimeType>
-{
-    pub fn new(i: I) -> CalculatingIter<I> {
-        CalculatingIter(i)
-    }
-}
-
-impl<I> Iterator for CalculatingIter<I>
-    where I: Iterator<Item = TimeType>
-{
     type Item = Result<TimeType>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(TimeType::calculate)
+        Some(self.skip().map(|_| self.base.clone()))
     }
 
-}
-
-pub trait IntoCalculatingIter : Iterator<Item = TimeType> + Sized {
-    fn calculate(self) -> CalculatingIter<Self>;
-}
-
-impl<I> IntoCalculatingIter for I
-    where I: Iterator<Item = TimeType>
-{
-    fn calculate(self) -> CalculatingIter<Self> {
-        CalculatingIter(self)
-    }
 }
 
 pub struct FilterIter<I, M>(I, M)
@@ -294,7 +268,6 @@ pub mod extensions {
         use super::*;
         use timetype::TimeType as TT;
         use chrono::NaiveDate as ND;
-        use iter::IntoCalculatingIter;
 
         fn ymd_hms(y: i32, m: u32, d: u32, h: u32, mi: u32, s: u32) -> TT {
             TT::moment(ND::from_ymd(y, m, d).and_hms(h, mi, s))
@@ -305,7 +278,6 @@ pub mod extensions {
             let minutes = ymd_hms(2000, 1, 1, 0, 0, 0)
                 .minutely(1)
                 .unwrap()
-                .calculate()
                 .take(5)
                 .collect::<Vec<_>>();
 
@@ -321,7 +293,6 @@ pub mod extensions {
             let minutes = ymd_hms(2000, 1, 1, 0, 0, 0)
                 .hourly(1)
                 .unwrap()
-                .calculate()
                 .take(5)
                 .collect::<Vec<_>>();
 
@@ -337,7 +308,6 @@ pub mod extensions {
             let minutes = ymd_hms(2000, 1, 1, 1, 0, 0)
                 .weekly(1)
                 .unwrap()
-                .calculate()
                 .take(5)
                 .collect::<Vec<_>>();
 
@@ -353,7 +323,6 @@ pub mod extensions {
             let minutes = ymd_hms(2000, 1, 1, 0, 0, 0)
                 .monthly(1)
                 .unwrap()
-                .calculate()
                 .take(5)
                 .collect::<Vec<_>>();
 
@@ -369,7 +338,6 @@ pub mod extensions {
             let minutes = ymd_hms(2000, 1, 1, 0, 0, 0)
                 .yearly(1)
                 .unwrap()
-                .calculate()
                 .take(5)
                 .collect::<Vec<_>>();
 
@@ -387,7 +355,6 @@ pub mod extensions {
 #[cfg(test)]
 mod type_tests {
     use super::*;
-    use super::IntoCalculatingIter;
     use super::extensions::*;
 
     #[test]
@@ -396,7 +363,6 @@ mod type_tests {
         let _ = TimeType::today()
             .yearly(1)
             .unwrap()
-            .calculate()
             .every(::indicator::Day::Monday);
     }
 
@@ -406,7 +372,6 @@ mod type_tests {
         let _ = TimeType::today()
             .yearly(1) // collecting makes us stack-overflow because of the heavy filtering!
             .unwrap()
-            .calculate()
             .every(::indicator::Day::Monday)
             .every(::indicator::Month::January);
     }
@@ -415,7 +380,6 @@ mod type_tests {
 #[cfg(all(feature = "with-filters", test))]
 mod type_tests_filter_interface {
     use super::*;
-    use super::IntoCalculatingIter;
     use super::extensions::*;
 
     #[test]
@@ -424,8 +388,8 @@ mod type_tests_filter_interface {
         let _ = TimeType::today()
             .yearly(1)
             .unwrap()
-            .calculate()
-            .every(::indicator::Day::Monday.or(::indicator::Month::January));
+            .every(::indicator::Day::Monday.or(::indicator::Month::January))
+            .collect::<Vec<_>>();
     }
 }
 
