@@ -1,3 +1,15 @@
+#[cfg(feature = "with-filters")]
+use filters::filter::Filter;
+
+#[cfg(feature = "with-filters")]
+use filters::filter::IntoFilter;
+
+#[cfg(feature = "with-filters")]
+use timetype::TimeType;
+
+#[cfg(feature = "with-filters")]
+use chrono::Datelike;
+
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
 pub enum Day {
     Monday,
@@ -64,7 +76,7 @@ pub struct DayFilter(Day);
 #[cfg(feature = "with-filters")]
 impl Filter<TimeType> for DayFilter {
     fn filter(&self, tt: &TimeType) -> bool {
-        tt.get_moment(|mom| mom.weekday() == self.0.into()).unwrap_or(false)
+        tt.get_moment().map(|mom| mom.weekday() == self.0.clone().into()).unwrap_or(false)
     }
 }
 
@@ -85,7 +97,7 @@ pub struct MonthFilter(Month);
 #[cfg(feature = "with-filters")]
 impl Filter<TimeType> for MonthFilter {
     fn filter(&self, tt: &TimeType) -> bool {
-        tt.get_moment(|mom| mom.month() == self.0.into()).unwrap_or(false)
+        tt.get_moment().map(|mom| mom.month() == self.0.clone().into()).unwrap_or(false)
     }
 }
 
