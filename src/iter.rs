@@ -7,6 +7,7 @@ use error::KairosError as KE;
 use error::KairosErrorKind as KEK;
 use error::Result;
 use timetype::TimeType;
+use matcher::Matcher;
 
 pub struct Iter {
     base: TimeType,
@@ -102,6 +103,53 @@ impl<I> IntoCalculatingIter for I
 {
     fn calculate(self) -> CalculatingIter<Self> {
         CalculatingIter(self)
+    }
+}
+
+pub struct FilterIter<I, M>(I, M)
+    where I: Iterator<Item = Result<TimeType>>,
+          M: Matcher;
+
+impl<I, M> FilterIter<I, M>
+    where I: Iterator<Item = Result<TimeType>>,
+          M: Matcher
+{
+    fn new(i: I, m: M) -> FilterIter<I, M> {
+        FilterIter(i, m)
+    }
+}
+
+impl<I, M> Iterator for FilterIter<I, M>
+    where I: Iterator<Item = Result<TimeType>>,
+          M: Matcher
+{
+    type Item = Result<TimeType>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.0.next() {
+                None        => return None,
+                Some(Err(e)) => return Some(Err(e)),
+                Some(Ok(tt)) => match self.1.matches(&tt) {
+                    Ok(false) => continue,
+                    Ok(true)  => return Some(Ok(tt)),
+                    Err(e)    => return Some(Err(e)),
+                }
+            }
+        }
+    }
+}
+
+pub trait EveryFilter<M: Matcher> : Iterator<Item = Result<TimeType>> + Sized {
+    fn every(self, M) -> FilterIter<Self, M>;
+}
+
+impl<I, M> EveryFilter<M> for I
+    where I: Iterator<Item = Result<TimeType>>,
+          M: Matcher
+{
+    fn every(self, matcher: M) -> FilterIter<Self, M> {
+        FilterIter::new(self, matcher)
     }
 }
 
@@ -335,3 +383,32 @@ pub mod extensions {
     }
 
 }
+
+#[cfg(test)]
+mod type_tests {
+    use super::*;
+    use super::IntoCalculatingIter;
+    use super::extensions::*;
+
+    #[test]
+    fn test_iterator_every_once() {
+        // This test is solely to check whether this compiles and the API is nice
+        let _ = TimeType::today()
+            .yearly(1)
+            .unwrap()
+            .calculate()
+            .every(::indicator::Day::Monday);
+    }
+
+    #[test]
+    fn test_iterator_every_twice() {
+        // This test is solely to check whether this compiles and the API is nice
+        let _ = TimeType::today()
+            .yearly(1) // collecting makes us stack-overflow because of the heavy filtering!
+            .unwrap()
+            .calculate()
+            .every(::indicator::Day::Monday)
+            .every(::indicator::Month::January);
+    }
+}
+
