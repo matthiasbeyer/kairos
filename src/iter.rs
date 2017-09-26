@@ -127,6 +127,53 @@ impl<I, M> EveryFilter<M> for I
     }
 }
 
+pub struct WithoutIter<I, M>(I, M)
+    where I: Iterator<Item = Result<TimeType>>,
+          M: Matcher;
+
+impl<I, M> WithoutIter<I, M>
+    where I: Iterator<Item = Result<TimeType>>,
+          M: Matcher
+{
+    fn new(i: I, m: M) -> WithoutIter<I, M> {
+        WithoutIter(i, m)
+    }
+}
+
+impl<I, M> Iterator for WithoutIter<I, M>
+    where I: Iterator<Item = Result<TimeType>>,
+          M: Matcher
+{
+    type Item = Result<TimeType>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.0.next() {
+                None        => return None,
+                Some(Err(e)) => return Some(Err(e)),
+                Some(Ok(tt)) => match self.1.matches(&tt) {
+                    Ok(false) => return Some(Ok(tt)),
+                    Ok(true)  => continue,
+                    Err(e)    => return Some(Err(e)),
+                }
+            }
+        }
+    }
+}
+
+pub trait WithoutFilter<M: Matcher> : Iterator<Item = Result<TimeType>> + Sized {
+    fn without(self, M) -> WithoutIter<Self, M>;
+}
+
+impl<I, M> WithoutFilter<M> for I
+    where I: Iterator<Item = Result<TimeType>>,
+          M: Matcher
+{
+    fn without(self, matcher: M) -> WithoutIter<Self, M> {
+        WithoutIter::new(self, matcher)
+    }
+}
+
 pub mod extensions {
     use timetype::TimeType as TT;
     use super::Iter;
@@ -393,6 +440,20 @@ mod type_tests_filter_interface {
             .every(::indicator::Day::Monday.into_filter().or(::indicator::Month::January))
             .take(12)
             .collect::<Vec<_>>();
+    }
+
+    #[test]
+    fn test_compile_skip() {
+        // This test is solely to check whether this compiles and the API is nice
+        let v = TimeType::today()
+            .daily(1)
+            .unwrap()
+            .take(20)
+            .every(::indicator::Day::Monday)
+            .without(::indicator::Day::Monday)
+            .collect::<Vec<_>>();
+
+        assert_eq!(0, v.len());
     }
 }
 
