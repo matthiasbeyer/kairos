@@ -33,6 +33,11 @@ error_chain! {
             display("The passed argument is not an amount: {:?}", tt)
         }
 
+        ArgumentErrorNotAMoment(name: &'static str) {
+            description("Argument Error: Not a moment TimeType object")
+            display("The passed argument is not a moment, but a {}", name)
+        }
+
         CannotCalculateEndOfYearOn(tt: TimeType) {
             description("Argument Error: Cannot calculate end-of-year")
             display("Argument Error: Cannot calculate end-of-year on a {:?}", tt)

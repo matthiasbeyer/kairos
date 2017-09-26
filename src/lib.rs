@@ -7,5 +7,6 @@ pub mod iter;
 pub mod result;
 pub mod timetype;
 pub mod indicator;
+pub mod matcher;
 mod util;
 
