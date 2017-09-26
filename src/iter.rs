@@ -412,3 +412,20 @@ mod type_tests {
     }
 }
 
+#[cfg(all(feature = "with-filters", test))]
+mod type_tests_filter_interface {
+    use super::*;
+    use super::IntoCalculatingIter;
+    use super::extensions::*;
+
+    #[test]
+    fn test_compile() {
+        // This test is solely to check whether this compiles and the API is nice
+        let _ = TimeType::today()
+            .yearly(1)
+            .unwrap()
+            .calculate()
+            .every(::indicator::Day::Monday.or(::indicator::Month::January));
+    }
+}
+

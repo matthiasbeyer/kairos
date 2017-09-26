@@ -34,4 +34,15 @@ impl Matcher for Month {
 
 }
 
+#[cfg(feature = "with-filters")]
+use filters::filter::*;
+
+#[cfg(feature = "with-filters")]
+impl<F> Matcher for F
+    where F: Filter<TimeType>
+{
+    fn matches(&self, tt: &TimeType) -> Result<bool> {
+        Ok(self.filter(tt))
+    }
+}
 

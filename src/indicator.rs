@@ -57,3 +57,45 @@ impl Into<u32> for Month {
         }
     }
 }
+
+#[cfg(feature = "with-filters")]
+pub struct DayFilter(Day);
+
+#[cfg(feature = "with-filters")]
+impl Filter<TimeType> for DayFilter {
+    fn filter(&self, tt: &TimeType) -> bool {
+        tt.get_moment(|mom| mom.weekday() == self.0.into()).unwrap_or(false)
+    }
+}
+
+#[cfg(feature = "with-filters")]
+impl IntoFilter<TimeType> for Day {
+    type IntoFilt = DayFilter;
+
+    fn into_filter(self) -> Self::IntoFilt {
+        DayFilter(self)
+    }
+
+}
+
+
+#[cfg(feature = "with-filters")]
+pub struct MonthFilter(Month);
+
+#[cfg(feature = "with-filters")]
+impl Filter<TimeType> for MonthFilter {
+    fn filter(&self, tt: &TimeType) -> bool {
+        tt.get_moment(|mom| mom.month() == self.0.into()).unwrap_or(false)
+    }
+}
+
+#[cfg(feature = "with-filters")]
+impl IntoFilter<TimeType> for Month {
+    type IntoFilt = MonthFilter;
+
+    fn into_filter(self) -> Self::IntoFilt {
+        MonthFilter(self)
+    }
+
+}
+
