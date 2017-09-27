@@ -174,6 +174,54 @@ impl<I, M> WithoutFilter<M> for I
     }
 }
 
+pub struct UntilIter<I>(I, NaiveDateTime)
+    where I: Iterator<Item = Result<TimeType>>;
+
+impl<I> UntilIter<I>
+    where I: Iterator<Item = Result<TimeType>>
+{
+    fn new(i: I, date: NaiveDateTime) -> UntilIter<I> {
+        UntilIter(i, date)
+    }
+}
+
+impl<I> Iterator for UntilIter<I>
+    where I: Iterator<Item = Result<TimeType>>
+{
+    type Item = Result<TimeType>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.0.next() {
+            None         => None,
+            Some(Err(e)) => Some(Err(e)),
+            Some(Ok(tt)) => match tt.calculate() {
+                Err(e) => Some(Err(e)),
+                Ok(tt) => if tt.is_moment() {
+                    if tt.get_moment().unwrap() < &self.1 {
+                        Some(Ok(tt))
+                    } else {
+                        None
+                    }
+                } else {
+                    Some(Err(KE::from_kind(KEK::ArgumentErrorNotAMoment(tt.name()))))
+                }
+            }
+        }
+    }
+}
+
+pub trait Until : Iterator<Item = Result<TimeType>> + Sized {
+    fn until(self, NaiveDateTime) -> UntilIter<Self>;
+}
+
+impl<I> Until for I
+    where I: Iterator<Item = Result<TimeType>>
+{
+    fn until(self, ending: NaiveDateTime) -> UntilIter<Self> {
+        UntilIter::new(self, ending)
+    }
+}
+
 pub mod extensions {
     use timetype::TimeType as TT;
     use super::Iter;
@@ -455,5 +503,30 @@ mod type_tests_filter_interface {
 
         assert_eq!(0, v.len());
     }
+}
+
+#[cfg(test)]
+mod test_until {
+    use super::*;
+    use super::extensions::*;
+
+    #[test]
+    fn test_until() {
+        let yesterday = (TimeType::today() - TimeType::days(1))
+            .calculate()
+            .unwrap()
+            .get_moment()
+            .unwrap()
+            .clone();
+
+        let v = TimeType::today()
+            .daily(1)
+            .unwrap()
+            .until(yesterday)
+            .collect::<Vec<_>>();
+
+        assert!(v.is_empty());
+    }
+
 }
 
