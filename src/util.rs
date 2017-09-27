@@ -24,7 +24,10 @@ pub fn adjust_times_add(mut y: i64, mut mo: i64, mut d: i64, mut h: i64, mut mi:
         mo += 1;
     }
 
-    fix! { mo, 12, y  }
+    while mo > 12 {
+        y += 1;
+        mo -= 12;
+    }
 
     (y, mo, d, h, mi, s)
 }
