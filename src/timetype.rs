@@ -14,7 +14,6 @@ use std::ops::SubAssign;
 use result::Result;
 use error::KairosErrorKind as KEK;
 use error::KairosError as KE;
-use error_chain::ChainedError;
 use indicator::{Day, Month};
 use util::*;
 
@@ -630,7 +629,7 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (TT::EndOfHour(e), other) => Err(KE::from_kind(KEK::CannotAdd(other, TT::EndOfHour(e)))),
         (other, TT::EndOfHour(e)) => Err(KE::from_kind(KEK::CannotAdd(other, TT::EndOfHour(e)))),
 
-        others                           => unimplemented!(),
+        _ => unimplemented!(),
     }
 }
 
@@ -898,9 +897,8 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (other, TT::EndOfHour(e)) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfHour(e)))),
 
         (TT::EndOfMinute(e), other) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfMinute(e)))),
-        (other, TT::EndOfMinute(e)) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfMinute(e)))),
-
-        others                           => unimplemented!(),
+        // unreachable, but for completeness
+        //(other, TT::EndOfMinute(e)) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfMinute(e)))),
     }
 }
 
@@ -1132,10 +1130,7 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 #[cfg(test)]
 mod tests {
     use chrono::NaiveDate;
-
     use super::TimeType as TT;
-
-    use error::KairosErrorKind as KEK;
 
     #[test]
     fn test_addition_of_seconds() {
@@ -1990,8 +1985,6 @@ mod moment_plus_amount_tests {
     use env_logger;
     use super::TimeType as TT;
     use chrono::NaiveDate;
-    use chrono::Timelike;
-    use chrono::Datelike;
 
     macro_rules! generate_test_moment_operator_amount{
         {
@@ -2451,8 +2444,6 @@ mod test_time_adjustments {
 mod test_end_of_year {
     use super::TimeType as TT;
     use chrono::NaiveDate;
-    use chrono::Timelike;
-    use chrono::Datelike;
 
     macro_rules! generate_test_moment_operator_amount_and_end_of_year {
         {
@@ -2671,8 +2662,6 @@ mod test_end_of_year {
 mod test_end_of_month {
     use super::TimeType as TT;
     use chrono::NaiveDate;
-    use chrono::Timelike;
-    use chrono::Datelike;
 
     macro_rules! generate_test_moment_operator_amount_and_end_of_month {
         {
@@ -2892,8 +2881,6 @@ mod test_end_of_month {
 mod test_end_of_day {
     use super::TimeType as TT;
     use chrono::NaiveDate;
-    use chrono::Timelike;
-    use chrono::Datelike;
 
     macro_rules! generate_test_moment_operator_amount_and_end_of_day {
         {
@@ -3112,8 +3099,6 @@ mod test_end_of_day {
 mod test_end_of_hour {
     use super::TimeType as TT;
     use chrono::NaiveDate;
-    use chrono::Timelike;
-    use chrono::Datelike;
 
     macro_rules! generate_test_moment_operator_amount_and_end_of_hour {
         {
@@ -3332,8 +3317,6 @@ mod test_end_of_hour {
 mod test_end_of_minute {
     use super::TimeType as TT;
     use chrono::NaiveDate;
-    use chrono::Timelike;
-    use chrono::Datelike;
 
     macro_rules! generate_test_moment_operator_amount_and_end_of_minute {
         {
