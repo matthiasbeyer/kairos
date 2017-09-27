@@ -22,7 +22,7 @@ matrix:
 
 script:
 - |
-  cargo build --all --features filters --verbose -j 1 && cargo test --all --features filters --verbose -j 1
+  cargo build --all --features with-filters --verbose -j 1 && cargo test --all --features with-filters --verbose -j 1
 
 cache:
   cargo: true
