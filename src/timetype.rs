@@ -1987,6 +1987,7 @@ mod timetype_value_tests {
 
 #[cfg(test)]
 mod moment_plus_amount_tests {
+    use env_logger;
     use super::TimeType as TT;
     use chrono::NaiveDate;
     use chrono::Timelike;
@@ -2002,8 +2003,13 @@ mod moment_plus_amount_tests {
         } => {
             #[test]
             fn $name() {
+                let _ = env_logger::init();
+
                 let base = TT::moment($base);
+                debug!("Using base = {:?}", base);
+                debug!("           + {:?}", $amount);
                 let result = $op(base, $amount).calculate();
+                debug!("        -> = {:?}", result);
                 assert!(result.is_ok(), "Operation failed: {:?}", result);
                 let result = result.unwrap();
                 let expected = $exp;
