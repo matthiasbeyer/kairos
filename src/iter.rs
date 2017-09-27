@@ -388,9 +388,10 @@ mod type_tests_filter_interface {
     fn test_compile() {
         // This test is solely to check whether this compiles and the API is nice
         let _ = TimeType::today()
-            .yearly(1)
+            .daily(1)
             .unwrap()
             .every(::indicator::Day::Monday.into_filter().or(::indicator::Month::January))
+            .take(12)
             .collect::<Vec<_>>();
     }
 }
