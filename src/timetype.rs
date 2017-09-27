@@ -629,7 +629,7 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (TT::EndOfHour(e), other) => Err(KE::from_kind(KEK::CannotAdd(other, TT::EndOfHour(e)))),
         (other, TT::EndOfHour(e)) => Err(KE::from_kind(KEK::CannotAdd(other, TT::EndOfHour(e)))),
 
-        others                           => unimplemented!(),
+        _ => unimplemented!(),
     }
 }
 
@@ -897,9 +897,8 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
         (other, TT::EndOfHour(e)) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfHour(e)))),
 
         (TT::EndOfMinute(e), other) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfMinute(e)))),
-        (other, TT::EndOfMinute(e)) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfMinute(e)))),
-
-        others                           => unimplemented!(),
+        // unreachable, but for completeness
+        //(other, TT::EndOfMinute(e)) => Err(KE::from_kind(KEK::CannotSub(other, TT::EndOfMinute(e)))),
     }
 }
 
