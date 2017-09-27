@@ -381,6 +381,8 @@ mod type_tests {
 mod type_tests_filter_interface {
     use super::*;
     use super::extensions::*;
+    use filters::filter::Filter;
+    use filters::filter::IntoFilter;
 
     #[test]
     fn test_compile() {
@@ -388,7 +390,7 @@ mod type_tests_filter_interface {
         let _ = TimeType::today()
             .yearly(1)
             .unwrap()
-            .every(::indicator::Day::Monday.or(::indicator::Month::January))
+            .every(::indicator::Day::Monday.into_filter().or(::indicator::Month::January))
             .collect::<Vec<_>>();
     }
 }

@@ -1987,6 +1987,7 @@ mod timetype_value_tests {
 
 #[cfg(test)]
 mod moment_plus_amount_tests {
+    use env_logger;
     use super::TimeType as TT;
     use chrono::NaiveDate;
     use chrono::Timelike;
@@ -2002,8 +2003,13 @@ mod moment_plus_amount_tests {
         } => {
             #[test]
             fn $name() {
+                let _ = env_logger::init();
+
                 let base = TT::moment($base);
+                debug!("Using base = {:?}", base);
+                debug!("           + {:?}", $amount);
                 let result = $op(base, $amount).calculate();
+                debug!("        -> = {:?}", result);
                 assert!(result.is_ok(), "Operation failed: {:?}", result);
                 let result = result.unwrap();
                 let expected = $exp;
@@ -2203,6 +2209,75 @@ mod moment_plus_amount_tests {
         expected = NaiveDate::from_ymd(1999, 1, 1).and_hms(0, 0, 0);
     }
 
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_minute_in_seconds;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::seconds(130);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 2, 10);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_hour_in_minutes;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::minutes(130);
+        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(2, 10, 00);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_day_in_hours_1;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::hours(50);
+        expected = NaiveDate::from_ymd(2000, 1, 3).and_hms(2, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_day_in_hours_2;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::hours(170);
+        expected = NaiveDate::from_ymd(2000, 1, 8).and_hms(2, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_month_in_days_1;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::days(80);
+        expected = NaiveDate::from_ymd(2000, 3,21).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_month_in_days_2;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::days(120);
+        expected = NaiveDate::from_ymd(2000, 4,30).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_month_in_days_3;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::days(150);
+        expected = NaiveDate::from_ymd(2000, 5,30).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_year_in_months_1;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::months(15);
+        expected = NaiveDate::from_ymd(2001, 4, 1).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_year_in_months_2;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::months(25);
+        expected = NaiveDate::from_ymd(2002, 2, 1).and_hms(0, 0, 0);
+    }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_year_in_months_3;
+        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        amount   = TT::months(78);
+        expected = NaiveDate::from_ymd(2006, 7, 1).and_hms(0, 0, 0);
+    }
 }
 
 #[cfg(test)]
