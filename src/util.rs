@@ -19,8 +19,10 @@ pub fn adjust_times_add(mut y: i64, mut mo: i64, mut d: i64, mut h: i64, mut mi:
     fix! { mi, 60, h  }
     fix! { h , 24, d  }
 
-    let adjust = get_num_of_days_in_month(y, mo);
-    fix! { d , adjust, mo }
+    while d > get_num_of_days_in_month(y, mo) {
+        d -= get_num_of_days_in_month(y, mo);
+        mo += 1;
+    }
 
     fix! { mo, 12, y  }
 
