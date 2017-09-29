@@ -11,7 +11,7 @@ use std::ops::AddAssign;
 use std::ops::Sub;
 use std::ops::SubAssign;
 
-use result::Result;
+use error::Result;
 use error::KairosErrorKind as KEK;
 use error::KairosError as KE;
 use indicator::{Day, Month};
