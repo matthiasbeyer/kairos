@@ -14,7 +14,6 @@ extern crate log;
 
 pub mod error;
 pub mod iter;
-pub mod result;
 pub mod timetype;
 pub mod indicator;
 pub mod matcher;
