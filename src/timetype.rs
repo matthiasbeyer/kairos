@@ -2271,6 +2271,13 @@ mod moment_plus_amount_tests {
         amount   = TT::months(78);
         expected = NaiveDate::from_ymd(2006, 7, 1).and_hms(0, 0, 0);
     }
+
+    generate_test_moment_plus_amount! {
+        name     = test_moment_plus_more_than_one_year_in_months_4;
+        base     = NaiveDate::from_ymd(2000,10,31).and_hms(0, 0, 0);
+        amount   = TT::months(4);
+        expected = NaiveDate::from_ymd(2001, 3, 1).and_hms(0, 0, 0);
+    }
 }
 
 #[cfg(test)]
