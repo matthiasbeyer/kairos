@@ -12,11 +12,16 @@ license     = "MPL-2.0"
 
 repository    = "https://github.com/matthiasbeyer/kairos"
 
+build = "build.rs"
+
 [dependencies]
 chrono = "0.4"
 error-chain = "0.10"
 
 filters = { version  = "0.1.1", optional = true }
+
+[build-dependencies]
+peg = { version = "0.5" }
 
 [dev-dependencies]
 env_logger = "0.4"
