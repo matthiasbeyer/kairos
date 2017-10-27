@@ -29,13 +29,178 @@
 //!
 //! ## User-facing syntax nodes
 //!
-//! AmountExp = <Amount> (<Operator> <AmountExp>)?
-//! ExactDate = "today" | "yesterday" | "tomorrow" | <Iso8601>
-//! Date      = <ExactDate> (<Operator> <AmountExp>)?
-//! Iterator  = <Date> <Iterspec> ("until" <ExactDate> | <number> "times")?
+//! AmountExpr = <Amount> (<Operator> <AmountExpr>)?
+//! ExactDate  = "today" | "yesterday" | "tomorrow" | <Iso8601>
+//! Date       = <ExactDate> (<Operator> <AmountExpr>)?
+//! Iterator   = <Date> <Iterspec> ("until" <ExactDate> | <number> "times")?
 //!
 
-mod grammar {
-    include!(concat!(env!("OUT_DIR"), "/grammar.rs"));
+use nom::{IResult, space, alpha, alphanumeric, digit};
+use std::str;
+use std::str::FromStr;
+
+named!(integer<i64>, alt!(
+    map_res!(
+        map_res!(
+            ws!(digit),
+            str::from_utf8
+        ),
+        FromStr::from_str
+    )
+));
+
+named!(unit_parser<Unit>, alt!(
+    tag!("second")  => { |_| Unit::Second } |
+    tag!("seconds") => { |_| Unit::Second } |
+    tag!("sec")     => { |_| Unit::Second } |
+    tag!("secs")    => { |_| Unit::Second } |
+    tag!("s")       => { |_| Unit::Second } |
+    tag!("minute")  => { |_| Unit::Minute } |
+    tag!("minutes") => { |_| Unit::Minute } |
+    tag!("min")     => { |_| Unit::Minute } |
+    tag!("mins")    => { |_| Unit::Minute } |
+    tag!("hour")    => { |_| Unit::Hour } |
+    tag!("hours")   => { |_| Unit::Hour } |
+    tag!("hr")      => { |_| Unit::Hour } |
+    tag!("hrs")     => { |_| Unit::Hour } |
+    tag!("day")     => { |_| Unit::Day } |
+    tag!("days")    => { |_| Unit::Day } |
+    tag!("d")       => { |_| Unit::Day } |
+    tag!("week")    => { |_| Unit::Week } |
+    tag!("weeks")   => { |_| Unit::Week } |
+    tag!("w")       => { |_| Unit::Week } |
+    tag!("month")   => { |_| Unit::Month } |
+    tag!("months")  => { |_| Unit::Month } |
+    tag!("year")    => { |_| Unit::Year } |
+    tag!("years")   => { |_| Unit::Year } |
+    tag!("yrs")     => { |_| Unit::Year }
+));
+
+pub enum Unit {
+    Second,
+    Minute,
+    Hour,
+    Day,
+    Week,
+    Month,
+    Year,
 }
+
+named!(operator_parser<Operator>, alt!(
+    tag!("+") => { |_| Operator::Plus } |
+    tag!("-") => { |_| Operator::Minus }
+));
+
+pub enum Operator {
+    Plus,
+    Minus,
+}
+
+named!(amount_parser<Amount>, do_parse!(
+    number: integer >>
+    unit : unit_parser >>
+    (Amount(number, unit))
+));
+
+pub struct Amount(i64, Unit);
+
+named!(iter_spec<Iterspec>, alt!(
+    tag!("secondly") => { |_| Iterspec::Secondly } |
+    tag!("minutely") => { |_| Iterspec::Minutely } |
+    tag!("hourly")   => { |_| Iterspec::Hourly } |
+    tag!("daily")    => { |_| Iterspec::Daily } |
+    tag!("weekly")   => { |_| Iterspec::Weekly } |
+    tag!("monthly")  => { |_| Iterspec::Monthly } |
+    tag!("yearly")   => { |_| Iterspec::Yearly } |
+    do_parse!(
+        tag!("every") >>
+        number:integer >>
+        unit:unit_parser >>
+        (Iterspec::Every(number, unit))
+    )
+));
+
+pub enum Iterspec {
+    Secondly,
+    Minutely,
+    Hourly,
+    Daily,
+    Weekly,
+    Monthly,
+    Yearly,
+    Every(i64, Unit),
+}
+
+named!(amount_expr<AmountExpr>, do_parse!(
+    amount:amount_parser >>
+    o: opt!(do_parse!(op:operator_parser >> amexp:amount_expr >> ((op, Box::new(amexp))))) >>
+    (AmountExpr { amount: amount, next: o, })
+));
+
+pub struct AmountExpr {
+    amount: Amount,
+    next: Option<(Operator, Box<AmountExpr>)>,
+}
+
+impl AmountExpr {
+    fn new(amount: Amount, next: Option<(Operator, Box<AmountExpr>)>) -> AmountExpr {
+        AmountExpr {
+            amount: amount,
+            next: next
+        }
+    }
+}
+
+use iso8601::parsers::parse_date;
+use iso8601::parsers::parse_datetime;
+named!(exact_date_parser<ExactDate>, alt!(
+    tag!("today")     => { |_| ExactDate::Today } |
+    tag!("yesterday") => { |_| ExactDate::Yesterday } |
+    tag!("tomorrow")  => { |_| ExactDate::Tomorrow } |
+    do_parse!(d: parse_date     >> (ExactDate::Iso8601Date(d))) |
+    do_parse!(d: parse_datetime >> (ExactDate::Iso8601DateTime(d)))
+));
+
+pub enum ExactDate {
+    Today,
+    Yesterday,
+    Tomorrow,
+    Iso8601Date(::iso8601::Date),
+    Iso8601DateTime(::iso8601::DateTime)
+}
+
+named!(date<Date>, do_parse!(
+    exact:exact_date_parser >>
+    o: opt!(do_parse!(op:operator_parser >> a:amount_expr >> (op, a))) >>
+    (Date(exact, o))
+));
+
+pub struct Date(ExactDate, Option<(Operator, AmountExpr)>);
+
+named!(until_spec<UntilSpec>, alt!(
+    do_parse!(
+        tag!("until") >>
+        exact: exact_date_parser >>
+        (UntilSpec::Exact(exact))
+    ) |
+    do_parse!(
+        num: integer >>
+        tag!("times") >>
+        (UntilSpec::Times(num))
+    )
+));
+
+pub enum UntilSpec {
+    Exact(ExactDate),
+    Times(i64)
+}
+
+named!(iterator<Iterator>, do_parse!(
+    d: date                 >>
+    spec: iter_spec         >>
+    until: opt!(until_spec) >>
+    (Iterator(d, spec, until))
+));
+
+pub struct Iterator(Date, Iterspec, Option<UntilSpec>);
 

@@ -3,7 +3,8 @@ extern crate error_chain;
 extern crate chrono;
 
 #[macro_use]
-extern crate peg;
+extern crate nom;
+extern crate iso8601;
 
 #[cfg(feature = "with-filters")]
 extern crate filters;
