@@ -136,9 +136,12 @@ pub enum Iterspec {
     Every(i64, Unit),
 }
 
+use nom::whitespace::sp;
+
 named!(amount_expr<AmountExpr>, do_parse!(
     amount:amount_parser >>
-    o: opt!(do_parse!(op:operator_parser >> amexp:amount_expr >> ((op, Box::new(amexp))))) >>
+    opt!(sp) >>
+    o: opt!(do_parse!(op:operator_parser >> opt!(sp) >> amexp:amount_expr >> ((op, Box::new(amexp))))) >>
     (AmountExpr { amount: amount, next: o, })
 ));
 
