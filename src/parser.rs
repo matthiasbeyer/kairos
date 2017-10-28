@@ -214,5 +214,96 @@ named!(iterator<Iterator>, do_parse!(
     (Iterator(d, spec, until))
 ));
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Iterator(Date, Iterspec, Option<UntilSpec>);
+
+
+#[cfg(test)]
+mod tests {
+    use nom::IResult;
+    use super::*;
+
+    #[test]
+    fn test_integer() {
+        assert_eq!(integer(&b"2"[..]), IResult::Done(&b""[..], 2));
+        assert_eq!(integer(&b"217"[..]), IResult::Done(&b""[..], 217));
+    }
+
+    #[test]
+    fn test_unit() {
+        assert_eq!(unit_parser(&b"second"[..]), IResult::Done(&b""[..], Unit::Second));
+        assert_eq!(unit_parser(&b"seconds"[..]), IResult::Done(&b""[..], Unit::Second));
+        assert_eq!(unit_parser(&b"sec"[..]), IResult::Done(&b""[..], Unit::Second));
+        assert_eq!(unit_parser(&b"secs"[..]), IResult::Done(&b""[..], Unit::Second));
+        assert_eq!(unit_parser(&b"s"[..]), IResult::Done(&b""[..], Unit::Second));
+        assert_eq!(unit_parser(&b"minute"[..]), IResult::Done(&b""[..], Unit::Minute));
+        assert_eq!(unit_parser(&b"minutes"[..]), IResult::Done(&b""[..], Unit::Minute));
+        assert_eq!(unit_parser(&b"min"[..]), IResult::Done(&b""[..], Unit::Minute));
+        assert_eq!(unit_parser(&b"mins"[..]), IResult::Done(&b""[..], Unit::Minute));
+        assert_eq!(unit_parser(&b"hour"[..]), IResult::Done(&b""[..], Unit::Hour));
+        assert_eq!(unit_parser(&b"hours"[..]), IResult::Done(&b""[..], Unit::Hour));
+        assert_eq!(unit_parser(&b"hr"[..]), IResult::Done(&b""[..], Unit::Hour));
+        assert_eq!(unit_parser(&b"hrs"[..]), IResult::Done(&b""[..], Unit::Hour));
+        assert_eq!(unit_parser(&b"day"[..]), IResult::Done(&b""[..], Unit::Day));
+        assert_eq!(unit_parser(&b"days"[..]), IResult::Done(&b""[..], Unit::Day));
+        assert_eq!(unit_parser(&b"d"[..]), IResult::Done(&b""[..], Unit::Day));
+        assert_eq!(unit_parser(&b"week"[..]), IResult::Done(&b""[..], Unit::Week));
+        assert_eq!(unit_parser(&b"weeks"[..]), IResult::Done(&b""[..], Unit::Week));
+        assert_eq!(unit_parser(&b"w"[..]), IResult::Done(&b""[..], Unit::Week));
+        assert_eq!(unit_parser(&b"month"[..]), IResult::Done(&b""[..], Unit::Month));
+        assert_eq!(unit_parser(&b"months"[..]), IResult::Done(&b""[..], Unit::Month));
+        assert_eq!(unit_parser(&b"year"[..]), IResult::Done(&b""[..], Unit::Year));
+        assert_eq!(unit_parser(&b"years"[..]), IResult::Done(&b""[..], Unit::Year));
+        assert_eq!(unit_parser(&b"yrs"[..]), IResult::Done(&b""[..], Unit::Year));
+    }
+
+    #[test]
+    fn test_operator() {
+        assert_eq!(operator_parser(&b"+"[..]), IResult::Done(&b""[..], Operator::Plus));
+        assert_eq!(operator_parser(&b"-"[..]), IResult::Done(&b""[..], Operator::Minus));
+    }
+
+    #[test]
+    fn test_amount() {
+        assert_eq!(amount_parser(&b"5s"[..]), IResult::Done(&b""[..], Amount(5, Unit::Second)));
+        assert_eq!(amount_parser(&b"5min"[..]), IResult::Done(&b""[..], Amount(5, Unit::Minute)));
+        assert_eq!(amount_parser(&b"55hrs"[..]), IResult::Done(&b""[..], Amount(55, Unit::Hour)));
+        assert_eq!(amount_parser(&b"25days"[..]), IResult::Done(&b""[..], Amount(25, Unit::Day)));
+        assert_eq!(amount_parser(&b"15weeks"[..]), IResult::Done(&b""[..], Amount(15, Unit::Week)));
+    }
+
+    #[test]
+    fn test_iterspec() {
+        assert_eq!(iter_spec(&b"secondly"[..]), IResult::Done(&b""[..], Iterspec::Secondly));
+        assert_eq!(iter_spec(&b"minutely"[..]), IResult::Done(&b""[..], Iterspec::Minutely));
+        assert_eq!(iter_spec(&b"hourly"[..]), IResult::Done(&b""[..], Iterspec::Hourly));
+        assert_eq!(iter_spec(&b"daily"[..]), IResult::Done(&b""[..], Iterspec::Daily));
+        assert_eq!(iter_spec(&b"weekly"[..]), IResult::Done(&b""[..], Iterspec::Weekly));
+        assert_eq!(iter_spec(&b"monthly"[..]), IResult::Done(&b""[..], Iterspec::Monthly));
+        assert_eq!(iter_spec(&b"yearly"[..]), IResult::Done(&b""[..], Iterspec::Yearly));
+        assert_eq!(iter_spec(&b"every 5min"[..]), IResult::Done(&b""[..], Iterspec::Every(5, Unit::Minute)));
+    }
+
+    #[test]
+    fn test_amountexpr() {
+        assert_eq!(amount_expr(&b"5minutes"[..]),
+            IResult::Done(&b""[..],
+                          AmountExpr {
+                              amount: Amount(5, Unit::Minute),
+                              next: None
+                          })
+        );
+
+        assert_eq!(amount_expr(&b"5min + 12min"[..]),
+        IResult::Done(&b""[..],
+                      AmountExpr {
+                          amount: Amount(5, Unit::Minute),
+                          next: Some((Operator::Plus, Box::new(
+                                      AmountExpr {
+                                          amount: Amount(12, Unit::Minute),
+                                          next: None
+                                      })))
+                      }));
+    }
+}
 
