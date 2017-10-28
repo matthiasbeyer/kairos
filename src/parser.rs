@@ -77,6 +77,7 @@ named!(unit_parser<Unit>, alt_complete!(
     tag!("yrs")     => { |_| Unit::Year }
 ));
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Unit {
     Second,
     Minute,
@@ -92,6 +93,7 @@ named!(operator_parser<Operator>, alt!(
     tag!("-") => { |_| Operator::Minus }
 ));
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Operator {
     Plus,
     Minus,
@@ -103,6 +105,7 @@ named!(amount_parser<Amount>, do_parse!(
     (Amount(number, unit))
 ));
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Amount(i64, Unit);
 
 named!(iter_spec<Iterspec>, alt!(
@@ -121,6 +124,7 @@ named!(iter_spec<Iterspec>, alt!(
     )
 ));
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Iterspec {
     Secondly,
     Minutely,
@@ -138,6 +142,7 @@ named!(amount_expr<AmountExpr>, do_parse!(
     (AmountExpr { amount: amount, next: o, })
 ));
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct AmountExpr {
     amount: Amount,
     next: Option<(Operator, Box<AmountExpr>)>,
@@ -162,6 +167,7 @@ named!(exact_date_parser<ExactDate>, alt!(
     do_parse!(d: parse_datetime >> (ExactDate::Iso8601DateTime(d)))
 ));
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum ExactDate {
     Today,
     Yesterday,
@@ -176,6 +182,7 @@ named!(date<Date>, do_parse!(
     (Date(exact, o))
 ));
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Date(ExactDate, Option<(Operator, AmountExpr)>);
 
 named!(until_spec<UntilSpec>, alt!(
@@ -191,6 +198,7 @@ named!(until_spec<UntilSpec>, alt!(
     )
 ));
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum UntilSpec {
     Exact(ExactDate),
     Times(i64)
