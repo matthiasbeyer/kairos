@@ -108,7 +108,7 @@ named!(amount_parser<Amount>, do_parse!(
 #[derive(Debug, PartialEq, Eq)]
 pub struct Amount(i64, Unit);
 
-named!(iter_spec<Iterspec>, alt!(
+named!(iter_spec<Iterspec>, alt_complete!(
     tag!("secondly") => { |_| Iterspec::Secondly } |
     tag!("minutely") => { |_| Iterspec::Minutely } |
     tag!("hourly")   => { |_| Iterspec::Hourly } |
