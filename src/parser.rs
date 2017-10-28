@@ -49,30 +49,31 @@ named!(integer<i64>, alt!(
     )
 ));
 
-named!(unit_parser<Unit>, alt!(
-    tag!("second")  => { |_| Unit::Second } |
+// WARNING: Order is important here. Long tags first, shorter tags later
+named!(unit_parser<Unit>, alt_complete!(
     tag!("seconds") => { |_| Unit::Second } |
-    tag!("sec")     => { |_| Unit::Second } |
+    tag!("second")  => { |_| Unit::Second } |
     tag!("secs")    => { |_| Unit::Second } |
+    tag!("sec")     => { |_| Unit::Second } |
     tag!("s")       => { |_| Unit::Second } |
-    tag!("minute")  => { |_| Unit::Minute } |
     tag!("minutes") => { |_| Unit::Minute } |
-    tag!("min")     => { |_| Unit::Minute } |
+    tag!("minute")  => { |_| Unit::Minute } |
     tag!("mins")    => { |_| Unit::Minute } |
-    tag!("hour")    => { |_| Unit::Hour } |
+    tag!("min")     => { |_| Unit::Minute } |
     tag!("hours")   => { |_| Unit::Hour } |
-    tag!("hr")      => { |_| Unit::Hour } |
+    tag!("hour")    => { |_| Unit::Hour } |
     tag!("hrs")     => { |_| Unit::Hour } |
-    tag!("day")     => { |_| Unit::Day } |
+    tag!("hr")      => { |_| Unit::Hour } |
     tag!("days")    => { |_| Unit::Day } |
+    tag!("day")     => { |_| Unit::Day } |
     tag!("d")       => { |_| Unit::Day } |
-    tag!("week")    => { |_| Unit::Week } |
     tag!("weeks")   => { |_| Unit::Week } |
+    tag!("week")    => { |_| Unit::Week } |
     tag!("w")       => { |_| Unit::Week } |
-    tag!("month")   => { |_| Unit::Month } |
     tag!("months")  => { |_| Unit::Month } |
-    tag!("year")    => { |_| Unit::Year } |
+    tag!("month")   => { |_| Unit::Month } |
     tag!("years")   => { |_| Unit::Year } |
+    tag!("year")    => { |_| Unit::Year } |
     tag!("yrs")     => { |_| Unit::Year }
 ));
 
