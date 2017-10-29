@@ -138,10 +138,17 @@ pub enum Iterspec {
 
 use nom::whitespace::sp;
 
+named!(amount_expr_next<(Operator, Box<AmountExpr>)>, do_parse!(
+    op:operator_parser
+    >> opt!(sp)
+    >> amexp:amount_expr
+    >> ((op, Box::new(amexp)))
+));
+
 named!(amount_expr<AmountExpr>, do_parse!(
     amount:amount_parser >>
     opt!(sp) >>
-    o: opt!(do_parse!(op:operator_parser >> opt!(sp) >> amexp:amount_expr >> ((op, Box::new(amexp))))) >>
+    o: opt!(amount_expr_next) >>
     (AmountExpr { amount: amount, next: o, })
 ));
 
@@ -282,6 +289,17 @@ mod tests {
         assert_eq!(iter_spec(&b"monthly"[..]), IResult::Done(&b""[..], Iterspec::Monthly));
         assert_eq!(iter_spec(&b"yearly"[..]), IResult::Done(&b""[..], Iterspec::Yearly));
         assert_eq!(iter_spec(&b"every 5min"[..]), IResult::Done(&b""[..], Iterspec::Every(5, Unit::Minute)));
+    }
+
+    #[test]
+    fn test_amountexpr_next() {
+        assert_eq!(amount_expr_next(&b"+ 12minutes"[..]),
+            IResult::Done(&b""[..],
+                (
+                    Operator::Plus,
+                    Box::new(AmountExpr { amount: Amount(12, Unit::Minute), next: None })
+                )
+        ));
     }
 
     #[test]
