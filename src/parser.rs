@@ -148,7 +148,7 @@ named!(amount_expr_next<(Operator, Box<AmountExpr>)>, do_parse!(
 named!(amount_expr<AmountExpr>, do_parse!(
     amount:amount_parser >>
     opt!(sp) >>
-    o: opt!(amount_expr_next) >>
+    o: opt!(complete!(amount_expr_next)) >>
     (AmountExpr { amount: amount, next: o, })
 ));
 
