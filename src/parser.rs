@@ -39,6 +39,10 @@ use nom::{IResult, space, alpha, alphanumeric, digit};
 use std::str;
 use std::str::FromStr;
 
+use chrono::NaiveDate;
+
+use timetype::TimeType;
+
 named!(integer<i64>, alt!(
     map_res!(
         map_res!(
@@ -108,6 +112,20 @@ named!(amount_parser<Amount>, do_parse!(
 #[derive(Debug, PartialEq, Eq)]
 pub struct Amount(i64, Unit);
 
+impl Into<TimeType> for Amount {
+    fn into(self) -> TimeType {
+        match self.1 {
+            Unit::Second => TimeType::seconds(self.0),
+            Unit::Minute => TimeType::minutes(self.0),
+            Unit::Hour   => TimeType::hours(self.0),
+            Unit::Day    => TimeType::days(self.0),
+            Unit::Week   => TimeType::weeks(self.0),
+            Unit::Month  => TimeType::months(self.0),
+            Unit::Year   => TimeType::years(self.0),
+        }
+    }
+}
+
 named!(iter_spec<Iterspec>, alt_complete!(
     tag!("secondly") => { |_| Iterspec::Secondly } |
     tag!("minutely") => { |_| Iterspec::Minutely } |
@@ -158,6 +176,25 @@ pub struct AmountExpr {
     next: Option<(Operator, Box<AmountExpr>)>,
 }
 
+impl Into<TimeType> for AmountExpr {
+    fn into(self) -> TimeType {
+        let mut amount = self.amount.into();
+
+        if let Some((op, other_amonut_expr)) = self.next {
+            match op {
+                Operator::Plus => {
+                    amount = amount + (*other_amonut_expr).into();
+                },
+                Operator::Minus => {
+                    amount = amount - (*other_amonut_expr).into();
+                },
+            }
+        }
+
+        amount
+    }
+}
+
 impl AmountExpr {
     fn new(amount: Amount, next: Option<(Operator, Box<AmountExpr>)>) -> AmountExpr {
         AmountExpr {
@@ -186,6 +223,49 @@ pub enum ExactDate {
     Iso8601DateTime(::iso8601::DateTime)
 }
 
+impl Into<TimeType> for ExactDate {
+    fn into(self) -> TimeType {
+        match self {
+            ExactDate::Today => TimeType::today(),
+            ExactDate::Yesterday => TimeType::today() - TimeType::days(1),
+            ExactDate::Tomorrow  => TimeType::today() + TimeType::days(1),
+            ExactDate::Iso8601Date(date) => {
+                let (year, month, day) = match date {
+                    ::iso8601::Date::YMD { year, month, day } => {
+                        (year, month, day)
+                    },
+                    ::iso8601::Date::Week { year, ww, d } => {
+                        unimplemented!()
+                    },
+                    ::iso8601::Date::Ordinal { year, ddd } => {
+                        unimplemented!()
+                    },
+                };
+
+                let ndt = NaiveDate::from_ymd(year, month, day).and_hms(0, 0, 0);
+                TimeType::moment(ndt)
+            },
+            ExactDate::Iso8601DateTime(::iso8601::DateTime { date, time }) => {
+                let (hour, minute, second) = (time.hour, time.minute, time.second);
+                let (year, month, day) = match date {
+                    ::iso8601::Date::YMD { year, month, day } => {
+                        (year, month, day)
+                    },
+                    ::iso8601::Date::Week { year, ww, d } => {
+                        unimplemented!()
+                    },
+                    ::iso8601::Date::Ordinal { year, ddd } => {
+                        unimplemented!()
+                    },
+                };
+
+                let ndt = NaiveDate::from_ymd(year, month, day).and_hms(hour, minute, second);
+                TimeType::moment(ndt)
+            },
+        }
+    }
+}
+
 named!(date<Date>, do_parse!(
     exact:exact_date_parser >>
     o: opt!(do_parse!(op:operator_parser >> a:amount_expr >> (op, a))) >>
@@ -194,6 +274,17 @@ named!(date<Date>, do_parse!(
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Date(ExactDate, Option<(Operator, AmountExpr)>);
+
+impl Into<TimeType> for Date {
+    fn into(self) -> TimeType {
+        let base : TimeType = self.0.into();
+        match self.1 {
+            Some((Operator::Plus,  amount)) => base + amount.into(),
+            Some((Operator::Minus, amount)) => base - amount.into(),
+            None                            => base,
+        }
+    }
+}
 
 named!(until_spec<UntilSpec>, alt!(
     do_parse!(
@@ -224,11 +315,19 @@ named!(iterator<Iterator>, do_parse!(
 #[derive(Debug, PartialEq, Eq)]
 pub struct Iterator(Date, Iterspec, Option<UntilSpec>);
 
+impl Into<TimeType> for Iterator {
+    fn into(self) -> TimeType {
+        unimplemented!()
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use nom::IResult;
     use super::*;
+
+    use chrono::Timelike;
+    use chrono::Datelike;
 
     #[test]
     fn test_integer() {
@@ -323,5 +422,80 @@ mod tests {
                                       })))
                       }));
     }
+
+    #[test]
+    fn test_expressions_to_date() {
+        let res = amount_expr(&b"5min + 12min"[..]);
+        assert!(res.is_done());
+        let (_, o) = res.unwrap();
+
+        let calc_res : TimeType = o.into();
+        let calc_res = calc_res.calculate();
+        assert!(calc_res.is_ok());
+
+        let calc_res = calc_res.unwrap();
+        assert_eq!(calc_res.get_seconds(), 17 * 60);
+        assert_eq!(calc_res.get_minutes(), 17);
+        assert_eq!(calc_res.get_hours(), 0);
+        assert_eq!(calc_res.get_days(), 0);
+        assert_eq!(calc_res.get_years(), 0);
+    }
+
+    #[test]
+    fn test_expressions_to_date_2() {
+        let res = amount_expr(&b"5min + 12min + 15hours"[..]);
+        assert!(res.is_done());
+        let (_, o) = res.unwrap();
+
+        let calc_res : TimeType = o.into();
+        let calc_res = calc_res.calculate();
+        assert!(calc_res.is_ok());
+
+        let calc_res = calc_res.unwrap();
+        assert_eq!(calc_res.get_seconds(), 17 * 60 + (15 * 60 * 60));
+        assert_eq!(calc_res.get_minutes(), 17 + (15 * 60));
+        assert_eq!(calc_res.get_hours(), 15);
+        assert_eq!(calc_res.get_days(), 0);
+        assert_eq!(calc_res.get_years(), 0);
+    }
+
+    #[test]
+    fn test_expressions_to_date_3() {
+        let res = date(&b"today + 5min + 12min"[..]);
+        assert!(res.is_done(), "Not done: {:?}", res.unwrap_err().description());
+        let (_, o) = res.unwrap();
+
+        let calc_res : TimeType = o.into();
+        let calc_res = calc_res.calculate();
+        assert!(calc_res.is_ok());
+
+        // because this test is basically dependent on the current time, which is a baaaad use of
+        // state in a test, we rely on `test_expressions_to_date_4()` here and assume that the
+        // upper assertions are enough.
+    }
+
+    #[test]
+    fn test_expressions_to_date_4() {
+        let res = date(&b"2017-01-01 + 5min + 12min"[..]);
+        assert!(res.is_done(), "Not done: {:?}", res.unwrap_err().description());
+        let (_, o) = res.unwrap();
+
+        println!("{:#?}", o);
+
+        let calc_res : TimeType = o.into();
+        let calc_res = calc_res.calculate();
+        assert!(calc_res.is_ok());
+
+        let calc_res = calc_res.unwrap();
+        println!("{:#?}", calc_res);
+
+        assert_eq!(calc_res.get_moment().unwrap().year()  , 2017);
+        assert_eq!(calc_res.get_moment().unwrap().month() , 01);
+        assert_eq!(calc_res.get_moment().unwrap().day()   , 01);
+        assert_eq!(calc_res.get_moment().unwrap().hour()  , 00);
+        assert_eq!(calc_res.get_moment().unwrap().minute(), 17);
+        assert_eq!(calc_res.get_moment().unwrap().second(), 00);
+    }
+
 }
 
