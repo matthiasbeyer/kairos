@@ -59,6 +59,11 @@ error_chain! {
             display("Cannot compare Month to non-Moment TimeType: {:?}", tt_rep)
         }
 
+        NotADateInsideIterator {
+            description("Cannot calculate date for iterator")
+            display("Cannot calculate date for iterator")
+        }
+
         UnknownParserError {
             description("Unknown parser error")
             display("Unknown parser error")
