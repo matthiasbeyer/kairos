@@ -206,12 +206,14 @@ impl AmountExpr {
 
 use iso8601::parsers::parse_date;
 use iso8601::parsers::parse_datetime;
-named!(exact_date_parser<ExactDate>, alt!(
+// The order is relevant here, because datetime is longer than date, we must parse datetime before
+// date.
+named!(exact_date_parser<ExactDate>, alt_complete!(
     tag!("today")     => { |_| ExactDate::Today } |
     tag!("yesterday") => { |_| ExactDate::Yesterday } |
     tag!("tomorrow")  => { |_| ExactDate::Tomorrow } |
-    do_parse!(d: parse_date     >> (ExactDate::Iso8601Date(d))) |
-    do_parse!(d: parse_datetime >> (ExactDate::Iso8601DateTime(d)))
+    do_parse!(d: parse_datetime >> (ExactDate::Iso8601DateTime(d))) |
+    do_parse!(d: parse_date     >> (ExactDate::Iso8601Date(d)))
 ));
 
 #[derive(Debug, PartialEq, Eq)]
@@ -421,6 +423,57 @@ mod tests {
                                           next: None
                                       })))
                       }));
+    }
+
+    #[test]
+    fn test_parse_expressions_date() {
+        use iso8601::Date;
+        let res = exact_date_parser(&b"2017-01-01"[..]);
+        assert!(res.is_done());
+
+        match res.unwrap().1 {
+            ExactDate::Iso8601DateTime(_) => assert!(false),
+            ExactDate::Iso8601Date(d) => {
+                match d {
+                    Date::YMD { year, month, day } => {
+                        assert_eq!(year, 2017);
+                        assert_eq!(month, 1);
+                        assert_eq!(day, 1)
+                    },
+                    _ => assert!(false),
+                }
+            },
+            ExactDate::Tomorrow       => assert!(false),
+            ExactDate::Yesterday      => assert!(false),
+            ExactDate::Today          => assert!(false),
+        };
+    }
+
+    #[test]
+    fn test_parse_expressions_datetime() {
+        use iso8601::Date;
+        let res = exact_date_parser(&b"2017-01-01T22:00:11"[..]);
+        assert!(res.is_done());
+
+        match res.unwrap().1 {
+            ExactDate::Iso8601DateTime(obj) => {
+                match obj.date {
+                    Date::YMD { year, month, day } => {
+                        assert_eq!(year, 2017);
+                        assert_eq!(month, 1);
+                        assert_eq!(day, 1)
+                    },
+                    _ => assert!(false),
+                }
+                assert_eq!(obj.time.hour, 22);
+                assert_eq!(obj.time.minute, 0);
+                assert_eq!(obj.time.second, 11);
+            },
+            ExactDate::Iso8601Date(_) => assert!(false),
+            ExactDate::Tomorrow       => assert!(false),
+            ExactDate::Yesterday      => assert!(false),
+            ExactDate::Today          => assert!(false),
+        };
     }
 
     #[test]
