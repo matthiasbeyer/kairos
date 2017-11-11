@@ -9,6 +9,7 @@ use error::Result;
 use timetype::TimeType;
 use matcher::Matcher;
 
+#[derive(Debug)]
 pub struct Iter {
     base: TimeType,
     increment: TimeType,
@@ -80,6 +81,7 @@ impl Iterator for Iter {
 
 }
 
+#[derive(Debug)]
 pub struct FilterIter<I, M>(I, M)
     where I: Iterator<Item = Result<TimeType>>,
           M: Matcher;
@@ -127,6 +129,7 @@ impl<I, M> EveryFilter<M> for I
     }
 }
 
+#[derive(Debug)]
 pub struct WithoutIter<I, M>(I, M)
     where I: Iterator<Item = Result<TimeType>>,
           M: Matcher;
@@ -174,6 +177,7 @@ impl<I, M> WithoutFilter<M> for I
     }
 }
 
+#[derive(Debug)]
 pub struct UntilIter<I>(I, NaiveDateTime)
     where I: Iterator<Item = Result<TimeType>>;
 
@@ -222,6 +226,7 @@ impl<I> Until for I
     }
 }
 
+#[derive(Debug)]
 pub struct TimesIter<I>
     where I: Iterator<Item = Result<TimeType>>
 {

@@ -50,6 +50,8 @@ use std::str::FromStr;
 use chrono::NaiveDate;
 
 use timetype;
+use iter;
+use error;
 
 named!(integer<i64>, alt!(
     map_res!(
@@ -345,18 +347,92 @@ pub enum UntilSpec {
 }
 
 named!(iterator<Iterator>, do_parse!(
-    d: date                 >>
-    spec: iter_spec         >>
-    until: opt!(until_spec) >>
+    opt!(sp) >> d: date         >>
+    opt!(sp) >> spec: iter_spec >>
+    opt!(sp) >> until: opt!(complete!(until_spec)) >>
     (Iterator(d, spec, until))
 ));
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Iterator(Date, Iterspec, Option<UntilSpec>);
 
-impl Into<timetype::TimeType> for Iterator {
-    fn into(self) -> timetype::TimeType {
-        unimplemented!()
+impl Iterator {
+    pub fn into_user_iterator(self) -> error::Result<UserIterator<iter::Iter>> {
+        use iter::Times;
+        use iter::Until;
+
+        let unit_to_amount = |i, unit| match unit {
+            Unit::Second => timetype::TimeType::seconds(i),
+            Unit::Minute => timetype::TimeType::minutes(i),
+            Unit::Hour   => timetype::TimeType::hours(i),
+            Unit::Day    => timetype::TimeType::days(i),
+            Unit::Week   => timetype::TimeType::weeks(i),
+            Unit::Month  => timetype::TimeType::months(i),
+            Unit::Year   => timetype::TimeType::years(i),
+        };
+
+        let recur = match self.1 {
+            Iterspec::Every(i, unit) => unit_to_amount(i, unit),
+            Iterspec::Secondly => unit_to_amount(1, Unit::Second),
+            Iterspec::Minutely => unit_to_amount(1, Unit::Minute),
+            Iterspec::Hourly   => unit_to_amount(1, Unit::Hour),
+            Iterspec::Daily    => unit_to_amount(1, Unit::Day),
+            Iterspec::Weekly   => unit_to_amount(1, Unit::Week),
+            Iterspec::Monthly  => unit_to_amount(1, Unit::Month),
+            Iterspec::Yearly   => unit_to_amount(1, Unit::Year),
+        };
+
+        let into_ndt = |e: timetype::TimeType| try!(e.calculate())
+            .get_moment()
+            .ok_or(error::KairosErrorKind::NotADateInsideIterator)
+            .map(Clone::clone);
+
+        match self.2 {
+            Some(UntilSpec::Exact(e)) => {
+                let base = try!(into_ndt(self.0.into()));
+                let e    = try!(into_ndt(e.into()));
+
+                iter::Iter::build(base, recur)
+                    .map(|it| UserIterator::UntilIterator(it.until(e)))
+            },
+
+            Some(UntilSpec::Times(i)) => {
+                let base = try!(into_ndt(self.0.into()));
+                iter::Iter::build(base, recur)
+                    .map(|it| it.times(i))
+                    .map(UserIterator::TimesIter)
+            },
+
+            None => {
+                let base = try!(into_ndt(self.0.into()));
+                iter::Iter::build(base, recur)
+                    .map(UserIterator::Iterator)
+            },
+        }
+    }
+}
+
+// names are hard
+#[derive(Debug)]
+pub enum UserIterator<I>
+    where I: ::std::iter::Iterator<Item = error::Result<timetype::TimeType>>
+{
+    Iterator(iter::Iter),
+    TimesIter(iter::TimesIter<I>),
+    UntilIterator(iter::UntilIter<I>)
+}
+
+impl<I> ::std::iter::Iterator for UserIterator<I>
+    where I: ::std::iter::Iterator<Item = error::Result<timetype::TimeType>>
+{
+    type Item = error::Result<timetype::TimeType>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match *self {
+            UserIterator::Iterator(ref mut i)      => i.next(),
+            UserIterator::TimesIter(ref mut i)     => i.next(),
+            UserIterator::UntilIterator(ref mut i) => i.next(),
+        }
     }
 }
 
