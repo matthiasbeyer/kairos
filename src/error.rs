@@ -9,6 +9,7 @@ error_chain! {
     }
 
     foreign_links {
+        NomError(::nom::simple_errors::Err);
     }
 
     errors {
@@ -56,6 +57,11 @@ error_chain! {
         CannotCompareMonthTo(tt_rep: &'static str) {
             description("Cannot compare Month to non-Moment TimeType")
             display("Cannot compare Month to non-Moment TimeType: {:?}", tt_rep)
+        }
+
+        UnknownParserError {
+            description("Unknown parser error")
+            display("Unknown parser error")
         }
 
     }
