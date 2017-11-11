@@ -9,6 +9,7 @@ error_chain! {
     }
 
     foreign_links {
+        NomError(::nom::IError);
     }
 
     errors {
