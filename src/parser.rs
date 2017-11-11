@@ -618,5 +618,28 @@ mod tests {
         // upper assertions are enough.
     }
 
+    #[test]
+    fn test_expressions_to_timetype_subtract() {
+        let res = timetype(&b"5min + 12min + 15hours - 1hour"[..]);
+        assert!(res.is_done());
+        let (_, o) = res.unwrap();
+
+        println!("{:#?}", o);
+
+        let calc_res : timetype::TimeType = o.into();
+        println!("{:#?}", calc_res);
+
+        let calc_res = calc_res.calculate();
+        assert!(calc_res.is_ok());
+        println!("{:#?}", calc_res);
+
+        let calc_res = calc_res.unwrap();
+        assert_eq!(calc_res.get_seconds(), 17 * 60 + (14 * 60 * 60));
+        assert_eq!(calc_res.get_minutes(), 17 + (14 * 60));
+        assert_eq!(calc_res.get_hours(), 14);
+        assert_eq!(calc_res.get_days(), 0);
+        assert_eq!(calc_res.get_years(), 0);
+    }
+
 }
 
