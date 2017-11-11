@@ -16,7 +16,7 @@ repository    = "https://github.com/matthiasbeyer/kairos"
 chrono = "0.4"
 error-chain = "0.10"
 nom = "3.2"
-iso8601 = { git = "https://github.com/matthiasbeyer/iso8601", branch = "update-nom" }
+iso8601 = "0.2"
 
 filters = { version  = "0.1.1", optional = true }
 
