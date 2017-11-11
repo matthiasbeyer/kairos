@@ -222,6 +222,53 @@ impl<I> Until for I
     }
 }
 
+pub struct TimesIter<I>
+    where I: Iterator<Item = Result<TimeType>>
+{
+    inner: I,
+    times: i64,
+    count: i64,
+}
+
+impl<I> TimesIter<I>
+    where I: Iterator<Item = Result<TimeType>>
+{
+    fn new(i: I, times: i64) -> TimesIter<I> {
+        TimesIter {
+            inner: i,
+            times: times,
+            count: 0,
+        }
+    }
+}
+
+impl<I> Iterator for TimesIter<I>
+    where I: Iterator<Item = Result<TimeType>>
+{
+    type Item = Result<TimeType>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.times == self.count {
+            None
+        } else {
+            self.count += 1;
+            self.inner.next()
+        }
+    }
+}
+
+pub trait Times : Iterator<Item = Result<TimeType>> + Sized {
+    fn times(self, i64) -> TimesIter<Self>;
+}
+
+impl<I> Times for I
+    where I: Iterator<Item = Result<TimeType>>
+{
+    fn times(self, times: i64) -> TimesIter<Self> {
+        TimesIter::new(self, times)
+    }
+}
+
 pub mod extensions {
     use timetype::TimeType as TT;
     use super::Iter;
