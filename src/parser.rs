@@ -270,7 +270,7 @@ impl Into<TimeType> for ExactDate {
 
 named!(date<Date>, do_parse!(
     exact:exact_date_parser >>
-    o: opt!(do_parse!(op:operator_parser >> a:amount_expr >> (op, a))) >>
+    o: opt!(do_parse!(sp >> op:operator_parser >> a:amount_expr >> (op, a))) >>
     (Date(exact, o))
 ));
 
