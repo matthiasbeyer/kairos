@@ -34,6 +34,14 @@
 //! Date       = <ExactDate> (<Operator> <AmountExpr>)?
 //! Iterator   = <Date> <Iterspec> ("until" <ExactDate> | <number> "times")?
 //!
+//! # Warning
+//!
+//! This module is not intended for public use... it is still public, so you can use it, but you
+//! should know that these interfaces are considered private and I will not follow semver and
+//! update the minor or major semver numbers of the interface of this module changes.
+//!
+//! Be warned!
+//!
 
 use nom::{IResult, space, alpha, alphanumeric, digit};
 use std::str;
@@ -288,8 +296,14 @@ impl Into<timetype::TimeType> for Date {
     }
 }
 
-
-named!(timetype<TimeType>, alt!(
+/// Main entry function for timetype parser
+///
+/// # Notice
+///
+/// Note that this function returns a parser::TimeType, not a timetype::TimeType. Though, the
+/// parser::TimeType can be `Into::into()`ed.
+///
+named!(pub timetype<TimeType>, alt!(
     do_parse!(d: date        >> (TimeType::Date(d))) |
     do_parse!(a: amount_expr >> (TimeType::AmountExpr(a)))
 ));
