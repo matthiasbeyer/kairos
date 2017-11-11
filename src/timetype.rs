@@ -671,7 +671,7 @@ fn add_to_minutes(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfHour(e)      => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::EndOfHour(e)))),
         TT::EndOfMinute(e)    => Err(KE::from_kind(KEK::CannotAdd(TT::Minutes(amount), TT::EndOfMinute(e)))),
         TT::Addition(b, c)    => add_to_minutes(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => sub_from_minutes(amount, try!(sub(b, c))),
+        TT::Subtraction(b, c) => add_to_minutes(amount, try!(sub(b, c))),
     }
 }
 
