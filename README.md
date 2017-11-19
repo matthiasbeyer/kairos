@@ -44,11 +44,6 @@ Plus, we want to offer a string-parser which can be used to parse user input
 into such things. This will be a compiletime option to include the parser or
 not.
 
-# Known Problems
-
-* Iterators such as "today daily" start one day off. So "today daily" yields
-  tomorrow as first item.
-
 # License
 
 MPL 2.0

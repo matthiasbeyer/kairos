@@ -13,6 +13,7 @@ use matcher::Matcher;
 pub struct Iter {
     base: TimeType,
     increment: TimeType,
+    had_first: bool,
 }
 
 // An iterator for creating new TimeType instances based on a base-date plus some increment value
@@ -29,8 +30,9 @@ impl Iter {
             Err(KE::from_kind(KEK::ArgumentErrorNotAnAmount(inc)))
         } else {
             Ok(Iter {
-                base:       TimeType::moment(base),
-                increment:  inc,
+                base:      TimeType::moment(base),
+                increment: inc,
+                had_first: false,
             })
         }
     }
@@ -76,7 +78,12 @@ impl Iterator for Iter {
     type Item = Result<TimeType>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        Some(self.skip().map(|_| self.base.clone()))
+        if !self.had_first {
+            self.had_first = true;
+            Some(Ok(self.base.clone()))
+        } else {
+            Some(self.skip().map(|_| self.base.clone()))
+        }
     }
 
 }
@@ -428,11 +435,11 @@ pub mod extensions {
                 .take(5)
                 .collect::<Vec<_>>();
 
-            assert_eq!(ymd_hms(2000, 1, 1, 0, 1, 0), *minutes[0].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1, 1, 0, 2, 0), *minutes[1].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1, 1, 0, 3, 0), *minutes[2].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1, 1, 0, 4, 0), *minutes[3].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1, 1, 0, 5, 0), *minutes[4].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 0, 0, 0), *minutes[0].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 0, 1, 0), *minutes[1].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 0, 2, 0), *minutes[2].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 0, 3, 0), *minutes[3].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 0, 4, 0), *minutes[4].as_ref().unwrap());
         }
 
         #[test]
@@ -443,11 +450,11 @@ pub mod extensions {
                 .take(5)
                 .collect::<Vec<_>>();
 
-            assert_eq!(ymd_hms(2000, 1, 1, 1, 0, 0), *minutes[0].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1, 1, 2, 0, 0), *minutes[1].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1, 1, 3, 0, 0), *minutes[2].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1, 1, 4, 0, 0), *minutes[3].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1, 1, 5, 0, 0), *minutes[4].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 0, 0, 0), *minutes[0].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 1, 0, 0), *minutes[1].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 2, 0, 0), *minutes[2].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 3, 0, 0), *minutes[3].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 4, 0, 0), *minutes[4].as_ref().unwrap());
         }
 
         #[test]
@@ -458,11 +465,11 @@ pub mod extensions {
                 .take(5)
                 .collect::<Vec<_>>();
 
-            assert_eq!(ymd_hms(2000, 1, 8, 1, 0, 0), *minutes[0].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1,15, 1, 0, 0), *minutes[1].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1,22, 1, 0, 0), *minutes[2].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1,29, 1, 0, 0), *minutes[3].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 2, 5, 1, 0, 0), *minutes[4].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 1, 0, 0), *minutes[0].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 8, 1, 0, 0), *minutes[1].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1,15, 1, 0, 0), *minutes[2].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1,22, 1, 0, 0), *minutes[3].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1,29, 1, 0, 0), *minutes[4].as_ref().unwrap());
         }
 
         #[test]
@@ -473,11 +480,11 @@ pub mod extensions {
                 .take(5)
                 .collect::<Vec<_>>();
 
-            assert_eq!(ymd_hms(2000, 2, 1, 0, 0, 0), *minutes[0].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 3, 1, 0, 0, 0), *minutes[1].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 4, 1, 0, 0, 0), *minutes[2].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 5, 1, 0, 0, 0), *minutes[3].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 6, 1, 0, 0, 0), *minutes[4].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 0, 0, 0), *minutes[0].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 2, 1, 0, 0, 0), *minutes[1].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 3, 1, 0, 0, 0), *minutes[2].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 4, 1, 0, 0, 0), *minutes[3].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 5, 1, 0, 0, 0), *minutes[4].as_ref().unwrap());
         }
 
         #[test]
@@ -488,11 +495,11 @@ pub mod extensions {
                 .take(5)
                 .collect::<Vec<_>>();
 
-            assert_eq!(ymd_hms(2001, 1, 1, 0, 0, 0), *minutes[0].as_ref().unwrap());
-            assert_eq!(ymd_hms(2002, 1, 1, 0, 0, 0), *minutes[1].as_ref().unwrap());
-            assert_eq!(ymd_hms(2003, 1, 1, 0, 0, 0), *minutes[2].as_ref().unwrap());
-            assert_eq!(ymd_hms(2004, 1, 1, 0, 0, 0), *minutes[3].as_ref().unwrap());
-            assert_eq!(ymd_hms(2005, 1, 1, 0, 0, 0), *minutes[4].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 1, 0, 0, 0), *minutes[0].as_ref().unwrap());
+            assert_eq!(ymd_hms(2001, 1, 1, 0, 0, 0), *minutes[1].as_ref().unwrap());
+            assert_eq!(ymd_hms(2002, 1, 1, 0, 0, 0), *minutes[2].as_ref().unwrap());
+            assert_eq!(ymd_hms(2003, 1, 1, 0, 0, 0), *minutes[3].as_ref().unwrap());
+            assert_eq!(ymd_hms(2004, 1, 1, 0, 0, 0), *minutes[4].as_ref().unwrap());
         }
 
     }
@@ -582,7 +589,7 @@ mod test_until {
 
     #[test]
     fn test_until_1() {
-        let end = (TimeType::today() + TimeType::days(2))
+        let end = (TimeType::today() + TimeType::days(1))
             .calculate()
             .unwrap()
             .get_moment()
@@ -613,7 +620,7 @@ mod test_until {
             .until(end)
             .collect::<Vec<_>>();
 
-        assert_eq!(v.len(), 48 - 1); // -1 because we do not start to iterate with 0, but 1
+        assert_eq!(v.len(), 48);
     }
 
 }
