@@ -9,6 +9,7 @@ use error::Result;
 use timetype::TimeType;
 use matcher::Matcher;
 
+#[derive(Debug)]
 pub struct Iter {
     base: TimeType,
     increment: TimeType,
@@ -80,6 +81,7 @@ impl Iterator for Iter {
 
 }
 
+#[derive(Debug)]
 pub struct FilterIter<I, M>(I, M)
     where I: Iterator<Item = Result<TimeType>>,
           M: Matcher;
@@ -127,6 +129,7 @@ impl<I, M> EveryFilter<M> for I
     }
 }
 
+#[derive(Debug)]
 pub struct WithoutIter<I, M>(I, M)
     where I: Iterator<Item = Result<TimeType>>,
           M: Matcher;
@@ -174,6 +177,7 @@ impl<I, M> WithoutFilter<M> for I
     }
 }
 
+#[derive(Debug)]
 pub struct UntilIter<I>(I, NaiveDateTime)
     where I: Iterator<Item = Result<TimeType>>;
 
@@ -219,6 +223,54 @@ impl<I> Until for I
 {
     fn until(self, ending: NaiveDateTime) -> UntilIter<Self> {
         UntilIter::new(self, ending)
+    }
+}
+
+#[derive(Debug)]
+pub struct TimesIter<I>
+    where I: Iterator<Item = Result<TimeType>>
+{
+    inner: I,
+    times: i64,
+    count: i64,
+}
+
+impl<I> TimesIter<I>
+    where I: Iterator<Item = Result<TimeType>>
+{
+    fn new(i: I, times: i64) -> TimesIter<I> {
+        TimesIter {
+            inner: i,
+            times: times,
+            count: 0,
+        }
+    }
+}
+
+impl<I> Iterator for TimesIter<I>
+    where I: Iterator<Item = Result<TimeType>>
+{
+    type Item = Result<TimeType>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.times == self.count {
+            None
+        } else {
+            self.count += 1;
+            self.inner.next()
+        }
+    }
+}
+
+pub trait Times : Iterator<Item = Result<TimeType>> + Sized {
+    fn times(self, i64) -> TimesIter<Self>;
+}
+
+impl<I> Times for I
+    where I: Iterator<Item = Result<TimeType>>
+{
+    fn times(self, times: i64) -> TimesIter<Self> {
+        TimesIter::new(self, times)
     }
 }
 
@@ -526,6 +578,42 @@ mod test_until {
             .collect::<Vec<_>>();
 
         assert!(v.is_empty());
+    }
+
+    #[test]
+    fn test_until_1() {
+        let end = (TimeType::today() + TimeType::days(2))
+            .calculate()
+            .unwrap()
+            .get_moment()
+            .unwrap()
+            .clone();
+
+        let v = TimeType::today()
+            .daily(1)
+            .unwrap()
+            .until(end)
+            .collect::<Vec<_>>();
+
+        assert_eq!(v.len(), 1);
+    }
+
+    #[test]
+    fn test_until_2() {
+        let end = (TimeType::today() + TimeType::days(2))
+            .calculate()
+            .unwrap()
+            .get_moment()
+            .unwrap()
+            .clone();
+
+        let v = TimeType::today()
+            .hourly(1)
+            .unwrap()
+            .until(end)
+            .collect::<Vec<_>>();
+
+        assert_eq!(v.len(), 48 - 1); // -1 because we do not start to iterate with 0, but 1
     }
 
 }
