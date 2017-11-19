@@ -785,7 +785,7 @@ mod tests {
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
-        for hour in 1..10 { // 10 is randomly chosen (fair dice roll... )
+        for hour in 0..10 { // 10 is randomly chosen (fair dice roll... )
             let n = ui.next().unwrap();
             assert!(n.is_ok(), "Not ok: {:#?}", n);
             let tt = n.unwrap();
@@ -809,7 +809,7 @@ mod tests {
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
-        for min in (1..60).into_iter().filter(|n| n % 2 == 0) {
+        for min in (0..59).into_iter().filter(|n| n % 2 == 0) {
             let n = ui.next().unwrap();
             assert!(n.is_ok(), "Not ok: {:#?}", n);
             let tt = n.unwrap();
@@ -833,7 +833,7 @@ mod tests {
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
-        for day in 2..30 {
+        for day in 1..29 {
             let n = ui.next().unwrap();
             assert!(n.is_ok(), "Not ok: {:#?}", n);
             let tt = n.unwrap();
@@ -857,7 +857,7 @@ mod tests {
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
-        for week in 1..3 {
+        for week in 0..3 {
             let n = ui.next().unwrap();
             assert!(n.is_ok(), "Not ok: {:#?}", n);
             let tt = n.unwrap();
@@ -890,8 +890,8 @@ mod tests {
         let mut ui = ui.unwrap();
         println!("Okay: {:#?}", ui);
 
-        for hour in 1..10 { // 10 is randomly chosen (fair dice roll... )
-            if hour > 5 - 1 {
+        for hour in 0..10 { // 10 is randomly chosen (fair dice roll... )
+            if hour > 4 {
                 let n = ui.next();
                 assert!(n.is_none(), "Is Some, should be None: {:?}", n);
                 return;
@@ -920,8 +920,8 @@ mod tests {
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
-        for min in (1..60).into_iter().filter(|n| n % 2 == 0) {
-            if min > 10 - 1 {
+        for min in (0..60).into_iter().filter(|n| n % 2 == 0) {
+            if min > 9 {
                 let n = ui.next();
                 assert!(n.is_none(), "Is Some, should be None: {:?}", n);
                 return;
@@ -950,8 +950,8 @@ mod tests {
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
-        for day in 2..30 {
-            if day > 5 - 1 {
+        for day in 1..30 {
+            if day > 4 {
                 let n = ui.next();
                 assert!(n.is_none(), "Is Some, should be None: {:?}", n);
                 return;
@@ -980,8 +980,8 @@ mod tests {
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
-        for week in 1..3 {
-            if (week * 7 + 1) > 14 {
+        for week in 0..3 {
+            if (week * 7) > 13 {
                 let n = ui.next();
                 assert!(n.is_none(), "Is Some, should be None: {:?}", n);
                 return;
