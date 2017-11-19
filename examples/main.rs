@@ -6,15 +6,31 @@ fn main() {
     let s = s.trim(); // because kairos is not yet whitespace tolerant
 
     println!("Parsing: '{}'", s);
-    match kairos::timetype::TimeType::parse(&s) {
-        Ok(tt) => {
-            println!("{:?}", tt);
+    match kairos::parser::parse(s) {
+        Err(e) => println!("Error -> {:?}", e),
+        Ok(kairos::parser::Parsed::TimeType(tt)) => {
+            println!("Having TimeType");
 
             match tt.calculate() {
-                Ok(r) => println!("{:?}", r),
+                Ok(r)  => println!("{:?}", r),
                 Err(e) => println!("Error calculating: {:?}", e),
             }
         },
-        Err(e) => println!("Error -> {:?}", e),
+        Ok(kairos::parser::Parsed::Iterator(Ok(ui))) => {
+            println!("Having iterator");
+
+            for elem in ui {
+                match elem {
+                    Ok(r)  => println!("{:?}", r),
+                    Err(e) => {
+                        println!("Error calculating: {:?}", e);
+                        ::std::process::exit(1)
+                    }
+                }
+            }
+        },
+        Ok(kairos::parser::Parsed::Iterator(Err(e))) => {
+            println!("Failed building iterator: {:?}", e);
+        },
     }
 }
