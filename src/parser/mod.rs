@@ -70,7 +70,7 @@ pub fn parse(s: &str) -> Result<Parsed> {
         IResult::Done(_, o)                  => Ok(o),
         IResult::Error(e)               => Err(e).map_err(From::from),
         IResult::Incomplete(Needed::Unknown) => Err(KEK::UnknownParserError.into()),
-        IResult::Incomplete(Needed::Size(s)) => Err(KEK::UnknownParserError.into()),
+        IResult::Incomplete(Needed::Size(_)) => Err(KEK::UnknownParserError.into()),
 
     }
 }

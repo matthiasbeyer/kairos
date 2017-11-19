@@ -1,9 +1,4 @@
-use std::str;
-use std::str::FromStr;
-
-use nom::{IResult, space, alpha, alphanumeric, digit};
 use nom::whitespace::sp;
-use chrono::NaiveDate;
 
 use parser::timetype::*;
 use timetype;
