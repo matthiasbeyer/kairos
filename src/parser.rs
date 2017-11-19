@@ -277,8 +277,10 @@ impl Into<timetype::TimeType> for ExactDate {
 }
 
 named!(date<Date>, do_parse!(
-    exact:exact_date_parser >>
-    o: opt!(do_parse!(sp >> op:operator_parser >> a:amount_expr >> (op, a))) >>
+    exact: exact_date_parser >>
+    o: opt!(
+        complete!(do_parse!(sp >> op:operator_parser >> sp >> a:amount_expr >> (op, a)))
+    ) >>
     (Date(exact, o))
 ));
 
@@ -509,6 +511,61 @@ mod tests {
             ExactDate::Yesterday      => assert!(false),
             ExactDate::Today          => assert!(false),
         };
+    }
+
+    #[test]
+    fn test_simple_date_1() {
+        let res = exact_date_parser(&b"today"[..]);
+        assert!(res.is_done(), format!("Not done: {:?}", res));
+
+        let res = date(&b"today"[..]);
+        assert!(res.is_done(), format!("Not done: {:?}", res));
+    }
+
+    #[test]
+    fn test_simple_date_2() {
+        let res = date(&b"2017-01-01"[..]);
+        assert!(res.is_done(), format!("Not done: {:?}", res));
+        let (_, o) = res.unwrap();
+
+        println!("{:#?}", o);
+
+        let calc_res : timetype::TimeType = o.into();
+        let calc_res = calc_res.calculate();
+        assert!(calc_res.is_ok());
+
+        let calc_res = calc_res.unwrap();
+        println!("{:#?}", calc_res);
+
+        assert_eq!(calc_res.get_moment().unwrap().year()  , 2017);
+        assert_eq!(calc_res.get_moment().unwrap().month() , 01);
+        assert_eq!(calc_res.get_moment().unwrap().day()   , 01);
+        assert_eq!(calc_res.get_moment().unwrap().hour()  , 00);
+        assert_eq!(calc_res.get_moment().unwrap().minute(), 00);
+        assert_eq!(calc_res.get_moment().unwrap().second(), 00);
+    }
+
+    #[test]
+    fn test_simple_date_3() {
+        let res = date(&b"2017-01-01T01:02:03"[..]);
+        assert!(res.is_done(), format!("Not done: {:?}", res));
+        let (_, o) = res.unwrap();
+
+        println!("{:#?}", o);
+
+        let calc_res : timetype::TimeType = o.into();
+        let calc_res = calc_res.calculate();
+        assert!(calc_res.is_ok());
+
+        let calc_res = calc_res.unwrap();
+        println!("{:#?}", calc_res);
+
+        assert_eq!(calc_res.get_moment().unwrap().year()  , 2017);
+        assert_eq!(calc_res.get_moment().unwrap().month() , 01);
+        assert_eq!(calc_res.get_moment().unwrap().day()   , 01);
+        assert_eq!(calc_res.get_moment().unwrap().hour()  , 01);
+        assert_eq!(calc_res.get_moment().unwrap().minute(), 02);
+        assert_eq!(calc_res.get_moment().unwrap().second(), 03);
     }
 
     #[test]
