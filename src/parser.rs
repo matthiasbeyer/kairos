@@ -325,14 +325,14 @@ impl Into<timetype::TimeType> for TimeType {
     }
 }
 
-named!(until_spec<UntilSpec>, alt!(
+named!(until_spec<UntilSpec>, alt_complete!(
     do_parse!(
-        tag!("until") >>
+        tag!("until") >> sp >>
         exact: exact_date_parser >>
         (UntilSpec::Exact(exact))
     ) |
     do_parse!(
-        num: integer >>
+        num: integer >> sp >>
         tag!("times") >>
         (UntilSpec::Times(num))
     )
