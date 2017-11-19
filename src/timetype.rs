@@ -436,14 +436,6 @@ impl TimeType {
         do_calculate(self)
     }
 
-    pub fn parse(s: &str) -> Result<TimeType> {
-        use parser;
-        match parser::timetype(s.as_bytes()) {
-            ::nom::IResult::Done(_, o)    => Ok(o.into()),
-            ::nom::IResult::Error(e)      => Err(KE::from(e)),
-            ::nom::IResult::Incomplete(_) => Err(KEK::UnknownParserError.into()),
-        }
-    }
 }
 
 fn do_calculate(tt: TimeType) -> Result<TimeType> {
