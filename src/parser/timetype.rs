@@ -1,13 +1,11 @@
 use std::str;
 use std::str::FromStr;
 
-use nom::{IResult, space, alpha, alphanumeric, digit};
+use nom::digit;
 use nom::whitespace::sp;
 use chrono::NaiveDate;
 
 use timetype;
-use iter;
-use error;
 
 named!(pub integer<i64>, alt!(
     map_res!(
@@ -131,15 +129,6 @@ impl Into<timetype::TimeType> for AmountExpr {
     }
 }
 
-impl AmountExpr {
-    fn new(amount: Amount, next: Option<(Operator, Box<AmountExpr>)>) -> AmountExpr {
-        AmountExpr {
-            amount: amount,
-            next: next
-        }
-    }
-}
-
 use iso8601::parsers::parse_date;
 use iso8601::parsers::parse_datetime;
 // The order is relevant here, because datetime is longer than date, we must parse datetime before
@@ -172,10 +161,10 @@ impl Into<timetype::TimeType> for ExactDate {
                     ::iso8601::Date::YMD { year, month, day } => {
                         (year, month, day)
                     },
-                    ::iso8601::Date::Week { year, ww, d } => {
+                    ::iso8601::Date::Week { /* year, ww, d */ .. } => {
                         unimplemented!()
                     },
-                    ::iso8601::Date::Ordinal { year, ddd } => {
+                    ::iso8601::Date::Ordinal { /* year, ddd */ .. } => {
                         unimplemented!()
                     },
                 };
@@ -189,10 +178,10 @@ impl Into<timetype::TimeType> for ExactDate {
                     ::iso8601::Date::YMD { year, month, day } => {
                         (year, month, day)
                     },
-                    ::iso8601::Date::Week { year, ww, d } => {
+                    ::iso8601::Date::Week { /* year, ww, d */ .. } => {
                         unimplemented!()
                     },
-                    ::iso8601::Date::Ordinal { year, ddd } => {
+                    ::iso8601::Date::Ordinal { /* year, ddd */ .. } => {
                         unimplemented!()
                     },
                 };
