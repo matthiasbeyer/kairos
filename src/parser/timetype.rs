@@ -157,37 +157,50 @@ impl Into<timetype::TimeType> for ExactDate {
             ExactDate::Yesterday => timetype::TimeType::today() - timetype::TimeType::days(1),
             ExactDate::Tomorrow  => timetype::TimeType::today() + timetype::TimeType::days(1),
             ExactDate::Iso8601Date(date) => {
-                let (year, month, day) = match date {
+                match date {
                     ::iso8601::Date::YMD { year, month, day } => {
-                        (year, month, day)
+                        let ndt = NaiveDate::from_ymd(year, month, day).and_hms(0, 0, 0);
+                        timetype::TimeType::moment(ndt)
                     },
-                    ::iso8601::Date::Week { /* year, ww, d */ .. } => {
-                        unimplemented!()
+                    ::iso8601::Date::Week { year, ww, d } => {
+                        let ndt = NaiveDate::from_ymd(year, 1, 1).and_hms(0, 0, 0);
+                        timetype::TimeType::moment(ndt)
+                            + timetype::TimeType::weeks(ww as i64)
+                            + timetype::TimeType::days(d as i64)
                     },
-                    ::iso8601::Date::Ordinal { /* year, ddd */ .. } => {
-                        unimplemented!()
+                    ::iso8601::Date::Ordinal { year, ddd } => {
+                        let ndt = NaiveDate::from_ymd(year, 1, 1).and_hms(0, 0, 0);
+                        timetype::TimeType::moment(ndt)
+                            + timetype::TimeType::days(ddd as i64)
                     },
-                };
-
-                let ndt = NaiveDate::from_ymd(year, month, day).and_hms(0, 0, 0);
-                timetype::TimeType::moment(ndt)
+                }
             },
             ExactDate::Iso8601DateTime(::iso8601::DateTime { date, time }) => {
                 let (hour, minute, second) = (time.hour, time.minute, time.second);
-                let (year, month, day) = match date {
-                    ::iso8601::Date::YMD { year, month, day } => {
-                        (year, month, day)
-                    },
-                    ::iso8601::Date::Week { /* year, ww, d */ .. } => {
-                        unimplemented!()
-                    },
-                    ::iso8601::Date::Ordinal { /* year, ddd */ .. } => {
-                        unimplemented!()
-                    },
-                };
 
-                let ndt = NaiveDate::from_ymd(year, month, day).and_hms(hour, minute, second);
-                timetype::TimeType::moment(ndt)
+                match date {
+                    ::iso8601::Date::YMD { year, month, day } => {
+                        let ndt = NaiveDate::from_ymd(year, month, day).and_hms(hour, minute, second);
+                        timetype::TimeType::moment(ndt)
+                    },
+                    ::iso8601::Date::Week { year, ww, d } => {
+                        let ndt = NaiveDate::from_ymd(year, 1, 1).and_hms(0, 0, 0);
+                        timetype::TimeType::moment(ndt)
+                            + timetype::TimeType::weeks(ww as i64)
+                            + timetype::TimeType::days(d as i64)
+                            + timetype::TimeType::hours(hour as i64)
+                            + timetype::TimeType::minutes(minute as i64)
+                            + timetype::TimeType::seconds(second as i64)
+                    },
+                    ::iso8601::Date::Ordinal { year, ddd } => {
+                        let ndt = NaiveDate::from_ymd(year, 1, 1).and_hms(0, 0, 0);
+                        timetype::TimeType::moment(ndt)
+                            + timetype::TimeType::days(ddd as i64)
+                            + timetype::TimeType::hours(hour as i64)
+                            + timetype::TimeType::minutes(minute as i64)
+                            + timetype::TimeType::seconds(second as i64)
+                    },
+                }
             },
         }
     }
