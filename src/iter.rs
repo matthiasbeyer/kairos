@@ -580,5 +580,41 @@ mod test_until {
         assert!(v.is_empty());
     }
 
+    #[test]
+    fn test_until_1() {
+        let end = (TimeType::today() + TimeType::days(2))
+            .calculate()
+            .unwrap()
+            .get_moment()
+            .unwrap()
+            .clone();
+
+        let v = TimeType::today()
+            .daily(1)
+            .unwrap()
+            .until(end)
+            .collect::<Vec<_>>();
+
+        assert_eq!(v.len(), 1);
+    }
+
+    #[test]
+    fn test_until_2() {
+        let end = (TimeType::today() + TimeType::days(2))
+            .calculate()
+            .unwrap()
+            .get_moment()
+            .unwrap()
+            .clone();
+
+        let v = TimeType::today()
+            .hourly(1)
+            .unwrap()
+            .until(end)
+            .collect::<Vec<_>>();
+
+        assert_eq!(v.len(), 48 - 1); // -1 because we do not start to iterate with 0, but 1
+    }
+
 }
 
