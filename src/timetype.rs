@@ -438,6 +438,19 @@ impl TimeType {
 
 }
 
+/// Helper trait for converting things into a TimeType object
+///
+/// Until `TryInto` is stabilized in Rust, we need a helper trait for this.
+pub trait IntoTimeType {
+    fn into_timetype(self) -> Result<TimeType>;
+}
+
+impl IntoTimeType for TimeType {
+    fn into_timetype(self) -> Result<TimeType> {
+        Ok(self)
+    }
+}
+
 fn do_calculate(tt: TimeType) -> Result<TimeType> {
     use timetype::TimeType as TT;
 

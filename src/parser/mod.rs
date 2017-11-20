@@ -52,6 +52,7 @@ mod iterator;
 use error::Result;
 use error::KairosErrorKind as KEK;
 use iter::Iter;
+use timetype::IntoTimeType;
 use parser::timetype::timetype;
 use parser::iterator::iterator;
 
@@ -60,15 +61,16 @@ pub enum Parsed {
     TimeType(::timetype::TimeType)
 }
 
-named!(do_parse<Parsed>, alt_complete!(
-    do_parse!(it: iterator >> (Parsed::Iterator(it.into_user_iterator()))) |
-    do_parse!(tt: timetype >> (Parsed::TimeType(tt.into())))
+named!(do_parse<Result<Parsed>>, alt_complete!(
+    do_parse!(it: iterator >> (Ok(Parsed::Iterator(it.into_user_iterator())))) |
+    do_parse!(tt: timetype >> (tt.into_timetype().map(Parsed::TimeType)))
 ));
 
 pub fn parse(s: &str) -> Result<Parsed> {
     match do_parse(s.as_bytes()) {
-        IResult::Done(_, o)                  => Ok(o),
-        IResult::Error(e)               => Err(e).map_err(From::from),
+        IResult::Done(_, Ok(o))              => Ok(o),
+        IResult::Done(_, Err(e))             => Err(e),
+        IResult::Error(e)                    => Err(e).map_err(From::from),
         IResult::Incomplete(Needed::Unknown) => Err(KEK::UnknownParserError.into()),
         IResult::Incomplete(Needed::Size(_)) => Err(KEK::UnknownParserError.into()),
 
