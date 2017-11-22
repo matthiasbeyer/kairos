@@ -482,7 +482,10 @@ fn end_of_year(tt: TimeType) -> Result<TimeType> {
         els @ TT::Years(_)          |
         els @ TT::Addition(_, _)    |
         els @ TT::Subtraction(_, _) => Err(KE::from_kind(KEK::CannotCalculateEndOfYearOn(els))),
-        TT::Moment(m)    => Ok(TT::moment(NaiveDate::from_ymd(m.year(), 12, 31).and_hms(0, 0, 0))),
+        TT::Moment(m) => NaiveDate::from_ymd_opt(m.year(), 12, 31)
+            .map(|nd| nd.and_hms(0, 0, 0))
+            .map(TT::moment)
+            .ok_or(KEK::OutOfBounds(m.year() as i32, 12, 31, 0, 0, 0).into()),
 
         TT::EndOfYear(e)   => do_calculate(*e),
         TT::EndOfMonth(e)  => do_calculate(*e),
@@ -510,7 +513,10 @@ fn end_of_month(tt: TimeType) -> Result<TimeType> {
         els @ TT::Subtraction(_, _) => Err(KE::from_kind(KEK::CannotCalculateEndOfMonthOn(els))),
         TT::Moment(m)    => {
             let last_day = get_num_of_days_in_month(m.year() as i64, m.month() as i64) as u32;
-            Ok(TT::moment(NaiveDate::from_ymd(m.year(), m.month(), last_day).and_hms(0, 0, 0)))
+            NaiveDate::from_ymd_opt(m.year(), m.month(), last_day)
+                .map(|nd| nd.and_hms(0, 0, 0))
+                .map(TT::moment)
+                .ok_or(KEK::OutOfBounds(m.year() as i32, m.month() as u32, last_day, 0, 0, 0).into())
         },
         TT::EndOfYear(e)   => do_calculate(*e),
         TT::EndOfMonth(e)  => do_calculate(*e),
@@ -536,9 +542,10 @@ fn end_of_day(tt: TimeType) -> Result<TimeType> {
         els @ TT::Years(_)          |
         els @ TT::Addition(_, _)    |
         els @ TT::Subtraction(_, _) => Err(KE::from_kind(KEK::CannotCalculateEndOfMonthOn(els))),
-        TT::Moment(m)    => {
-            Ok(TT::moment(NaiveDate::from_ymd(m.year(), m.month(), m.day()).and_hms(23, 59, 59)))
-        },
+        TT::Moment(m) => NaiveDate::from_ymd_opt(m.year(), m.month(), m.day())
+            .map(|nd| nd.and_hms(23, 59, 59))
+            .map(TT::moment)
+            .ok_or(KEK::OutOfBounds(m.year() as i32, m.month() as u32, m.day() as u32, 23, 59, 59).into()),
         TT::EndOfYear(e)   => do_calculate(*e),
         TT::EndOfMonth(e)  => do_calculate(*e),
         TT::EndOfDay(e)    => do_calculate(*e),
@@ -563,10 +570,10 @@ fn end_of_hour(tt: TimeType) -> Result<TimeType> {
         els @ TT::Years(_)          |
         els @ TT::Addition(_, _)    |
         els @ TT::Subtraction(_, _) => Err(KE::from_kind(KEK::CannotCalculateEndOfMonthOn(els))),
-        TT::Moment(m)    => {
-            Ok(TT::moment(NaiveDate::from_ymd(m.year(), m.month(), m.day())
-                          .and_hms(m.hour(), 59, 59)))
-        },
+        TT::Moment(m)    => NaiveDate::from_ymd_opt(m.year(), m.month(), m.day())
+            .and_then(|nd| nd.and_hms_opt(m.hour(), 59, 59))
+            .map(TT::moment)
+            .ok_or(KEK::OutOfBounds(m.year() as i32, m.month() as u32, m.day() as u32, m.hour() as u32, 59, 59).into()),
         TT::EndOfYear(e)   => do_calculate(*e),
         TT::EndOfMonth(e)  => do_calculate(*e),
         TT::EndOfDay(e)    => do_calculate(*e),
@@ -591,10 +598,10 @@ fn end_of_minute(tt: TimeType) -> Result<TimeType> {
         els @ TT::Years(_)          |
         els @ TT::Addition(_, _)    |
         els @ TT::Subtraction(_, _) => Err(KE::from_kind(KEK::CannotCalculateEndOfMonthOn(els))),
-        TT::Moment(m)    => {
-            Ok(TT::moment(NaiveDate::from_ymd(m.year(), m.month(), m.day())
-                          .and_hms(m.hour(), m.minute(), 59)))
-        },
+        TT::Moment(m)    => NaiveDate::from_ymd_opt(m.year(), m.month(), m.day())
+            .and_then(|nd| nd.and_hms_opt(m.hour(), m.minute(), 59))
+            .map(TT::moment)
+            .ok_or(KEK::OutOfBounds(m.year() as i32, m.month() as u32, m.day() as u32, m.hour() as u32, m.minute() as u32, 59 as u32).into()),
         TT::EndOfYear(e)   => do_calculate(*e),
         TT::EndOfMonth(e)  => do_calculate(*e),
         TT::EndOfDay(e)    => do_calculate(*e),
@@ -789,8 +796,10 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
 
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
+            let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
         TT::Minutes(a)        => {
@@ -803,8 +812,10 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
 
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
+            let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
         TT::Hours(a)          => {
@@ -817,8 +828,10 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
 
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
+            let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
         TT::Days(a)           => {
@@ -831,8 +844,10 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
 
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
+            let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
         TT::Months(a)         => {
@@ -845,8 +860,10 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
 
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
+            let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
         TT::Years(a)          => {
@@ -859,8 +876,10 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
 
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
+            let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotAdd(TT::Moment(mom), TT::Moment(m)))),
@@ -1058,8 +1077,10 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
 
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
+            let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
         TT::Minutes(a)        => {
@@ -1072,8 +1093,10 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
 
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
+            let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
         TT::Hours(a)          => {
@@ -1086,8 +1109,10 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
 
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
+            let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
         TT::Days(a)           => {
@@ -1100,8 +1125,10 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
 
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
+            let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
         TT::Months(a)         => {
@@ -1114,8 +1141,10 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
 
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
+            let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
         TT::Years(a)          => {
@@ -1128,8 +1157,10 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
 
-            let tt = NaiveDate::from_ymd(y as i32, mo as u32, d as u32)
-                  .and_hms(h as u32, mi as u32, s as u32);
+            let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
         TT::Moment(m)         => Err(KE::from_kind(KEK::CannotSub(TT::Moment(mom), TT::Moment(m)))),
