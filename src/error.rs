@@ -59,6 +59,11 @@ error_chain! {
             display("Cannot compare Month to non-Moment TimeType: {:?}", tt_rep)
         }
 
+        OutOfBounds(y: i32, mo: u32, d: u32, hr: u32, mi: u32, s: u32) {
+            description("Out of bounds error")
+            display("Out of bounds: {}-{}-{}T{}:{}:{}", y, mo, d, hr, mi, s)
+        }
+
         NotADateInsideIterator {
             description("Cannot calculate date for iterator")
             display("Cannot calculate date for iterator")

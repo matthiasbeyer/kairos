@@ -5,7 +5,10 @@ use nom::digit;
 use nom::whitespace::sp;
 use chrono::NaiveDate;
 
+use timetype::IntoTimeType;
 use timetype;
+use error::Result;
+use error::KairosErrorKind as KEK;
 
 named!(pub integer<i64>, alt!(
     map_res!(
@@ -76,9 +79,9 @@ named!(pub amount_parser<Amount>, do_parse!(
 #[derive(Debug, PartialEq, Eq)]
 pub struct Amount(i64, Unit);
 
-impl Into<timetype::TimeType> for Amount {
-    fn into(self) -> timetype::TimeType {
-        match self.1 {
+impl IntoTimeType for Amount {
+    fn into_timetype(self) -> Result<timetype::TimeType> {
+        Ok(match self.1 {
             Unit::Second => timetype::TimeType::seconds(self.0),
             Unit::Minute => timetype::TimeType::minutes(self.0),
             Unit::Hour   => timetype::TimeType::hours(self.0),
@@ -86,7 +89,7 @@ impl Into<timetype::TimeType> for Amount {
             Unit::Week   => timetype::TimeType::weeks(self.0),
             Unit::Month  => timetype::TimeType::months(self.0),
             Unit::Year   => timetype::TimeType::years(self.0),
-        }
+        })
     }
 }
 
@@ -110,22 +113,18 @@ pub struct AmountExpr {
     next: Option<(Operator, Box<AmountExpr>)>,
 }
 
-impl Into<timetype::TimeType> for AmountExpr {
-    fn into(self) -> timetype::TimeType {
-        let mut amount = self.amount.into();
+impl IntoTimeType for AmountExpr {
+    fn into_timetype(self) -> Result<timetype::TimeType> {
+        let mut amount = self.amount.into_timetype()?;
 
         if let Some((op, other_amonut_expr)) = self.next {
             match op {
-                Operator::Plus => {
-                    amount = amount + (*other_amonut_expr).into();
-                },
-                Operator::Minus => {
-                    amount = amount - (*other_amonut_expr).into();
-                },
+                Operator::Plus => amount = amount + (*other_amonut_expr).into_timetype()?,
+                Operator::Minus => amount = amount - (*other_amonut_expr).into_timetype()?,
             }
         }
 
-        amount
+        Ok(amount)
     }
 }
 
@@ -150,56 +149,69 @@ pub enum ExactDate {
     Iso8601DateTime(::iso8601::DateTime)
 }
 
-impl Into<timetype::TimeType> for ExactDate {
-    fn into(self) -> timetype::TimeType {
+impl IntoTimeType for ExactDate {
+    fn into_timetype(self) -> Result<timetype::TimeType> {
         match self {
-            ExactDate::Today => timetype::TimeType::today(),
-            ExactDate::Yesterday => timetype::TimeType::today() - timetype::TimeType::days(1),
-            ExactDate::Tomorrow  => timetype::TimeType::today() + timetype::TimeType::days(1),
+            ExactDate::Today     => Ok(timetype::TimeType::today()),
+            ExactDate::Yesterday => Ok(timetype::TimeType::today() - timetype::TimeType::days(1)),
+            ExactDate::Tomorrow  => Ok(timetype::TimeType::today() + timetype::TimeType::days(1)),
             ExactDate::Iso8601Date(date) => {
                 match date {
-                    ::iso8601::Date::YMD { year, month, day } => {
-                        let ndt = NaiveDate::from_ymd(year, month, day).and_hms(0, 0, 0);
-                        timetype::TimeType::moment(ndt)
-                    },
-                    ::iso8601::Date::Week { year, ww, d } => {
-                        let ndt = NaiveDate::from_ymd(year, 1, 1).and_hms(0, 0, 0);
-                        timetype::TimeType::moment(ndt)
+                    ::iso8601::Date::YMD { year, month, day } => NaiveDate::from_ymd_opt(year, month, day)
+                        .ok_or(KEK::OutOfBounds(year, month, day, 0, 0, 0).into())
+                        .map(|ndt| ndt.and_hms(0, 0, 0))
+                        .map(timetype::TimeType::moment),
+
+                    ::iso8601::Date::Week { year, ww, d } => NaiveDate::from_ymd_opt(year, 1, 1)
+                        .ok_or(KEK::OutOfBounds(year, 1, 1, 0,  0, 0).into())
+                        .map(|ndt| ndt.and_hms(0, 0, 0))
+                        .map(timetype::TimeType::moment)
+                        .map(|m| {
+                            m
                             + timetype::TimeType::weeks(ww as i64)
                             + timetype::TimeType::days(d as i64)
-                    },
-                    ::iso8601::Date::Ordinal { year, ddd } => {
-                        let ndt = NaiveDate::from_ymd(year, 1, 1).and_hms(0, 0, 0);
-                        timetype::TimeType::moment(ndt)
-                            + timetype::TimeType::days(ddd as i64)
-                    },
+                        }),
+
+                    ::iso8601::Date::Ordinal { year, ddd } => NaiveDate::from_ymd_opt(year, 1, 1)
+                        .ok_or(KEK::OutOfBounds(year, 1, 1, 0, 0, 0).into())
+                        .map(|ndt| ndt.and_hms(0, 0, 0))
+                        .map(timetype::TimeType::moment)
+                        .map(|m| m + timetype::TimeType::days(ddd as i64)),
                 }
             },
             ExactDate::Iso8601DateTime(::iso8601::DateTime { date, time }) => {
                 let (hour, minute, second) = (time.hour, time.minute, time.second);
 
                 match date {
-                    ::iso8601::Date::YMD { year, month, day } => {
-                        let ndt = NaiveDate::from_ymd(year, month, day).and_hms(hour, minute, second);
-                        timetype::TimeType::moment(ndt)
-                    },
-                    ::iso8601::Date::Week { year, ww, d } => {
-                        let ndt = NaiveDate::from_ymd(year, 1, 1).and_hms(0, 0, 0);
-                        timetype::TimeType::moment(ndt)
+                    ::iso8601::Date::YMD { year, month, day } => NaiveDate::from_ymd_opt(year, month, day)
+                        .and_then(|ndt| ndt.and_hms_opt(hour, minute, second))
+                        .ok_or(KEK::OutOfBounds(year, month, day, hour, minute, second).into())
+                        .map(timetype::TimeType::moment),
+
+                    ::iso8601::Date::Week { year, ww, d } => NaiveDate::from_ymd_opt(year, 1, 1)
+                        .ok_or(KEK::OutOfBounds(year, 1, 1, 0, 0, 0).into())
+                        .map(|ndt| ndt.and_hms(0, 0, 0))
+                        .map(timetype::TimeType::moment)
+                        .map(|m| {
+                            m
                             + timetype::TimeType::weeks(ww as i64)
                             + timetype::TimeType::days(d as i64)
                             + timetype::TimeType::hours(hour as i64)
                             + timetype::TimeType::minutes(minute as i64)
                             + timetype::TimeType::seconds(second as i64)
-                    },
-                    ::iso8601::Date::Ordinal { year, ddd } => {
-                        let ndt = NaiveDate::from_ymd(year, 1, 1).and_hms(0, 0, 0);
-                        timetype::TimeType::moment(ndt)
+                        }),
+
+                    ::iso8601::Date::Ordinal { year, ddd } => NaiveDate::from_ymd_opt(year, 1, 1)
+                        .ok_or(KEK::OutOfBounds(year, 1, 1, 0, 0, 0).into())
+                        .map(|ndt| ndt.and_hms(0, 0, 0))
+                        .map(timetype::TimeType::moment)
+                        .map(|m| {
+                            m
                             + timetype::TimeType::days(ddd as i64)
                             + timetype::TimeType::hours(hour as i64)
                             + timetype::TimeType::minutes(minute as i64)
                             + timetype::TimeType::seconds(second as i64)
-                    },
+                        }),
                 }
             },
         }
@@ -217,13 +229,13 @@ named!(pub date<Date>, do_parse!(
 #[derive(Debug, PartialEq, Eq)]
 pub struct Date(ExactDate, Option<(Operator, AmountExpr)>);
 
-impl Into<timetype::TimeType> for Date {
-    fn into(self) -> timetype::TimeType {
-        let base : timetype::TimeType = self.0.into();
+impl IntoTimeType for Date {
+    fn into_timetype(self) -> Result<timetype::TimeType> {
+        let base : timetype::TimeType = self.0.into_timetype()?;
         match self.1 {
-            Some((Operator::Plus,  amount)) => base + amount.into(),
-            Some((Operator::Minus, amount)) => base - amount.into(),
-            None                            => base,
+            Some((Operator::Plus,  amount)) => Ok(base + amount.into_timetype()?),
+            Some((Operator::Minus, amount)) => Ok(base - amount.into_timetype()?),
+            None                            => Ok(base),
         }
     }
 }
@@ -234,11 +246,11 @@ pub enum TimeType {
     AmountExpr(AmountExpr),
 }
 
-impl Into<timetype::TimeType> for TimeType {
-    fn into(self) -> timetype::TimeType {
+impl IntoTimeType for TimeType {
+    fn into_timetype(self) -> Result<timetype::TimeType> {
         match self {
-            TimeType::Date(d)       => d.into(),
-            TimeType::AmountExpr(a) => a.into(),
+            TimeType::Date(d)       => d.into_timetype(),
+            TimeType::AmountExpr(a) => a.into_timetype(),
         }
     }
 }
@@ -414,7 +426,7 @@ mod tests {
 
         println!("{:#?}", o);
 
-        let calc_res : timetype::TimeType = o.into();
+        let calc_res : timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -437,7 +449,7 @@ mod tests {
 
         println!("{:#?}", o);
 
-        let calc_res : timetype::TimeType = o.into();
+        let calc_res : timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -458,7 +470,7 @@ mod tests {
         assert!(res.is_done());
         let (_, o) = res.unwrap();
 
-        let calc_res : timetype::TimeType = o.into();
+        let calc_res : timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -476,7 +488,7 @@ mod tests {
         assert!(res.is_done());
         let (_, o) = res.unwrap();
 
-        let calc_res : timetype::TimeType = o.into();
+        let calc_res : timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -494,7 +506,7 @@ mod tests {
         assert!(res.is_done(), "Not done: {:?}", res.unwrap_err().description());
         let (_, o) = res.unwrap();
 
-        let calc_res : timetype::TimeType = o.into();
+        let calc_res : timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -511,7 +523,7 @@ mod tests {
 
         println!("{:#?}", o);
 
-        let calc_res : timetype::TimeType = o.into();
+        let calc_res : timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -532,7 +544,7 @@ mod tests {
         assert!(res.is_done());
         let (_, o) = res.unwrap();
 
-        let calc_res : ::timetype::TimeType = o.into();
+        let calc_res : ::timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -550,7 +562,7 @@ mod tests {
         assert!(res.is_done(), "Not done: {:?}", res.unwrap_err().description());
         let (_, o) = res.unwrap();
 
-        let calc_res : ::timetype::TimeType = o.into();
+        let calc_res : ::timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -567,7 +579,7 @@ mod tests {
 
         println!("{:#?}", o);
 
-        let calc_res : ::timetype::TimeType = o.into();
+        let calc_res : ::timetype::TimeType = o.into_timetype().unwrap();
         println!("{:#?}", calc_res);
 
         let calc_res = calc_res.calculate();

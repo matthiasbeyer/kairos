@@ -2,16 +2,16 @@
 pub fn adjust_times_add(mut y: i64, mut mo: i64, mut d: i64, mut h: i64, mut mi: i64, mut s: i64)
     -> (i64, i64, i64, i64, i64, i64)
 {
+    // Subtract $border from the $base as long as the $base is bigger or equal to the $border.
+    // The number of subtractions are added to $next.
     macro_rules! fix {
         {
             $base:ident,
             $border:expr,
             $next:ident
         } => {
-            while $base >= $border {
-                $next += 1;
-                $base -= $border;
-            }
+            $next += ($base - ($base % $border)) / $border;
+            $base = $base % $border;
         }
     }
 

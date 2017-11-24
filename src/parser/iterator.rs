@@ -1,6 +1,7 @@
 use nom::whitespace::sp;
 
 use parser::timetype::*;
+use timetype::IntoTimeType;
 use timetype;
 use iter;
 use error;
@@ -95,22 +96,22 @@ impl Iterator {
 
         match self.2 {
             Some(UntilSpec::Exact(e)) => {
-                let base = try!(into_ndt(self.0.into()));
-                let e    = try!(into_ndt(e.into()));
+                let base = try!(into_ndt(self.0.into_timetype()?));
+                let e    = try!(into_ndt(e.into_timetype()?));
 
                 iter::Iter::build(base, recur)
                     .map(|it| UserIterator::UntilIterator(it.until(e)))
             },
 
             Some(UntilSpec::Times(i)) => {
-                let base = try!(into_ndt(self.0.into()));
+                let base = try!(into_ndt(self.0.into_timetype()?));
                 iter::Iter::build(base, recur)
                     .map(|it| it.times(i))
                     .map(UserIterator::TimesIter)
             },
 
             None => {
-                let base = try!(into_ndt(self.0.into()));
+                let base = try!(into_ndt(self.0.into_timetype()?));
                 iter::Iter::build(base, recur)
                     .map(UserIterator::Iterator)
             },
