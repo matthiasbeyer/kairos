@@ -59,6 +59,31 @@ pub enum Unit {
     Year,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum UnitAlias {
+    Secondly,
+    Minutely,
+    Hourly,
+    Daily,
+    Weekly,
+    Monthly,
+    Yearly,
+}
+
+impl Into<Unit> for UnitAlias {
+    fn into(self) -> Unit {
+        match self {
+            UnitAlias::Secondly => Unit::Second,
+            UnitAlias::Minutely => Unit::Minute,
+            UnitAlias::Hourly   => Unit::Hour,
+            UnitAlias::Daily    => Unit::Day,
+            UnitAlias::Weekly   => Unit::Week,
+            UnitAlias::Monthly  => Unit::Month,
+            UnitAlias::Yearly   => Unit::Year,
+        }
+    }
+}
+
 named!(pub operator_parser<Operator>, alt!(
     tag!("+") => { |_| Operator::Plus } |
     tag!("-") => { |_| Operator::Minus }
@@ -70,10 +95,19 @@ pub enum Operator {
     Minus,
 }
 
-named!(pub amount_parser<Amount>, do_parse!(
-    number: integer >>
-    unit : unit_parser >>
-    (Amount(number, unit))
+named!(pub unit_alias<UnitAlias>, alt_complete!(
+    tag!("secondly")  => { |_| UnitAlias::Secondly } |
+    tag!("minutely")  => { |_| UnitAlias::Minutely } |
+    tag!("hourly")    => { |_| UnitAlias::Hourly } |
+    tag!("daily")     => { |_| UnitAlias::Daily } |
+    tag!("weekly")    => { |_| UnitAlias::Weekly } |
+    tag!("monthly")   => { |_| UnitAlias::Monthly } |
+    tag!("yearly")    => { |_| UnitAlias::Yearly }
+));
+
+named!(pub amount_parser<Amount>, alt!(
+    do_parse!(number: integer >> unit: unit_parser >> (Amount(number, unit))) |
+    do_parse!(unitalias: unit_alias                >> (Amount(1, unitalias.into())))
 ));
 
 #[derive(Debug, PartialEq, Eq)]
@@ -311,6 +345,17 @@ mod tests {
     }
 
     #[test]
+    fn test_unit_alias() {
+        assert_eq!(unit_alias(&b"secondly"[..]), IResult::Done(&b""[..], UnitAlias::Secondly));
+        assert_eq!(unit_alias(&b"minutely"[..]), IResult::Done(&b""[..], UnitAlias::Minutely));
+        assert_eq!(unit_alias(&b"hourly"[..]), IResult::Done(&b""[..], UnitAlias::Hourly));
+        assert_eq!(unit_alias(&b"daily"[..]), IResult::Done(&b""[..], UnitAlias::Daily));
+        assert_eq!(unit_alias(&b"weekly"[..]), IResult::Done(&b""[..], UnitAlias::Weekly));
+        assert_eq!(unit_alias(&b"monthly"[..]), IResult::Done(&b""[..], UnitAlias::Monthly));
+        assert_eq!(unit_alias(&b"yearly"[..]), IResult::Done(&b""[..], UnitAlias::Yearly));
+    }
+
+    #[test]
     fn test_operator() {
         assert_eq!(operator_parser(&b"+"[..]), IResult::Done(&b""[..], Operator::Plus));
         assert_eq!(operator_parser(&b"-"[..]), IResult::Done(&b""[..], Operator::Minus));
@@ -324,6 +369,18 @@ mod tests {
         assert_eq!(amount_parser(&b"25days"[..]), IResult::Done(&b""[..], Amount(25, Unit::Day)));
         assert_eq!(amount_parser(&b"15weeks"[..]), IResult::Done(&b""[..], Amount(15, Unit::Week)));
     }
+
+    #[test]
+    fn test_unit_alias_with_amount_parser() {
+        assert_eq!(amount_parser(&b"secondly"[..]), IResult::Done(&b""[..], Amount(1, Unit::Second)));
+        assert_eq!(amount_parser(&b"minutely"[..]), IResult::Done(&b""[..], Amount(1, Unit::Minute)));
+        assert_eq!(amount_parser(&b"hourly"[..]), IResult::Done(&b""[..], Amount(1, Unit::Hour)));
+        assert_eq!(amount_parser(&b"daily"[..]), IResult::Done(&b""[..], Amount(1, Unit::Day)));
+        assert_eq!(amount_parser(&b"weekly"[..]), IResult::Done(&b""[..], Amount(1, Unit::Week)));
+        assert_eq!(amount_parser(&b"monthly"[..]), IResult::Done(&b""[..], Amount(1, Unit::Month)));
+        assert_eq!(amount_parser(&b"yearly"[..]), IResult::Done(&b""[..], Amount(1, Unit::Year)));
+    }
+
 
     #[test]
     fn test_amountexpr_next() {
