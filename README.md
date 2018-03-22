@@ -51,7 +51,8 @@ let _ = (TT::today() - TT::years(1))       // exactly one year ago
 kairos ships a user input parser, so you can include kairos in your
 commandline applications.
 
-Have a look at [the example CLI utility](./examples/main.rs).
+Have a look at [the example CLI utility](./examples/main.rs)
+or the [language documentation](./doc/language.md).
 
 # License
 
