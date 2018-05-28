@@ -1079,7 +1079,7 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, d as u32, h as u32, mi as u32, s as u32).into())
                 .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
@@ -1095,7 +1095,7 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, d as u32, h as u32, mi as u32, s as u32).into())
                 .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
@@ -1111,7 +1111,7 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, d as u32, h as u32, mi as u32, s as u32).into())
                 .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
@@ -1127,7 +1127,7 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, d as u32, h as u32, mi as u32, s as u32).into())
                 .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
@@ -1143,7 +1143,7 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, d as u32, h as u32, mi as u32, s as u32).into())
                 .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
@@ -1159,7 +1159,7 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32).into())
+                .ok_or(KEK::OutOfBounds(y as i32, mo as u32, d as u32, h as u32, mi as u32, s as u32).into())
                 .map_err(KE::from_kind)?;
             Ok(TimeType::moment(tt))
         },
