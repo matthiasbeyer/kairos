@@ -1,5 +1,7 @@
 use nom::whitespace::sp;
 
+use failure::Fallible as Result;
+use failure::Error;
 use parser::timetype::*;
 use timetype::IntoTimeType;
 use timetype;
@@ -64,7 +66,7 @@ named!(pub iterator<Iterator>, do_parse!(
 pub struct Iterator(Date, Iterspec, Option<UntilSpec>);
 
 impl Iterator {
-    pub fn into_user_iterator(self) -> error::Result<UserIterator<iter::Iter>> {
+    pub fn into_user_iterator(self) -> Result<UserIterator<iter::Iter>> {
         use iter::Times;
         use iter::Until;
 
@@ -91,7 +93,8 @@ impl Iterator {
 
         let into_ndt = |e: timetype::TimeType| try!(e.calculate())
             .get_moment()
-            .ok_or(error::KairosErrorKind::NotADateInsideIterator)
+            .ok_or(error::ErrorKind::NotADateInsideIterator)
+            .map_err(Error::from)
             .map(Clone::clone);
 
         match self.2 {
@@ -122,7 +125,7 @@ impl Iterator {
 // names are hard
 #[derive(Debug)]
 pub enum UserIterator<I>
-    where I: ::std::iter::Iterator<Item = error::Result<timetype::TimeType>>
+    where I: ::std::iter::Iterator<Item = Result<timetype::TimeType>>
 {
     Iterator(iter::Iter),
     TimesIter(iter::TimesIter<I>),
@@ -130,9 +133,9 @@ pub enum UserIterator<I>
 }
 
 impl<I> ::std::iter::Iterator for UserIterator<I>
-    where I: ::std::iter::Iterator<Item = error::Result<timetype::TimeType>>
+    where I: ::std::iter::Iterator<Item = Result<timetype::TimeType>>
 {
-    type Item = error::Result<timetype::TimeType>;
+    type Item = Result<timetype::TimeType>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match *self {
@@ -171,7 +174,7 @@ mod tests {
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
-        let ui : Result<UserIterator<iter::Iter>, _> = i.into_user_iterator();
+        let ui : Result<UserIterator<iter::Iter>> = i.into_user_iterator();
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
@@ -195,7 +198,7 @@ mod tests {
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
-        let ui : Result<UserIterator<iter::Iter>, _> = i.into_user_iterator();
+        let ui : Result<UserIterator<iter::Iter>> = i.into_user_iterator();
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
@@ -219,7 +222,7 @@ mod tests {
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
-        let ui : Result<UserIterator<iter::Iter>, _> = i.into_user_iterator();
+        let ui : Result<UserIterator<iter::Iter>> = i.into_user_iterator();
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
@@ -243,7 +246,7 @@ mod tests {
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
-        let ui : Result<UserIterator<iter::Iter>, _> = i.into_user_iterator();
+        let ui : Result<UserIterator<iter::Iter>> = i.into_user_iterator();
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
@@ -275,7 +278,7 @@ mod tests {
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
-        let ui : Result<UserIterator<iter::Iter>, _> = i.into_user_iterator();
+        let ui : Result<UserIterator<iter::Iter>> = i.into_user_iterator();
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
         println!("Okay: {:#?}", ui);
@@ -306,7 +309,7 @@ mod tests {
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
-        let ui : Result<UserIterator<iter::Iter>, _> = i.into_user_iterator();
+        let ui : Result<UserIterator<iter::Iter>> = i.into_user_iterator();
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
@@ -336,7 +339,7 @@ mod tests {
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
-        let ui : Result<UserIterator<iter::Iter>, _> = i.into_user_iterator();
+        let ui : Result<UserIterator<iter::Iter>> = i.into_user_iterator();
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
@@ -366,7 +369,7 @@ mod tests {
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
-        let ui : Result<UserIterator<iter::Iter>, _> = i.into_user_iterator();
+        let ui : Result<UserIterator<iter::Iter>> = i.into_user_iterator();
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
