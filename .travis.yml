@@ -8,7 +8,7 @@ dist:
 language: rust
 
 rust:
-  - 1.23.0
+  - 1.28.0
   - stable
   - beta
   - nightly
