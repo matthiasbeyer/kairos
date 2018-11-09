@@ -49,8 +49,8 @@ use nom::IResult;
 mod timetype;
 mod iterator;
 
-use error::Result;
-use error::KairosErrorKind as KEK;
+use failure::Fallible as Result;
+use error::ErrorKind as KEK;
 use iter::Iter;
 use timetype::IntoTimeType;
 use parser::timetype::timetype;

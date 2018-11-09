@@ -1,79 +1,42 @@
 use timetype::TimeType;
 
-error_chain! {
-    types {
-        KairosError, KairosErrorKind, ResultExt, Result;
-    }
+#[derive(Debug, Clone, Eq, PartialEq, Fail)]
+pub enum ErrorKind {
 
-    links {
-    }
+    #[fail(display = "Unknown Error")]
+    UnknownError,
 
-    foreign_links {
-        NomError(::nom::simple_errors::Err);
-    }
+    #[fail(display = "Cannot add: {:?} + {:?}", _0, _1)]
+    CannotAdd(TimeType, TimeType),
 
-    errors {
+    #[fail(display = "Cannot subtract: {:?} - {:?}", _0, _1)]
+    CannotSub(TimeType, TimeType),
 
-        UnknownError {
-            description("Unknown Error")
-            display("Unknown Error")
-        }
+    #[fail(display = "The passed argument is not an amount: {:?}", _0)]
+    ArgumentErrorNotAnAmount(TimeType),
 
-        CannotAdd(a: TimeType, b: TimeType) {
-            description("Cannot add")
-            display("Cannot add: {:?} + {:?}", a, b)
-        }
+    #[fail(display = "The passed argument is not a moment, but a {}", _0)]
+    ArgumentErrorNotAMoment(&'static str),
 
-        CannotSub(a: TimeType, b: TimeType) {
-            description("Cannot subtract")
-            display("Cannot subtract: {:?} - {:?}", a, b)
-        }
+    #[fail(display = "Argument Error: Cannot calculate end-of-year on a {:?}", _0)]
+    CannotCalculateEndOfYearOn(TimeType),
 
-        ArgumentErrorNotAnAmount(tt: TimeType) {
-            description("Argument Error: Not an amount TimeType object")
-            display("The passed argument is not an amount: {:?}", tt)
-        }
+    #[fail(display = "Argument Error: Cannot calculate end-of-month on a {:?}", _0)]
+    CannotCalculateEndOfMonthOn(TimeType),
 
-        ArgumentErrorNotAMoment(name: &'static str) {
-            description("Argument Error: Not a moment TimeType object")
-            display("The passed argument is not a moment, but a {}", name)
-        }
+    #[fail(display = "Cannot compare Day to non-Moment TimeType: {:?}", _0)]
+    CannotCompareDayTo(&'static str),
 
-        CannotCalculateEndOfYearOn(tt: TimeType) {
-            description("Argument Error: Cannot calculate end-of-year")
-            display("Argument Error: Cannot calculate end-of-year on a {:?}", tt)
-        }
+    #[fail(display = "Cannot compare Month to non-Moment TimeType: {:?}", _0)]
+    CannotCompareMonthTo(&'static str),
 
-        CannotCalculateEndOfMonthOn(tt: TimeType) {
-            description("Argument Error: Cannot calculate end-of-month")
-            display("Argument Error: Cannot calculate end-of-month on a {:?}", tt)
-        }
+    #[fail(display = "Out of bounds: {}-{}-{}T{}:{}:{}", _0, _1, _2, _3, _4, _5)]
+    OutOfBounds(i32, u32, u32, u32, u32, u32),
 
-        CannotCompareDayTo(tt_rep: &'static str) {
-            description("Cannot compare Day to non-Moment TimeType")
-            display("Cannot compare Day to non-Moment TimeType: {:?}", tt_rep)
-        }
+    #[fail(display = "Cannot calculate date for iterator")]
+    NotADateInsideIterator,
 
-        CannotCompareMonthTo(tt_rep: &'static str) {
-            description("Cannot compare Month to non-Moment TimeType")
-            display("Cannot compare Month to non-Moment TimeType: {:?}", tt_rep)
-        }
-
-        OutOfBounds(y: i32, mo: u32, d: u32, hr: u32, mi: u32, s: u32) {
-            description("Out of bounds error")
-            display("Out of bounds: {}-{}-{}T{}:{}:{}", y, mo, d, hr, mi, s)
-        }
-
-        NotADateInsideIterator {
-            description("Cannot calculate date for iterator")
-            display("Cannot calculate date for iterator")
-        }
-
-        UnknownParserError {
-            description("Unknown parser error")
-            display("Unknown parser error")
-        }
-
-    }
+    #[fail(display = "Unknown parser error")]
+    UnknownParserError,
 
 }

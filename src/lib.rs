@@ -1,7 +1,7 @@
 #![recursion_limit="256"]
 
 #[macro_use]
-extern crate error_chain;
+extern crate failure;
 extern crate chrono;
 
 #[macro_use]

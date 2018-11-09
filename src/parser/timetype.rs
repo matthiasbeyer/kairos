@@ -4,11 +4,11 @@ use std::str::FromStr;
 use nom::digit;
 use nom::whitespace::sp;
 use chrono::NaiveDate;
+use failure::Fallible as Result;
 
 use timetype::IntoTimeType;
 use timetype;
-use error::Result;
-use error::KairosErrorKind as KEK;
+use error::ErrorKind as KEK;
 
 named!(pub integer<i64>, alt!(
     map_res!(
