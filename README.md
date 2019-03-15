@@ -54,17 +54,6 @@ commandline applications.
 Have a look at [the example CLI utility](./examples/main.rs)
 or the [language documentation](./doc/language.md).
 
-# Vacation notice
-
-**Notice:** I, the author of kairos, will be on vacation from mid-May 2018
-until early 2019. I hope I can continue develop kairos during that time, but I
-cannot guarantee that. I hope I can continue development of kairos after that
-and I certainly plan to do so.
-
-@TheNeikos as commit rights to this repository and will respond to issues and
-PRs.
-
-
 # License
 
 MPL 2.0
