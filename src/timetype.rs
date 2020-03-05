@@ -1182,7 +1182,7 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 mod tests {
     use chrono::NaiveDate;
     use super::TimeType as TT;
-    use error::ErrorKind;
+    use error::Error;
 
     #[test]
     fn test_addition_of_seconds() {
@@ -1897,8 +1897,8 @@ mod tests {
         assert!(res.is_err());
         let res = res.unwrap_err();
 
-        assert!(match res.downcast_ref::<ErrorKind>() {
-            Some(&ErrorKind::CannotAdd(..)) => true,
+        assert!(match res {
+            Error::CannotAdd(..) => true,
             _ => false,
         });
     }
@@ -1913,8 +1913,8 @@ mod tests {
         assert!(res.is_err());
         let res = res.unwrap_err();
 
-        assert!(match res.downcast_ref::<ErrorKind>() {
-            Some(&ErrorKind::CannotSub(..)) => true,
+        assert!(match res {
+            Error::CannotSub(..) => true,
             _ => false,
         });
     }

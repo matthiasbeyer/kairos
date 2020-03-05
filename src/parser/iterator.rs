@@ -6,7 +6,6 @@ use parser::timetype::*;
 use timetype::IntoTimeType;
 use timetype;
 use iter;
-use error;
 
 named!(pub iter_spec<Iterspec>, alt_complete!(
     tag!("secondly") => { |_| Iterspec::Secondly } |
