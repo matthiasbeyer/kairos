@@ -16,7 +16,7 @@ repository    = "https://github.com/matthiasbeyer/kairos"
 chrono = "0.4"
 nom = "3.2"
 iso8601 = "0.2"
-failure = "0.1"
+thiserror = "1"
 
 filters = { version  = "0.3", optional = true }
 

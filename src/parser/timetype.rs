@@ -4,11 +4,11 @@ use std::str::FromStr;
 use nom::digit;
 use nom::whitespace::sp;
 use chrono::NaiveDate;
-use failure::Fallible as Result;
 
 use timetype::IntoTimeType;
 use timetype;
-use error::ErrorKind as KEK;
+use error::Result;
+use error::Error;
 
 named!(pub integer<i64>, alt!(
     map_res!(
@@ -192,12 +192,12 @@ impl IntoTimeType for ExactDate {
             ExactDate::Iso8601Date(date) => {
                 match date {
                     ::iso8601::Date::YMD { year, month, day } => NaiveDate::from_ymd_opt(year, month, day)
-                        .ok_or(KEK::OutOfBounds(year, month, day, 0, 0, 0).into())
+                        .ok_or(Error::OutOfBounds(year, month, day, 0, 0, 0))
                         .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment),
 
                     ::iso8601::Date::Week { year, ww, d } => NaiveDate::from_ymd_opt(year, 1, 1)
-                        .ok_or(KEK::OutOfBounds(year, 1, 1, 0,  0, 0).into())
+                        .ok_or(Error::OutOfBounds(year, 1, 1, 0,  0, 0))
                         .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment)
                         .map(|m| {
@@ -207,7 +207,7 @@ impl IntoTimeType for ExactDate {
                         }),
 
                     ::iso8601::Date::Ordinal { year, ddd } => NaiveDate::from_ymd_opt(year, 1, 1)
-                        .ok_or(KEK::OutOfBounds(year, 1, 1, 0, 0, 0).into())
+                        .ok_or(Error::OutOfBounds(year, 1, 1, 0, 0, 0))
                         .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment)
                         .map(|m| m + timetype::TimeType::days(ddd as i64)),
@@ -219,11 +219,11 @@ impl IntoTimeType for ExactDate {
                 match date {
                     ::iso8601::Date::YMD { year, month, day } => NaiveDate::from_ymd_opt(year, month, day)
                         .and_then(|ndt| ndt.and_hms_opt(hour, minute, second))
-                        .ok_or(KEK::OutOfBounds(year, month, day, hour, minute, second).into())
+                        .ok_or(Error::OutOfBounds(year, month, day, hour, minute, second))
                         .map(timetype::TimeType::moment),
 
                     ::iso8601::Date::Week { year, ww, d } => NaiveDate::from_ymd_opt(year, 1, 1)
-                        .ok_or(KEK::OutOfBounds(year, 1, 1, 0, 0, 0).into())
+                        .ok_or(Error::OutOfBounds(year, 1, 1, 0, 0, 0))
                         .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment)
                         .map(|m| {
@@ -236,7 +236,7 @@ impl IntoTimeType for ExactDate {
                         }),
 
                     ::iso8601::Date::Ordinal { year, ddd } => NaiveDate::from_ymd_opt(year, 1, 1)
-                        .ok_or(KEK::OutOfBounds(year, 1, 1, 0, 0, 0).into())
+                        .ok_or(Error::OutOfBounds(year, 1, 1, 0, 0, 0))
                         .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment)
                         .map(|m| {

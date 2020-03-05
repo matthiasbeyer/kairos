@@ -1,7 +1,7 @@
 use nom::whitespace::sp;
 
-use failure::Fallible as Result;
-use failure::Error;
+use error::Result;
+use error::Error;
 use parser::timetype::*;
 use timetype::IntoTimeType;
 use timetype;
@@ -93,7 +93,7 @@ impl Iterator {
 
         let into_ndt = |e: timetype::TimeType| try!(e.calculate())
             .get_moment()
-            .ok_or(error::ErrorKind::NotADateInsideIterator)
+            .ok_or(Error::NotADateInsideIterator)
             .map_err(Error::from)
             .map(Clone::clone);
 

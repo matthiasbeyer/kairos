@@ -49,8 +49,8 @@ use nom::IResult;
 mod timetype;
 mod iterator;
 
-use failure::Fallible as Result;
-use error::ErrorKind as KEK;
+use error::Result;
+use error::Error;
 use iter::Iter;
 use timetype::IntoTimeType;
 use parser::timetype::timetype;
@@ -71,8 +71,8 @@ pub fn parse(s: &str) -> Result<Parsed> {
         IResult::Done(_, Ok(o))              => Ok(o),
         IResult::Done(_, Err(e))             => Err(e),
         IResult::Error(e)                    => Err(e).map_err(From::from),
-        IResult::Incomplete(Needed::Unknown) => Err(KEK::UnknownParserError.into()),
-        IResult::Incomplete(Needed::Size(_)) => Err(KEK::UnknownParserError.into()),
+        IResult::Incomplete(Needed::Unknown) => Err(Error::UnknownParserError),
+        IResult::Incomplete(Needed::Size(_)) => Err(Error::UnknownParserError),
 
     }
 }

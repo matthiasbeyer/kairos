@@ -1,9 +1,8 @@
 
 use chrono::Datelike;
 
-use error::ErrorKind as KEK;
-use failure::Fallible as Result;
-use failure::Error;
+use error::Error;
+use error::Result;
 use indicator::Day;
 use indicator::Month;
 use timetype::TimeType;
@@ -19,7 +18,7 @@ impl Matcher for Day {
         let this : ::chrono::Weekday = self.clone().into();
         tt.get_moment()
             .map(|mom| this == mom.weekday())
-            .ok_or(Error::from(KEK::ArgumentErrorNotAMoment(tt.name())))
+            .ok_or(Error::ArgumentErrorNotAMoment(tt.name()))
     }
 }
 
@@ -29,7 +28,7 @@ impl Matcher for Month {
         let this : u32 = self.clone().into();
         tt.get_moment()
             .map(|mom| this == mom.month())
-            .ok_or(Error::from(KEK::ArgumentErrorNotAMoment(tt.name())))
+            .ok_or(Error::ArgumentErrorNotAMoment(tt.name()))
     }
 
 }
