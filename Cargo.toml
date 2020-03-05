@@ -14,7 +14,7 @@ repository    = "https://github.com/matthiasbeyer/kairos"
 
 [dependencies]
 chrono = "0.4"
-nom = "3.2"
+nom = "3"
 iso8601 = "0.2"
 failure = "0.1"
 
