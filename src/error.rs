@@ -1,42 +1,49 @@
 use timetype::TimeType;
 
-#[derive(Debug, Clone, Eq, PartialEq, Fail)]
-pub enum ErrorKind {
+use thiserror::Error;
 
-    #[fail(display = "Unknown Error")]
+pub type Result<T> = ::std::result::Result<T, Error>;
+
+#[derive(Debug, Clone, Eq, PartialEq, Error)]
+pub enum Error {
+
+    #[error("Unknown Error")]
     UnknownError,
 
-    #[fail(display = "Cannot add: {:?} + {:?}", _0, _1)]
+    #[error("Cannot add: {0:?} + {1:?}")]
     CannotAdd(TimeType, TimeType),
 
-    #[fail(display = "Cannot subtract: {:?} - {:?}", _0, _1)]
+    #[error("Cannot subtract: {0:?} - {1:?}")]
     CannotSub(TimeType, TimeType),
 
-    #[fail(display = "The passed argument is not an amount: {:?}", _0)]
+    #[error("The passed argument is not an amount: {0:?}")]
     ArgumentErrorNotAnAmount(TimeType),
 
-    #[fail(display = "The passed argument is not a moment, but a {}", _0)]
+    #[error("The passed argument is not a moment, but a {0}")]
     ArgumentErrorNotAMoment(&'static str),
 
-    #[fail(display = "Argument Error: Cannot calculate end-of-year on a {:?}", _0)]
+    #[error("Argument Error: Cannot calculate end-of-year on a {0:?}")]
     CannotCalculateEndOfYearOn(TimeType),
 
-    #[fail(display = "Argument Error: Cannot calculate end-of-month on a {:?}", _0)]
+    #[error("Argument Error: Cannot calculate end-of-month on a {0:?}")]
     CannotCalculateEndOfMonthOn(TimeType),
 
-    #[fail(display = "Cannot compare Day to non-Moment TimeType: {:?}", _0)]
+    #[error("Cannot compare Day to non-Moment TimeType: {0:?}")]
     CannotCompareDayTo(&'static str),
 
-    #[fail(display = "Cannot compare Month to non-Moment TimeType: {:?}", _0)]
+    #[error("Cannot compare Month to non-Moment TimeType: {0:?}")]
     CannotCompareMonthTo(&'static str),
 
-    #[fail(display = "Out of bounds: {}-{}-{}T{}:{}:{}", _0, _1, _2, _3, _4, _5)]
+    #[error("Out of bounds: {0}-{1}-{2}T{3}:{4}:{5}")]
     OutOfBounds(i32, u32, u32, u32, u32, u32),
 
-    #[fail(display = "Cannot calculate date for iterator")]
+    #[error("Cannot calculate date for iterator")]
     NotADateInsideIterator,
 
-    #[fail(display = "Unknown parser error")]
+    #[error("Unknown parser error")]
     UnknownParserError,
 
+    #[error("Tokenizer error")]
+    NomError(#[from] nom::Err),
 }
+

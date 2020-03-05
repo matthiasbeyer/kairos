@@ -2,10 +2,9 @@
 //!
 
 use chrono::NaiveDateTime;
-use failure::Fallible as Result;
-use failure::Error;
 
-use error::ErrorKind as KEK;
+use error::Result;
+use error::Error;
 use timetype::TimeType;
 use matcher::Matcher;
 
@@ -27,7 +26,7 @@ impl Iter {
 
     pub fn build(base: NaiveDateTime, inc: TimeType) -> Result<Iter> {
         if !inc.is_a_amount() {
-            Err(Error::from(KEK::ArgumentErrorNotAnAmount(inc)))
+            Err(Error::ArgumentErrorNotAnAmount(inc))
         } else {
             Ok(Iter {
                 base:      TimeType::moment(base),
@@ -214,7 +213,7 @@ impl<I> Iterator for UntilIter<I>
                         None
                     }
                 } else {
-                    Some(Err(Error::from(KEK::ArgumentErrorNotAMoment(tt.name()))))
+                    Some(Err(Error::ArgumentErrorNotAMoment(tt.name())))
                 }
             }
         }
@@ -284,9 +283,8 @@ impl<I> Times for I
 pub mod extensions {
     use timetype::TimeType as TT;
     use super::Iter;
-    use failure::Fallible as Result;
-    use failure::Error;
-    use error::ErrorKind as KEK;
+    use error::Result;
+    use error::Error;
 
     pub trait Minutely {
         fn minutely(self, i: i64) -> Result<Iter>;
@@ -325,7 +323,7 @@ pub mod extensions {
                     assert!(increment.is_a_amount(), "This is a Bug, please report this!");
                     Iter::build(mom, increment)
                 },
-                _ => Err(Error::from(KEK::ArgumentErrorNotAnAmount(self))),
+                _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
 
@@ -340,7 +338,7 @@ pub mod extensions {
                     assert!(increment.is_a_amount(), "This is a Bug, please report this!");
                     Iter::build(mom, increment)
                 },
-                _ => Err(Error::from(KEK::ArgumentErrorNotAnAmount(self))),
+                _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
 
@@ -355,7 +353,7 @@ pub mod extensions {
                     assert!(increment.is_a_amount(), "This is a Bug, please report this!");
                     Iter::build(mom, increment)
                 },
-                _ => Err(Error::from(KEK::ArgumentErrorNotAnAmount(self))),
+                _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
 
@@ -371,7 +369,7 @@ pub mod extensions {
                     assert!(increment.is_a_amount(), "This is a Bug, please report this!");
                     Iter::build(mom, increment)
                 },
-                _ => Err(Error::from(KEK::ArgumentErrorNotAnAmount(self))),
+                _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
 
@@ -386,7 +384,7 @@ pub mod extensions {
                     assert!(increment.is_a_amount(), "This is a Bug, please report this!");
                     Iter::build(mom, increment)
                 },
-                _ => Err(Error::from(KEK::ArgumentErrorNotAnAmount(self))),
+                _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
 
@@ -401,7 +399,7 @@ pub mod extensions {
                     assert!(increment.is_a_amount(), "This is a Bug, please report this!");
                     Iter::build(mom, increment)
                 },
-                _ => Err(Error::from(KEK::ArgumentErrorNotAnAmount(self))),
+                _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
 
@@ -412,7 +410,7 @@ pub mod extensions {
         fn every(self, inc: TT) -> Result<Iter> {
             match self {
                 TT::Moment(mom) => Iter::build(mom, inc),
-                _ => Err(Error::from(KEK::ArgumentErrorNotAnAmount(self))),
+                _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
     }
