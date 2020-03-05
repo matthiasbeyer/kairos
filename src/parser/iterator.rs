@@ -91,7 +91,7 @@ impl Iterator {
             Iterspec::Yearly   => unit_to_amount(1, Unit::Year),
         };
 
-        let into_ndt = |e: timetype::TimeType| try!(e.calculate())
+        let into_ndt = |e: timetype::TimeType| e.calculate()?
             .get_moment()
             .ok_or(Error::NotADateInsideIterator)
             .map_err(Error::from)
@@ -99,22 +99,22 @@ impl Iterator {
 
         match self.2 {
             Some(UntilSpec::Exact(e)) => {
-                let base = try!(into_ndt(self.0.into_timetype()?));
-                let e    = try!(into_ndt(e.into_timetype()?));
+                let base = into_ndt(self.0.into_timetype()?)?;
+                let e    = into_ndt(e.into_timetype()?)?;
 
                 iter::Iter::build(base, recur)
                     .map(|it| UserIterator::UntilIterator(it.until(e)))
             },
 
             Some(UntilSpec::Times(i)) => {
-                let base = try!(into_ndt(self.0.into_timetype()?));
+                let base = into_ndt(self.0.into_timetype()?)?;
                 iter::Iter::build(base, recur)
                     .map(|it| it.times(i))
                     .map(UserIterator::TimesIter)
             },
 
             None => {
-                let base = try!(into_ndt(self.0.into_timetype()?));
+                let base = into_ndt(self.0.into_timetype()?)?;
                 iter::Iter::build(base, recur)
                     .map(UserIterator::Iterator)
             },

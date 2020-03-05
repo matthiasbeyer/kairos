@@ -472,7 +472,7 @@ fn do_calculate(tt: TimeType) -> Result<TimeType> {
 fn end_of_year(tt: TimeType) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
-    match try!(do_calculate(tt)) {
+    match do_calculate(tt)? {
         els @ TT::Seconds(_)        |
         els @ TT::Minutes(_)        |
         els @ TT::Hours(_)          |
@@ -502,7 +502,7 @@ fn end_of_year(tt: TimeType) -> Result<TimeType> {
 fn end_of_month(tt: TimeType) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
-    match try!(do_calculate(tt)) {
+    match do_calculate(tt)? {
         els @ TT::Seconds(_)        |
         els @ TT::Minutes(_)        |
         els @ TT::Hours(_)          |
@@ -534,7 +534,7 @@ fn end_of_month(tt: TimeType) -> Result<TimeType> {
 fn end_of_day(tt: TimeType) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
-    match try!(do_calculate(tt)) {
+    match do_calculate(tt)? {
         els @ TT::Seconds(_)        |
         els @ TT::Minutes(_)        |
         els @ TT::Hours(_)          |
@@ -563,7 +563,7 @@ fn end_of_day(tt: TimeType) -> Result<TimeType> {
 fn end_of_hour(tt: TimeType) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
-    match try!(do_calculate(tt)) {
+    match do_calculate(tt)? {
         els @ TT::Seconds(_)        |
         els @ TT::Minutes(_)        |
         els @ TT::Hours(_)          |
@@ -592,7 +592,7 @@ fn end_of_hour(tt: TimeType) -> Result<TimeType> {
 fn end_of_minute(tt: TimeType) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
-    match try!(do_calculate(tt)) {
+    match do_calculate(tt)? {
         els @ TT::Seconds(_)        |
         els @ TT::Minutes(_)        |
         els @ TT::Hours(_)          |
@@ -676,8 +676,8 @@ fn add_to_seconds(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => add_to_seconds(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => add_to_seconds(amount, try!(sub(b, c))),
+        TT::Addition(b, c)    => add_to_seconds(amount, add(b, c)?),
+        TT::Subtraction(b, c) => add_to_seconds(amount, sub(b, c)?),
     }
 }
 
@@ -697,8 +697,8 @@ fn add_to_minutes(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => add_to_minutes(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => add_to_minutes(amount, try!(sub(b, c))),
+        TT::Addition(b, c)    => add_to_minutes(amount, add(b, c)?),
+        TT::Subtraction(b, c) => add_to_minutes(amount, sub(b, c)?),
     }
 }
 
@@ -718,8 +718,8 @@ fn add_to_hours(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => add_to_hours(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => add_to_hours(amount, try!(sub(b, c))),
+        TT::Addition(b, c)    => add_to_hours(amount, add(b, c)?),
+        TT::Subtraction(b, c) => add_to_hours(amount, sub(b, c)?),
     }
 }
 
@@ -739,8 +739,8 @@ fn add_to_days(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => add_to_days(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => add_to_days(amount, try!(sub(b, c))),
+        TT::Addition(b, c)    => add_to_days(amount, add(b, c)?),
+        TT::Subtraction(b, c) => add_to_days(amount, sub(b, c)?),
     }
 }
 
@@ -760,8 +760,8 @@ fn add_to_months(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => add_to_months(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => add_to_months(amount, try!(sub(b, c))),
+        TT::Addition(b, c)    => add_to_months(amount, add(b, c)?),
+        TT::Subtraction(b, c) => add_to_months(amount, sub(b, c)?),
     }
 }
 
@@ -781,8 +781,8 @@ fn add_to_years(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => add_to_years(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => add_to_years(amount, try!(sub(b, c))),
+        TT::Addition(b, c)    => add_to_years(amount, add(b, c)?),
+        TT::Subtraction(b, c) => add_to_years(amount, sub(b, c)?),
     }
 }
 
@@ -892,8 +892,8 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfMinute(e))),
-        TT::Addition(a, b)    => add_to_moment(mom, try!(add(a, b))),
-        TT::Subtraction(a, b) => add_to_moment(mom, try!(sub(a, b))),
+        TT::Addition(a, b)    => add_to_moment(mom, add(a, b)?),
+        TT::Subtraction(a, b) => add_to_moment(mom, sub(a, b)?),
     }
 }
 
@@ -957,8 +957,8 @@ fn sub_from_seconds(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => sub_from_seconds(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => sub_from_seconds(amount, try!(sub(b, c))),
+        TT::Addition(b, c)    => sub_from_seconds(amount, add(b, c)?),
+        TT::Subtraction(b, c) => sub_from_seconds(amount, sub(b, c)?),
     }
 }
 
@@ -978,8 +978,8 @@ fn sub_from_minutes(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => sub_from_minutes(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => sub_from_minutes(amount, try!(sub(b, c))),
+        TT::Addition(b, c)    => sub_from_minutes(amount, add(b, c)?),
+        TT::Subtraction(b, c) => sub_from_minutes(amount, sub(b, c)?),
     }
 }
 
@@ -999,8 +999,8 @@ fn sub_from_hours(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => sub_from_hours(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => sub_from_hours(amount, try!(sub(b, c))),
+        TT::Addition(b, c)    => sub_from_hours(amount, add(b, c)?),
+        TT::Subtraction(b, c) => sub_from_hours(amount, sub(b, c)?),
     }
 }
 
@@ -1020,8 +1020,8 @@ fn sub_from_days(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Days(amount), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Days(amount), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Days(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => sub_from_days(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => sub_from_days(amount, try!(sub(b, c))),
+        TT::Addition(b, c)    => sub_from_days(amount, add(b, c)?),
+        TT::Subtraction(b, c) => sub_from_days(amount, sub(b, c)?),
     }
 }
 
@@ -1041,8 +1041,8 @@ fn sub_from_months(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Months(amount), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Months(amount), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Months(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => sub_from_months(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => sub_from_months(amount, try!(sub(b, c))),
+        TT::Addition(b, c)    => sub_from_months(amount, add(b, c)?),
+        TT::Subtraction(b, c) => sub_from_months(amount, sub(b, c)?),
     }
 }
 
@@ -1062,8 +1062,8 @@ fn sub_from_years(amount: i64, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Years(amount), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Years(amount), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Years(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => sub_from_years(amount, try!(add(b, c))),
-        TT::Subtraction(b, c) => sub_from_years(amount, try!(sub(b, c))),
+        TT::Addition(b, c)    => sub_from_years(amount, add(b, c)?),
+        TT::Subtraction(b, c) => sub_from_years(amount, sub(b, c)?),
     }
 }
 
@@ -1173,8 +1173,8 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
         TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfDay(e))),
         TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfHour(e))),
         TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfMinute(e))),
-        TT::Addition(a, b)    => sub_from_moment(mom, try!(add(a, b))),
-        TT::Subtraction(a, b) => sub_from_moment(mom, try!(sub(a, b))),
+        TT::Addition(a, b)    => sub_from_moment(mom, add(a, b)?),
+        TT::Subtraction(a, b) => sub_from_moment(mom, sub(a, b)?),
     }
 }
 
