@@ -290,13 +290,13 @@ impl IntoTimeType for TimeType {
 }
 
 
-/// Main entry function for timetype parser
-///
-/// # Notice
-///
-/// Note that this function returns a parser::TimeType, not a timetype::TimeType. Though, the
-/// parser::TimeType can be `Into::into()`ed.
-///
+// Main entry function for timetype parser
+//
+// # Notice
+//
+// Note that this function returns a parser::TimeType, not a timetype::TimeType. Though, the
+// parser::TimeType can be `Into::into()`ed.
+//
 named!(pub timetype<TimeType>, alt!(
     do_parse!(d: date        >> (TimeType::Date(d))) |
     do_parse!(a: amount_expr >> (TimeType::AmountExpr(a)))
