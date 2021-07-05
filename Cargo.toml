@@ -9,8 +9,7 @@ categories  = [ "date-and-time" ]
 keywords    = ["time", "calc", "parser"]
 readme      = "README.md"
 license     = "MPL-2.0"
-
-repository    = "https://github.com/matthiasbeyer/kairos"
+repository    = "https://git.beyermatthi.as/kairos"
 
 [dependencies]
 chrono = "0.4"
