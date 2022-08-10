@@ -1,14 +1,14 @@
 use std::str;
 use std::str::FromStr;
 
+use chrono::NaiveDate;
 use nom::digit;
 use nom::whitespace::sp;
-use chrono::NaiveDate;
 
-use timetype::IntoTimeType;
-use timetype;
-use error::Result;
 use error::Error;
+use error::Result;
+use timetype;
+use timetype::IntoTimeType;
 
 named!(pub integer<i64>, alt!(
     map_res!(
@@ -75,11 +75,11 @@ impl Into<Unit> for UnitAlias {
         match self {
             UnitAlias::Secondly => Unit::Second,
             UnitAlias::Minutely => Unit::Minute,
-            UnitAlias::Hourly   => Unit::Hour,
-            UnitAlias::Daily    => Unit::Day,
-            UnitAlias::Weekly   => Unit::Week,
-            UnitAlias::Monthly  => Unit::Month,
-            UnitAlias::Yearly   => Unit::Year,
+            UnitAlias::Hourly => Unit::Hour,
+            UnitAlias::Daily => Unit::Day,
+            UnitAlias::Weekly => Unit::Week,
+            UnitAlias::Monthly => Unit::Month,
+            UnitAlias::Yearly => Unit::Year,
         }
     }
 }
@@ -118,11 +118,11 @@ impl IntoTimeType for Amount {
         Ok(match self.1 {
             Unit::Second => timetype::TimeType::seconds(self.0),
             Unit::Minute => timetype::TimeType::minutes(self.0),
-            Unit::Hour   => timetype::TimeType::hours(self.0),
-            Unit::Day    => timetype::TimeType::days(self.0),
-            Unit::Week   => timetype::TimeType::weeks(self.0),
-            Unit::Month  => timetype::TimeType::months(self.0),
-            Unit::Year   => timetype::TimeType::years(self.0),
+            Unit::Hour => timetype::TimeType::hours(self.0),
+            Unit::Day => timetype::TimeType::days(self.0),
+            Unit::Week => timetype::TimeType::weeks(self.0),
+            Unit::Month => timetype::TimeType::months(self.0),
+            Unit::Year => timetype::TimeType::years(self.0),
         })
     }
 }
@@ -180,59 +180,59 @@ pub enum ExactDate {
     Yesterday,
     Tomorrow,
     Iso8601Date(::iso8601::Date),
-    Iso8601DateTime(::iso8601::DateTime)
+    Iso8601DateTime(::iso8601::DateTime),
 }
 
 impl IntoTimeType for ExactDate {
     fn into_timetype(self) -> Result<timetype::TimeType> {
         match self {
-            ExactDate::Today     => Ok(timetype::TimeType::today()),
+            ExactDate::Today => Ok(timetype::TimeType::today()),
             ExactDate::Yesterday => Ok(timetype::TimeType::today() - timetype::TimeType::days(1)),
-            ExactDate::Tomorrow  => Ok(timetype::TimeType::today() + timetype::TimeType::days(1)),
-            ExactDate::Iso8601Date(date) => {
-                match date {
-                    ::iso8601::Date::YMD { year, month, day } => NaiveDate::from_ymd_opt(year, month, day)
+            ExactDate::Tomorrow => Ok(timetype::TimeType::today() + timetype::TimeType::days(1)),
+            ExactDate::Iso8601Date(date) => match date {
+                ::iso8601::Date::YMD { year, month, day } => {
+                    NaiveDate::from_ymd_opt(year, month, day)
                         .ok_or(Error::OutOfBounds(year, month, day, 0, 0, 0))
                         .map(|ndt| ndt.and_hms(0, 0, 0))
-                        .map(timetype::TimeType::moment),
-
-                    ::iso8601::Date::Week { year, ww, d } => NaiveDate::from_ymd_opt(year, 1, 1)
-                        .ok_or(Error::OutOfBounds(year, 1, 1, 0,  0, 0))
-                        .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment)
-                        .map(|m| {
-                            m
-                            + timetype::TimeType::weeks(ww as i64)
-                            + timetype::TimeType::days(d as i64)
-                        }),
-
-                    ::iso8601::Date::Ordinal { year, ddd } => NaiveDate::from_ymd_opt(year, 1, 1)
-                        .ok_or(Error::OutOfBounds(year, 1, 1, 0, 0, 0))
-                        .map(|ndt| ndt.and_hms(0, 0, 0))
-                        .map(timetype::TimeType::moment)
-                        .map(|m| m + timetype::TimeType::days(ddd as i64)),
                 }
+
+                ::iso8601::Date::Week { year, ww, d } => NaiveDate::from_ymd_opt(year, 1, 1)
+                    .ok_or(Error::OutOfBounds(year, 1, 1, 0, 0, 0))
+                    .map(|ndt| ndt.and_hms(0, 0, 0))
+                    .map(timetype::TimeType::moment)
+                    .map(|m| {
+                        m + timetype::TimeType::weeks(ww as i64)
+                            + timetype::TimeType::days(d as i64)
+                    }),
+
+                ::iso8601::Date::Ordinal { year, ddd } => NaiveDate::from_ymd_opt(year, 1, 1)
+                    .ok_or(Error::OutOfBounds(year, 1, 1, 0, 0, 0))
+                    .map(|ndt| ndt.and_hms(0, 0, 0))
+                    .map(timetype::TimeType::moment)
+                    .map(|m| m + timetype::TimeType::days(ddd as i64)),
             },
             ExactDate::Iso8601DateTime(::iso8601::DateTime { date, time }) => {
                 let (hour, minute, second) = (time.hour, time.minute, time.second);
 
                 match date {
-                    ::iso8601::Date::YMD { year, month, day } => NaiveDate::from_ymd_opt(year, month, day)
-                        .and_then(|ndt| ndt.and_hms_opt(hour, minute, second))
-                        .ok_or(Error::OutOfBounds(year, month, day, hour, minute, second))
-                        .map(timetype::TimeType::moment),
+                    ::iso8601::Date::YMD { year, month, day } => {
+                        NaiveDate::from_ymd_opt(year, month, day)
+                            .and_then(|ndt| ndt.and_hms_opt(hour, minute, second))
+                            .ok_or(Error::OutOfBounds(year, month, day, hour, minute, second))
+                            .map(timetype::TimeType::moment)
+                    }
 
                     ::iso8601::Date::Week { year, ww, d } => NaiveDate::from_ymd_opt(year, 1, 1)
                         .ok_or(Error::OutOfBounds(year, 1, 1, 0, 0, 0))
                         .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment)
                         .map(|m| {
-                            m
-                            + timetype::TimeType::weeks(ww as i64)
-                            + timetype::TimeType::days(d as i64)
-                            + timetype::TimeType::hours(hour as i64)
-                            + timetype::TimeType::minutes(minute as i64)
-                            + timetype::TimeType::seconds(second as i64)
+                            m + timetype::TimeType::weeks(ww as i64)
+                                + timetype::TimeType::days(d as i64)
+                                + timetype::TimeType::hours(hour as i64)
+                                + timetype::TimeType::minutes(minute as i64)
+                                + timetype::TimeType::seconds(second as i64)
                         }),
 
                     ::iso8601::Date::Ordinal { year, ddd } => NaiveDate::from_ymd_opt(year, 1, 1)
@@ -240,14 +240,13 @@ impl IntoTimeType for ExactDate {
                         .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment)
                         .map(|m| {
-                            m
-                            + timetype::TimeType::days(ddd as i64)
-                            + timetype::TimeType::hours(hour as i64)
-                            + timetype::TimeType::minutes(minute as i64)
-                            + timetype::TimeType::seconds(second as i64)
+                            m + timetype::TimeType::days(ddd as i64)
+                                + timetype::TimeType::hours(hour as i64)
+                                + timetype::TimeType::minutes(minute as i64)
+                                + timetype::TimeType::seconds(second as i64)
                         }),
                 }
-            },
+            }
         }
     }
 }
@@ -265,11 +264,11 @@ pub struct Date(ExactDate, Option<(Operator, AmountExpr)>);
 
 impl IntoTimeType for Date {
     fn into_timetype(self) -> Result<timetype::TimeType> {
-        let base : timetype::TimeType = self.0.into_timetype()?;
+        let base: timetype::TimeType = self.0.into_timetype()?;
         match self.1 {
-            Some((Operator::Plus,  amount)) => Ok(base + amount.into_timetype()?),
+            Some((Operator::Plus, amount)) => Ok(base + amount.into_timetype()?),
             Some((Operator::Minus, amount)) => Ok(base - amount.into_timetype()?),
-            None                            => Ok(base),
+            None => Ok(base),
         }
     }
 }
@@ -283,12 +282,11 @@ pub enum TimeType {
 impl IntoTimeType for TimeType {
     fn into_timetype(self) -> Result<timetype::TimeType> {
         match self {
-            TimeType::Date(d)       => d.into_timetype(),
+            TimeType::Date(d) => d.into_timetype(),
             TimeType::AmountExpr(a) => a.into_timetype(),
         }
     }
 }
-
 
 // Main entry function for timetype parser
 //
@@ -304,11 +302,11 @@ named!(pub timetype<TimeType>, alt!(
 
 #[cfg(test)]
 mod tests {
-    use nom::IResult;
     use super::*;
+    use nom::IResult;
 
-    use chrono::Timelike;
     use chrono::Datelike;
+    use chrono::Timelike;
 
     #[test]
     fn test_integer() {
@@ -318,101 +316,238 @@ mod tests {
 
     #[test]
     fn test_unit() {
-        assert_eq!(unit_parser(&b"second"[..]), IResult::Done(&b""[..], Unit::Second));
-        assert_eq!(unit_parser(&b"seconds"[..]), IResult::Done(&b""[..], Unit::Second));
-        assert_eq!(unit_parser(&b"sec"[..]), IResult::Done(&b""[..], Unit::Second));
-        assert_eq!(unit_parser(&b"secs"[..]), IResult::Done(&b""[..], Unit::Second));
-        assert_eq!(unit_parser(&b"s"[..]), IResult::Done(&b""[..], Unit::Second));
-        assert_eq!(unit_parser(&b"minute"[..]), IResult::Done(&b""[..], Unit::Minute));
-        assert_eq!(unit_parser(&b"minutes"[..]), IResult::Done(&b""[..], Unit::Minute));
-        assert_eq!(unit_parser(&b"min"[..]), IResult::Done(&b""[..], Unit::Minute));
-        assert_eq!(unit_parser(&b"mins"[..]), IResult::Done(&b""[..], Unit::Minute));
-        assert_eq!(unit_parser(&b"hour"[..]), IResult::Done(&b""[..], Unit::Hour));
-        assert_eq!(unit_parser(&b"hours"[..]), IResult::Done(&b""[..], Unit::Hour));
+        assert_eq!(
+            unit_parser(&b"second"[..]),
+            IResult::Done(&b""[..], Unit::Second)
+        );
+        assert_eq!(
+            unit_parser(&b"seconds"[..]),
+            IResult::Done(&b""[..], Unit::Second)
+        );
+        assert_eq!(
+            unit_parser(&b"sec"[..]),
+            IResult::Done(&b""[..], Unit::Second)
+        );
+        assert_eq!(
+            unit_parser(&b"secs"[..]),
+            IResult::Done(&b""[..], Unit::Second)
+        );
+        assert_eq!(
+            unit_parser(&b"s"[..]),
+            IResult::Done(&b""[..], Unit::Second)
+        );
+        assert_eq!(
+            unit_parser(&b"minute"[..]),
+            IResult::Done(&b""[..], Unit::Minute)
+        );
+        assert_eq!(
+            unit_parser(&b"minutes"[..]),
+            IResult::Done(&b""[..], Unit::Minute)
+        );
+        assert_eq!(
+            unit_parser(&b"min"[..]),
+            IResult::Done(&b""[..], Unit::Minute)
+        );
+        assert_eq!(
+            unit_parser(&b"mins"[..]),
+            IResult::Done(&b""[..], Unit::Minute)
+        );
+        assert_eq!(
+            unit_parser(&b"hour"[..]),
+            IResult::Done(&b""[..], Unit::Hour)
+        );
+        assert_eq!(
+            unit_parser(&b"hours"[..]),
+            IResult::Done(&b""[..], Unit::Hour)
+        );
         assert_eq!(unit_parser(&b"hr"[..]), IResult::Done(&b""[..], Unit::Hour));
-        assert_eq!(unit_parser(&b"hrs"[..]), IResult::Done(&b""[..], Unit::Hour));
+        assert_eq!(
+            unit_parser(&b"hrs"[..]),
+            IResult::Done(&b""[..], Unit::Hour)
+        );
         assert_eq!(unit_parser(&b"day"[..]), IResult::Done(&b""[..], Unit::Day));
-        assert_eq!(unit_parser(&b"days"[..]), IResult::Done(&b""[..], Unit::Day));
+        assert_eq!(
+            unit_parser(&b"days"[..]),
+            IResult::Done(&b""[..], Unit::Day)
+        );
         assert_eq!(unit_parser(&b"d"[..]), IResult::Done(&b""[..], Unit::Day));
-        assert_eq!(unit_parser(&b"week"[..]), IResult::Done(&b""[..], Unit::Week));
-        assert_eq!(unit_parser(&b"weeks"[..]), IResult::Done(&b""[..], Unit::Week));
+        assert_eq!(
+            unit_parser(&b"week"[..]),
+            IResult::Done(&b""[..], Unit::Week)
+        );
+        assert_eq!(
+            unit_parser(&b"weeks"[..]),
+            IResult::Done(&b""[..], Unit::Week)
+        );
         assert_eq!(unit_parser(&b"w"[..]), IResult::Done(&b""[..], Unit::Week));
-        assert_eq!(unit_parser(&b"month"[..]), IResult::Done(&b""[..], Unit::Month));
-        assert_eq!(unit_parser(&b"months"[..]), IResult::Done(&b""[..], Unit::Month));
-        assert_eq!(unit_parser(&b"year"[..]), IResult::Done(&b""[..], Unit::Year));
-        assert_eq!(unit_parser(&b"years"[..]), IResult::Done(&b""[..], Unit::Year));
-        assert_eq!(unit_parser(&b"yrs"[..]), IResult::Done(&b""[..], Unit::Year));
+        assert_eq!(
+            unit_parser(&b"month"[..]),
+            IResult::Done(&b""[..], Unit::Month)
+        );
+        assert_eq!(
+            unit_parser(&b"months"[..]),
+            IResult::Done(&b""[..], Unit::Month)
+        );
+        assert_eq!(
+            unit_parser(&b"year"[..]),
+            IResult::Done(&b""[..], Unit::Year)
+        );
+        assert_eq!(
+            unit_parser(&b"years"[..]),
+            IResult::Done(&b""[..], Unit::Year)
+        );
+        assert_eq!(
+            unit_parser(&b"yrs"[..]),
+            IResult::Done(&b""[..], Unit::Year)
+        );
     }
 
     #[test]
     fn test_unit_alias() {
-        assert_eq!(unit_alias(&b"secondly"[..]), IResult::Done(&b""[..], UnitAlias::Secondly));
-        assert_eq!(unit_alias(&b"minutely"[..]), IResult::Done(&b""[..], UnitAlias::Minutely));
-        assert_eq!(unit_alias(&b"hourly"[..]), IResult::Done(&b""[..], UnitAlias::Hourly));
-        assert_eq!(unit_alias(&b"daily"[..]), IResult::Done(&b""[..], UnitAlias::Daily));
-        assert_eq!(unit_alias(&b"weekly"[..]), IResult::Done(&b""[..], UnitAlias::Weekly));
-        assert_eq!(unit_alias(&b"monthly"[..]), IResult::Done(&b""[..], UnitAlias::Monthly));
-        assert_eq!(unit_alias(&b"yearly"[..]), IResult::Done(&b""[..], UnitAlias::Yearly));
+        assert_eq!(
+            unit_alias(&b"secondly"[..]),
+            IResult::Done(&b""[..], UnitAlias::Secondly)
+        );
+        assert_eq!(
+            unit_alias(&b"minutely"[..]),
+            IResult::Done(&b""[..], UnitAlias::Minutely)
+        );
+        assert_eq!(
+            unit_alias(&b"hourly"[..]),
+            IResult::Done(&b""[..], UnitAlias::Hourly)
+        );
+        assert_eq!(
+            unit_alias(&b"daily"[..]),
+            IResult::Done(&b""[..], UnitAlias::Daily)
+        );
+        assert_eq!(
+            unit_alias(&b"weekly"[..]),
+            IResult::Done(&b""[..], UnitAlias::Weekly)
+        );
+        assert_eq!(
+            unit_alias(&b"monthly"[..]),
+            IResult::Done(&b""[..], UnitAlias::Monthly)
+        );
+        assert_eq!(
+            unit_alias(&b"yearly"[..]),
+            IResult::Done(&b""[..], UnitAlias::Yearly)
+        );
     }
 
     #[test]
     fn test_operator() {
-        assert_eq!(operator_parser(&b"+"[..]), IResult::Done(&b""[..], Operator::Plus));
-        assert_eq!(operator_parser(&b"-"[..]), IResult::Done(&b""[..], Operator::Minus));
+        assert_eq!(
+            operator_parser(&b"+"[..]),
+            IResult::Done(&b""[..], Operator::Plus)
+        );
+        assert_eq!(
+            operator_parser(&b"-"[..]),
+            IResult::Done(&b""[..], Operator::Minus)
+        );
     }
 
     #[test]
     fn test_amount() {
-        assert_eq!(amount_parser(&b"5s"[..]), IResult::Done(&b""[..], Amount(5, Unit::Second)));
-        assert_eq!(amount_parser(&b"5min"[..]), IResult::Done(&b""[..], Amount(5, Unit::Minute)));
-        assert_eq!(amount_parser(&b"55hrs"[..]), IResult::Done(&b""[..], Amount(55, Unit::Hour)));
-        assert_eq!(amount_parser(&b"25days"[..]), IResult::Done(&b""[..], Amount(25, Unit::Day)));
-        assert_eq!(amount_parser(&b"15weeks"[..]), IResult::Done(&b""[..], Amount(15, Unit::Week)));
+        assert_eq!(
+            amount_parser(&b"5s"[..]),
+            IResult::Done(&b""[..], Amount(5, Unit::Second))
+        );
+        assert_eq!(
+            amount_parser(&b"5min"[..]),
+            IResult::Done(&b""[..], Amount(5, Unit::Minute))
+        );
+        assert_eq!(
+            amount_parser(&b"55hrs"[..]),
+            IResult::Done(&b""[..], Amount(55, Unit::Hour))
+        );
+        assert_eq!(
+            amount_parser(&b"25days"[..]),
+            IResult::Done(&b""[..], Amount(25, Unit::Day))
+        );
+        assert_eq!(
+            amount_parser(&b"15weeks"[..]),
+            IResult::Done(&b""[..], Amount(15, Unit::Week))
+        );
     }
 
     #[test]
     fn test_unit_alias_with_amount_parser() {
-        assert_eq!(amount_parser(&b"secondly"[..]), IResult::Done(&b""[..], Amount(1, Unit::Second)));
-        assert_eq!(amount_parser(&b"minutely"[..]), IResult::Done(&b""[..], Amount(1, Unit::Minute)));
-        assert_eq!(amount_parser(&b"hourly"[..]), IResult::Done(&b""[..], Amount(1, Unit::Hour)));
-        assert_eq!(amount_parser(&b"daily"[..]), IResult::Done(&b""[..], Amount(1, Unit::Day)));
-        assert_eq!(amount_parser(&b"weekly"[..]), IResult::Done(&b""[..], Amount(1, Unit::Week)));
-        assert_eq!(amount_parser(&b"monthly"[..]), IResult::Done(&b""[..], Amount(1, Unit::Month)));
-        assert_eq!(amount_parser(&b"yearly"[..]), IResult::Done(&b""[..], Amount(1, Unit::Year)));
+        assert_eq!(
+            amount_parser(&b"secondly"[..]),
+            IResult::Done(&b""[..], Amount(1, Unit::Second))
+        );
+        assert_eq!(
+            amount_parser(&b"minutely"[..]),
+            IResult::Done(&b""[..], Amount(1, Unit::Minute))
+        );
+        assert_eq!(
+            amount_parser(&b"hourly"[..]),
+            IResult::Done(&b""[..], Amount(1, Unit::Hour))
+        );
+        assert_eq!(
+            amount_parser(&b"daily"[..]),
+            IResult::Done(&b""[..], Amount(1, Unit::Day))
+        );
+        assert_eq!(
+            amount_parser(&b"weekly"[..]),
+            IResult::Done(&b""[..], Amount(1, Unit::Week))
+        );
+        assert_eq!(
+            amount_parser(&b"monthly"[..]),
+            IResult::Done(&b""[..], Amount(1, Unit::Month))
+        );
+        assert_eq!(
+            amount_parser(&b"yearly"[..]),
+            IResult::Done(&b""[..], Amount(1, Unit::Year))
+        );
     }
-
 
     #[test]
     fn test_amountexpr_next() {
-        assert_eq!(amount_expr_next(&b"+ 12minutes"[..]),
-            IResult::Done(&b""[..],
+        assert_eq!(
+            amount_expr_next(&b"+ 12minutes"[..]),
+            IResult::Done(
+                &b""[..],
                 (
                     Operator::Plus,
-                    Box::new(AmountExpr { amount: Amount(12, Unit::Minute), next: None })
+                    Box::new(AmountExpr {
+                        amount: Amount(12, Unit::Minute),
+                        next: None
+                    })
                 )
-        ));
+            )
+        );
     }
 
     #[test]
     fn test_amountexpr() {
-        assert_eq!(amount_expr(&b"5minutes"[..]),
-            IResult::Done(&b""[..],
-                          AmountExpr {
-                              amount: Amount(5, Unit::Minute),
-                              next: None
-                          })
+        assert_eq!(
+            amount_expr(&b"5minutes"[..]),
+            IResult::Done(
+                &b""[..],
+                AmountExpr {
+                    amount: Amount(5, Unit::Minute),
+                    next: None
+                }
+            )
         );
 
-        assert_eq!(amount_expr(&b"5min + 12min"[..]),
-        IResult::Done(&b""[..],
-                      AmountExpr {
-                          amount: Amount(5, Unit::Minute),
-                          next: Some((Operator::Plus, Box::new(
-                                      AmountExpr {
-                                          amount: Amount(12, Unit::Minute),
-                                          next: None
-                                      })))
-                      }));
+        assert_eq!(
+            amount_expr(&b"5min + 12min"[..]),
+            IResult::Done(
+                &b""[..],
+                AmountExpr {
+                    amount: Amount(5, Unit::Minute),
+                    next: Some((
+                        Operator::Plus,
+                        Box::new(AmountExpr {
+                            amount: Amount(12, Unit::Minute),
+                            next: None
+                        })
+                    ))
+                }
+            )
+        );
     }
 
     #[test]
@@ -423,19 +558,17 @@ mod tests {
 
         match res.unwrap().1 {
             ExactDate::Iso8601DateTime(_) => assert!(false),
-            ExactDate::Iso8601Date(d) => {
-                match d {
-                    Date::YMD { year, month, day } => {
-                        assert_eq!(year, 2017);
-                        assert_eq!(month, 1);
-                        assert_eq!(day, 1)
-                    },
-                    _ => assert!(false),
+            ExactDate::Iso8601Date(d) => match d {
+                Date::YMD { year, month, day } => {
+                    assert_eq!(year, 2017);
+                    assert_eq!(month, 1);
+                    assert_eq!(day, 1)
                 }
+                _ => assert!(false),
             },
-            ExactDate::Tomorrow       => assert!(false),
-            ExactDate::Yesterday      => assert!(false),
-            ExactDate::Today          => assert!(false),
+            ExactDate::Tomorrow => assert!(false),
+            ExactDate::Yesterday => assert!(false),
+            ExactDate::Today => assert!(false),
         };
     }
 
@@ -452,17 +585,17 @@ mod tests {
                         assert_eq!(year, 2017);
                         assert_eq!(month, 1);
                         assert_eq!(day, 1)
-                    },
+                    }
                     _ => assert!(false),
                 }
                 assert_eq!(obj.time.hour, 22);
                 assert_eq!(obj.time.minute, 0);
                 assert_eq!(obj.time.second, 11);
-            },
+            }
             ExactDate::Iso8601Date(_) => assert!(false),
-            ExactDate::Tomorrow       => assert!(false),
-            ExactDate::Yesterday      => assert!(false),
-            ExactDate::Today          => assert!(false),
+            ExactDate::Tomorrow => assert!(false),
+            ExactDate::Yesterday => assert!(false),
+            ExactDate::Today => assert!(false),
         };
     }
 
@@ -483,17 +616,17 @@ mod tests {
 
         println!("{:#?}", o);
 
-        let calc_res : timetype::TimeType = o.into_timetype().unwrap();
+        let calc_res: timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
         let calc_res = calc_res.unwrap();
         println!("{:#?}", calc_res);
 
-        assert_eq!(calc_res.get_moment().unwrap().year()  , 2017);
-        assert_eq!(calc_res.get_moment().unwrap().month() , 01);
-        assert_eq!(calc_res.get_moment().unwrap().day()   , 01);
-        assert_eq!(calc_res.get_moment().unwrap().hour()  , 00);
+        assert_eq!(calc_res.get_moment().unwrap().year(), 2017);
+        assert_eq!(calc_res.get_moment().unwrap().month(), 01);
+        assert_eq!(calc_res.get_moment().unwrap().day(), 01);
+        assert_eq!(calc_res.get_moment().unwrap().hour(), 00);
         assert_eq!(calc_res.get_moment().unwrap().minute(), 00);
         assert_eq!(calc_res.get_moment().unwrap().second(), 00);
     }
@@ -506,17 +639,17 @@ mod tests {
 
         println!("{:#?}", o);
 
-        let calc_res : timetype::TimeType = o.into_timetype().unwrap();
+        let calc_res: timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
         let calc_res = calc_res.unwrap();
         println!("{:#?}", calc_res);
 
-        assert_eq!(calc_res.get_moment().unwrap().year()  , 2017);
-        assert_eq!(calc_res.get_moment().unwrap().month() , 01);
-        assert_eq!(calc_res.get_moment().unwrap().day()   , 01);
-        assert_eq!(calc_res.get_moment().unwrap().hour()  , 01);
+        assert_eq!(calc_res.get_moment().unwrap().year(), 2017);
+        assert_eq!(calc_res.get_moment().unwrap().month(), 01);
+        assert_eq!(calc_res.get_moment().unwrap().day(), 01);
+        assert_eq!(calc_res.get_moment().unwrap().hour(), 01);
         assert_eq!(calc_res.get_moment().unwrap().minute(), 02);
         assert_eq!(calc_res.get_moment().unwrap().second(), 03);
     }
@@ -527,7 +660,7 @@ mod tests {
         assert!(res.is_done());
         let (_, o) = res.unwrap();
 
-        let calc_res : timetype::TimeType = o.into_timetype().unwrap();
+        let calc_res: timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -545,7 +678,7 @@ mod tests {
         assert!(res.is_done());
         let (_, o) = res.unwrap();
 
-        let calc_res : timetype::TimeType = o.into_timetype().unwrap();
+        let calc_res: timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -560,10 +693,14 @@ mod tests {
     #[test]
     fn test_expressions_to_date_3() {
         let res = date(&b"today + 5min + 12min"[..]);
-        assert!(res.is_done(), "Not done: {:?}", res.unwrap_err().description());
+        assert!(
+            res.is_done(),
+            "Not done: {:?}",
+            res.unwrap_err().description()
+        );
         let (_, o) = res.unwrap();
 
-        let calc_res : timetype::TimeType = o.into_timetype().unwrap();
+        let calc_res: timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -575,22 +712,26 @@ mod tests {
     #[test]
     fn test_expressions_to_date_4() {
         let res = date(&b"2017-01-01 + 5min + 12min"[..]);
-        assert!(res.is_done(), "Not done: {:?}", res.unwrap_err().description());
+        assert!(
+            res.is_done(),
+            "Not done: {:?}",
+            res.unwrap_err().description()
+        );
         let (_, o) = res.unwrap();
 
         println!("{:#?}", o);
 
-        let calc_res : timetype::TimeType = o.into_timetype().unwrap();
+        let calc_res: timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
         let calc_res = calc_res.unwrap();
         println!("{:#?}", calc_res);
 
-        assert_eq!(calc_res.get_moment().unwrap().year()  , 2017);
-        assert_eq!(calc_res.get_moment().unwrap().month() , 01);
-        assert_eq!(calc_res.get_moment().unwrap().day()   , 01);
-        assert_eq!(calc_res.get_moment().unwrap().hour()  , 00);
+        assert_eq!(calc_res.get_moment().unwrap().year(), 2017);
+        assert_eq!(calc_res.get_moment().unwrap().month(), 01);
+        assert_eq!(calc_res.get_moment().unwrap().day(), 01);
+        assert_eq!(calc_res.get_moment().unwrap().hour(), 00);
         assert_eq!(calc_res.get_moment().unwrap().minute(), 17);
         assert_eq!(calc_res.get_moment().unwrap().second(), 00);
     }
@@ -601,7 +742,7 @@ mod tests {
         assert!(res.is_done());
         let (_, o) = res.unwrap();
 
-        let calc_res : ::timetype::TimeType = o.into_timetype().unwrap();
+        let calc_res: ::timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -616,10 +757,14 @@ mod tests {
     #[test]
     fn test_expressions_to_timetype_2() {
         let res = timetype(&b"today + 5min + 12min"[..]);
-        assert!(res.is_done(), "Not done: {:?}", res.unwrap_err().description());
+        assert!(
+            res.is_done(),
+            "Not done: {:?}",
+            res.unwrap_err().description()
+        );
         let (_, o) = res.unwrap();
 
-        let calc_res : ::timetype::TimeType = o.into_timetype().unwrap();
+        let calc_res: ::timetype::TimeType = o.into_timetype().unwrap();
         let calc_res = calc_res.calculate();
         assert!(calc_res.is_ok());
 
@@ -636,7 +781,7 @@ mod tests {
 
         println!("{:#?}", o);
 
-        let calc_res : ::timetype::TimeType = o.into_timetype().unwrap();
+        let calc_res: ::timetype::TimeType = o.into_timetype().unwrap();
         println!("{:#?}", calc_res);
 
         let calc_res = calc_res.calculate();
@@ -650,5 +795,4 @@ mod tests {
         assert_eq!(calc_res.get_days(), 0);
         assert_eq!(calc_res.get_years(), 0);
     }
-
 }

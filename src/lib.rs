@@ -1,7 +1,7 @@
-#![recursion_limit="256"]
+#![recursion_limit = "256"]
 
-extern crate thiserror;
 extern crate chrono;
+extern crate thiserror;
 
 #[macro_use]
 extern crate nom;
@@ -18,10 +18,9 @@ extern crate env_logger;
 extern crate log;
 
 pub mod error;
-pub mod iter;
-pub mod timetype;
 pub mod indicator;
+pub mod iter;
 pub mod matcher;
 pub mod parser;
+pub mod timetype;
 mod util;
-

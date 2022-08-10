@@ -6,7 +6,6 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 
 #[derive(Debug, Clone, Eq, PartialEq, Error)]
 pub enum Error {
-
     #[error("Unknown Error")]
     UnknownError,
 
@@ -46,4 +45,3 @@ pub enum Error {
     #[error("Tokenizer error")]
     NomError(#[from] nom::Err),
 }
-
