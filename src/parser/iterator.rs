@@ -148,6 +148,7 @@ impl<I> ::std::iter::Iterator for UserIterator<I>
 
 #[cfg(test)]
 mod tests {
+    use std::iter::Iterator;
     use nom::IResult;
     use super::*;
 
@@ -169,7 +170,7 @@ mod tests {
     #[test]
     fn test_iterator_1() {
         let res = iterator(&b"2017-01-01 hourly"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -182,18 +183,18 @@ mod tests {
             assert!(n.is_ok(), "Not ok: {:#?}", n);
             let tt = n.unwrap();
             assert_eq!(tt.get_moment().unwrap().year()  , 2017);
-            assert_eq!(tt.get_moment().unwrap().month() , 01);
-            assert_eq!(tt.get_moment().unwrap().day()   , 01);
+            assert_eq!(tt.get_moment().unwrap().month() , 1);
+            assert_eq!(tt.get_moment().unwrap().day()   , 1);
             assert_eq!(tt.get_moment().unwrap().hour()  , hour);
-            assert_eq!(tt.get_moment().unwrap().minute(), 00);
-            assert_eq!(tt.get_moment().unwrap().second(), 00);
+            assert_eq!(tt.get_moment().unwrap().minute(), 0);
+            assert_eq!(tt.get_moment().unwrap().second(), 0);
         }
     }
 
     #[test]
     fn test_iterator_2() {
         let res = iterator(&b"2017-01-01 every 2mins"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -201,23 +202,23 @@ mod tests {
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
-        for min in (0..60).into_iter().filter(|n| n % 2 == 0) {
+        for min in (0..60).filter(|n| n % 2 == 0) {
             let n = ui.next().unwrap();
             assert!(n.is_ok(), "Not ok: {:#?}", n);
             let tt = n.unwrap();
             assert_eq!(tt.get_moment().unwrap().year()  , 2017);
-            assert_eq!(tt.get_moment().unwrap().month() , 01);
-            assert_eq!(tt.get_moment().unwrap().day()   , 01);
-            assert_eq!(tt.get_moment().unwrap().hour()  , 00);
+            assert_eq!(tt.get_moment().unwrap().month() , 1);
+            assert_eq!(tt.get_moment().unwrap().day()   , 1);
+            assert_eq!(tt.get_moment().unwrap().hour()  , 0);
             assert_eq!(tt.get_moment().unwrap().minute(), min);
-            assert_eq!(tt.get_moment().unwrap().second(), 00);
+            assert_eq!(tt.get_moment().unwrap().second(), 0);
         }
     }
 
     #[test]
     fn test_iterator_3() {
         let res = iterator(&b"2017-01-01 daily"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -230,18 +231,18 @@ mod tests {
             assert!(n.is_ok(), "Not ok: {:#?}", n);
             let tt = n.unwrap();
             assert_eq!(tt.get_moment().unwrap().year()  , 2017);
-            assert_eq!(tt.get_moment().unwrap().month() , 01);
+            assert_eq!(tt.get_moment().unwrap().month() , 1);
             assert_eq!(tt.get_moment().unwrap().day()   , day);
-            assert_eq!(tt.get_moment().unwrap().hour()  , 00);
-            assert_eq!(tt.get_moment().unwrap().minute(), 00);
-            assert_eq!(tt.get_moment().unwrap().second(), 00);
+            assert_eq!(tt.get_moment().unwrap().hour()  , 0);
+            assert_eq!(tt.get_moment().unwrap().minute(), 0);
+            assert_eq!(tt.get_moment().unwrap().second(), 0);
         }
     }
 
     #[test]
     fn test_iterator_4() {
         let res = iterator(&b"2017-01-01 weekly"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -254,18 +255,18 @@ mod tests {
             assert!(n.is_ok(), "Not ok: {:#?}", n);
             let tt = n.unwrap();
             assert_eq!(tt.get_moment().unwrap().year()  , 2017);
-            assert_eq!(tt.get_moment().unwrap().month() , 01);
-            assert_eq!(tt.get_moment().unwrap().day()   , 01 + (week * 7));
-            assert_eq!(tt.get_moment().unwrap().hour()  , 00);
-            assert_eq!(tt.get_moment().unwrap().minute(), 00);
-            assert_eq!(tt.get_moment().unwrap().second(), 00);
+            assert_eq!(tt.get_moment().unwrap().month() , 1);
+            assert_eq!(tt.get_moment().unwrap().day()   , 1 + (week * 7));
+            assert_eq!(tt.get_moment().unwrap().hour()  , 0);
+            assert_eq!(tt.get_moment().unwrap().minute(), 0);
+            assert_eq!(tt.get_moment().unwrap().second(), 0);
         }
     }
 
     #[test]
     fn test_until_spec_1() {
         let res = until_spec(&b"until 2017-01-01T05:00:00"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
     }
@@ -273,7 +274,7 @@ mod tests {
     #[test]
     fn test_until_iterator_1() {
         let res = iterator(&b"2017-01-01 hourly until 2017-01-01T05:00:00"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -292,11 +293,11 @@ mod tests {
                 assert!(n.is_ok(), "Not ok: {:#?}", n);
                 let tt = n.unwrap();
                 assert_eq!(tt.get_moment().unwrap().year()  , 2017);
-                assert_eq!(tt.get_moment().unwrap().month() , 01);
-                assert_eq!(tt.get_moment().unwrap().day()   , 01);
+                assert_eq!(tt.get_moment().unwrap().month() , 1);
+                assert_eq!(tt.get_moment().unwrap().day()   , 1);
                 assert_eq!(tt.get_moment().unwrap().hour()  , hour);
-                assert_eq!(tt.get_moment().unwrap().minute(), 00);
-                assert_eq!(tt.get_moment().unwrap().second(), 00);
+                assert_eq!(tt.get_moment().unwrap().minute(), 0);
+                assert_eq!(tt.get_moment().unwrap().second(), 0);
             }
         }
     }
@@ -304,7 +305,7 @@ mod tests {
     #[test]
     fn test_until_iterator_2() {
         let res = iterator(&b"2017-01-01 every 2mins until 2017-01-01T00:10:00"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -312,7 +313,7 @@ mod tests {
         assert!(ui.is_ok(), "Not okay: {:#?}", ui);
         let mut ui = ui.unwrap();
 
-        for min in (0..60).into_iter().filter(|n| n % 2 == 0) {
+        for min in (0..60).filter(|n| n % 2 == 0) {
             if min > 9 {
                 let n = ui.next();
                 assert!(n.is_none(), "Is Some, should be None: {:?}", n);
@@ -322,11 +323,11 @@ mod tests {
                 assert!(n.is_ok(), "Not ok: {:#?}", n);
                 let tt = n.unwrap();
                 assert_eq!(tt.get_moment().unwrap().year()  , 2017);
-                assert_eq!(tt.get_moment().unwrap().month() , 01);
-                assert_eq!(tt.get_moment().unwrap().day()   , 01);
-                assert_eq!(tt.get_moment().unwrap().hour()  , 00);
+                assert_eq!(tt.get_moment().unwrap().month() , 1);
+                assert_eq!(tt.get_moment().unwrap().day()   , 1);
+                assert_eq!(tt.get_moment().unwrap().hour()  , 0);
                 assert_eq!(tt.get_moment().unwrap().minute(), min);
-                assert_eq!(tt.get_moment().unwrap().second(), 00);
+                assert_eq!(tt.get_moment().unwrap().second(), 0);
             }
         }
     }
@@ -334,7 +335,7 @@ mod tests {
     #[test]
     fn test_until_iterator_3() {
         let res = iterator(&b"2017-01-01 daily until 2017-01-05"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -352,11 +353,11 @@ mod tests {
                 assert!(n.is_ok(), "Not ok: {:#?}", n);
                 let tt = n.unwrap();
                 assert_eq!(tt.get_moment().unwrap().year()  , 2017);
-                assert_eq!(tt.get_moment().unwrap().month() , 01);
+                assert_eq!(tt.get_moment().unwrap().month() , 1);
                 assert_eq!(tt.get_moment().unwrap().day()   , day);
-                assert_eq!(tt.get_moment().unwrap().hour()  , 00);
-                assert_eq!(tt.get_moment().unwrap().minute(), 00);
-                assert_eq!(tt.get_moment().unwrap().second(), 00);
+                assert_eq!(tt.get_moment().unwrap().hour()  , 0);
+                assert_eq!(tt.get_moment().unwrap().minute(), 0);
+                assert_eq!(tt.get_moment().unwrap().second(), 0);
             }
         }
     }
@@ -364,7 +365,7 @@ mod tests {
     #[test]
     fn test_until_iterator_4() {
         let res = iterator(&b"2017-01-01 weekly until 2017-01-14"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -382,11 +383,11 @@ mod tests {
                 assert!(n.is_ok(), "Not ok: {:#?}", n);
                 let tt = n.unwrap();
                 assert_eq!(tt.get_moment().unwrap().year()  , 2017);
-                assert_eq!(tt.get_moment().unwrap().month() , 01);
-                assert_eq!(tt.get_moment().unwrap().day()   , 01 + (week * 7));
-                assert_eq!(tt.get_moment().unwrap().hour()  , 00);
-                assert_eq!(tt.get_moment().unwrap().minute(), 00);
-                assert_eq!(tt.get_moment().unwrap().second(), 00);
+                assert_eq!(tt.get_moment().unwrap().month() , 1);
+                assert_eq!(tt.get_moment().unwrap().day()   , 1 + (week * 7));
+                assert_eq!(tt.get_moment().unwrap().hour()  , 0);
+                assert_eq!(tt.get_moment().unwrap().minute(), 0);
+                assert_eq!(tt.get_moment().unwrap().second(), 0);
             }
         }
     }

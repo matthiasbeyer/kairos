@@ -70,9 +70,9 @@ pub enum UnitAlias {
     Yearly,
 }
 
-impl Into<Unit> for UnitAlias {
-    fn into(self) -> Unit {
-        match self {
+impl From<UnitAlias> for Unit {
+    fn from(val: UnitAlias) -> Self {
+        match val {
             UnitAlias::Secondly => Unit::Second,
             UnitAlias::Minutely => Unit::Minute,
             UnitAlias::Hourly   => Unit::Hour,
@@ -138,7 +138,7 @@ named!(pub amount_expr<AmountExpr>, do_parse!(
     amount:amount_parser >>
     opt!(sp) >>
     o: opt!(complete!(amount_expr_next)) >>
-    (AmountExpr { amount: amount, next: o, })
+    (AmountExpr { amount, next: o, })
 ));
 
 #[derive(Debug, PartialEq, Eq)]
@@ -153,8 +153,8 @@ impl IntoTimeType for AmountExpr {
 
         if let Some((op, other_amonut_expr)) = self.next {
             match op {
-                Operator::Plus => amount = amount + (*other_amonut_expr).into_timetype()?,
-                Operator::Minus => amount = amount - (*other_amonut_expr).into_timetype()?,
+                Operator::Plus => amount += (*other_amonut_expr).into_timetype()?,
+                Operator::Minus => amount -= (*other_amonut_expr).into_timetype()?,
             }
         }
 
@@ -179,8 +179,8 @@ pub enum ExactDate {
     Today,
     Yesterday,
     Tomorrow,
-    Iso8601Date(::iso8601::Date),
-    Iso8601DateTime(::iso8601::DateTime)
+    Iso8601Date(iso8601::Date),
+    Iso8601DateTime(iso8601::DateTime)
 }
 
 impl IntoTimeType for ExactDate {
@@ -191,14 +191,14 @@ impl IntoTimeType for ExactDate {
             ExactDate::Tomorrow  => Ok(timetype::TimeType::today() + timetype::TimeType::days(1)),
             ExactDate::Iso8601Date(date) => {
                 match date {
-                    ::iso8601::Date::YMD { year, month, day } => NaiveDate::from_ymd_opt(year, month, day)
+                    iso8601::Date::YMD { year, month, day } => NaiveDate::from_ymd_opt(year, month, day)
+                        .and_then(|ndt| ndt.and_hms_opt(0, 0, 0))
                         .ok_or(Error::OutOfBounds(year, month, day, 0, 0, 0))
-                        .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment),
 
-                    ::iso8601::Date::Week { year, ww, d } => NaiveDate::from_ymd_opt(year, 1, 1)
+                    iso8601::Date::Week { year, ww, d } => NaiveDate::from_ymd_opt(year, 1, 1)
+                        .and_then(|ndt| ndt.and_hms_opt(0, 0, 0))
                         .ok_or(Error::OutOfBounds(year, 1, 1, 0,  0, 0))
-                        .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment)
                         .map(|m| {
                             m
@@ -206,25 +206,25 @@ impl IntoTimeType for ExactDate {
                             + timetype::TimeType::days(d as i64)
                         }),
 
-                    ::iso8601::Date::Ordinal { year, ddd } => NaiveDate::from_ymd_opt(year, 1, 1)
+                    iso8601::Date::Ordinal { year, ddd } => NaiveDate::from_ymd_opt(year, 1, 1)
+                        .and_then(|ndt| ndt.and_hms_opt(0, 0, 0))
                         .ok_or(Error::OutOfBounds(year, 1, 1, 0, 0, 0))
-                        .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment)
                         .map(|m| m + timetype::TimeType::days(ddd as i64)),
                 }
             },
-            ExactDate::Iso8601DateTime(::iso8601::DateTime { date, time }) => {
+            ExactDate::Iso8601DateTime(iso8601::DateTime { date, time }) => {
                 let (hour, minute, second) = (time.hour, time.minute, time.second);
 
                 match date {
-                    ::iso8601::Date::YMD { year, month, day } => NaiveDate::from_ymd_opt(year, month, day)
+                    iso8601::Date::YMD { year, month, day } => NaiveDate::from_ymd_opt(year, month, day)
                         .and_then(|ndt| ndt.and_hms_opt(hour, minute, second))
                         .ok_or(Error::OutOfBounds(year, month, day, hour, minute, second))
                         .map(timetype::TimeType::moment),
 
-                    ::iso8601::Date::Week { year, ww, d } => NaiveDate::from_ymd_opt(year, 1, 1)
+                    iso8601::Date::Week { year, ww, d } => NaiveDate::from_ymd_opt(year, 1, 1)
+                        .and_then(|ndt| ndt.and_hms_opt(0, 0, 0))
                         .ok_or(Error::OutOfBounds(year, 1, 1, 0, 0, 0))
-                        .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment)
                         .map(|m| {
                             m
@@ -235,9 +235,9 @@ impl IntoTimeType for ExactDate {
                             + timetype::TimeType::seconds(second as i64)
                         }),
 
-                    ::iso8601::Date::Ordinal { year, ddd } => NaiveDate::from_ymd_opt(year, 1, 1)
+                    iso8601::Date::Ordinal { year, ddd } => NaiveDate::from_ymd_opt(year, 1, 1)
+                        .and_then(|ndt| ndt.and_hms_opt(0, 0, 0))
                         .ok_or(Error::OutOfBounds(year, 1, 1, 0, 0, 0))
-                        .map(|ndt| ndt.and_hms(0, 0, 0))
                         .map(timetype::TimeType::moment)
                         .map(|m| {
                             m
@@ -422,7 +422,7 @@ mod tests {
         assert!(res.is_done());
 
         match res.unwrap().1 {
-            ExactDate::Iso8601DateTime(_) => assert!(false),
+            ExactDate::Iso8601DateTime(_) => panic!("Unexpected enum variant"),
             ExactDate::Iso8601Date(d) => {
                 match d {
                     Date::YMD { year, month, day } => {
@@ -430,12 +430,12 @@ mod tests {
                         assert_eq!(month, 1);
                         assert_eq!(day, 1)
                     },
-                    _ => assert!(false),
+                    _ => panic!("Unexpected enum variant"),
                 }
             },
-            ExactDate::Tomorrow       => assert!(false),
-            ExactDate::Yesterday      => assert!(false),
-            ExactDate::Today          => assert!(false),
+            ExactDate::Tomorrow       => panic!("Unexpected enum variant"),
+            ExactDate::Yesterday      => panic!("Unexpected enum variant"),
+            ExactDate::Today          => panic!("Unexpected enum variant"),
         };
     }
 
@@ -453,32 +453,32 @@ mod tests {
                         assert_eq!(month, 1);
                         assert_eq!(day, 1)
                     },
-                    _ => assert!(false),
+                    _ => panic!("Unexpected enum variant"),
                 }
                 assert_eq!(obj.time.hour, 22);
                 assert_eq!(obj.time.minute, 0);
                 assert_eq!(obj.time.second, 11);
             },
-            ExactDate::Iso8601Date(_) => assert!(false),
-            ExactDate::Tomorrow       => assert!(false),
-            ExactDate::Yesterday      => assert!(false),
-            ExactDate::Today          => assert!(false),
+            ExactDate::Iso8601Date(_) => panic!("Unexpected enum variant"),
+            ExactDate::Tomorrow       => panic!("Unexpected enum variant"),
+            ExactDate::Yesterday      => panic!("Unexpected enum variant"),
+            ExactDate::Today          => panic!("Unexpected enum variant"),
         };
     }
 
     #[test]
     fn test_simple_date_1() {
         let res = exact_date_parser(&b"today"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
 
         let res = date(&b"today"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
     }
 
     #[test]
     fn test_simple_date_2() {
         let res = date(&b"2017-01-01"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
         let (_, o) = res.unwrap();
 
         println!("{:#?}", o);
@@ -491,17 +491,17 @@ mod tests {
         println!("{:#?}", calc_res);
 
         assert_eq!(calc_res.get_moment().unwrap().year()  , 2017);
-        assert_eq!(calc_res.get_moment().unwrap().month() , 01);
-        assert_eq!(calc_res.get_moment().unwrap().day()   , 01);
-        assert_eq!(calc_res.get_moment().unwrap().hour()  , 00);
-        assert_eq!(calc_res.get_moment().unwrap().minute(), 00);
-        assert_eq!(calc_res.get_moment().unwrap().second(), 00);
+        assert_eq!(calc_res.get_moment().unwrap().month() , 1);
+        assert_eq!(calc_res.get_moment().unwrap().day()   , 1);
+        assert_eq!(calc_res.get_moment().unwrap().hour()  , 0);
+        assert_eq!(calc_res.get_moment().unwrap().minute(), 0);
+        assert_eq!(calc_res.get_moment().unwrap().second(), 0);
     }
 
     #[test]
     fn test_simple_date_3() {
         let res = date(&b"2017-01-01T01:02:03"[..]);
-        assert!(res.is_done(), format!("Not done: {:?}", res));
+        assert!(res.is_done(), "Not done: {:?}", res);
         let (_, o) = res.unwrap();
 
         println!("{:#?}", o);
@@ -514,11 +514,11 @@ mod tests {
         println!("{:#?}", calc_res);
 
         assert_eq!(calc_res.get_moment().unwrap().year()  , 2017);
-        assert_eq!(calc_res.get_moment().unwrap().month() , 01);
-        assert_eq!(calc_res.get_moment().unwrap().day()   , 01);
-        assert_eq!(calc_res.get_moment().unwrap().hour()  , 01);
-        assert_eq!(calc_res.get_moment().unwrap().minute(), 02);
-        assert_eq!(calc_res.get_moment().unwrap().second(), 03);
+        assert_eq!(calc_res.get_moment().unwrap().month() , 1);
+        assert_eq!(calc_res.get_moment().unwrap().day()   , 1);
+        assert_eq!(calc_res.get_moment().unwrap().hour()  , 1);
+        assert_eq!(calc_res.get_moment().unwrap().minute(), 2);
+        assert_eq!(calc_res.get_moment().unwrap().second(), 3);
     }
 
     #[test]
@@ -588,11 +588,11 @@ mod tests {
         println!("{:#?}", calc_res);
 
         assert_eq!(calc_res.get_moment().unwrap().year()  , 2017);
-        assert_eq!(calc_res.get_moment().unwrap().month() , 01);
-        assert_eq!(calc_res.get_moment().unwrap().day()   , 01);
-        assert_eq!(calc_res.get_moment().unwrap().hour()  , 00);
+        assert_eq!(calc_res.get_moment().unwrap().month() , 1);
+        assert_eq!(calc_res.get_moment().unwrap().day()   , 1);
+        assert_eq!(calc_res.get_moment().unwrap().hour()  , 0);
         assert_eq!(calc_res.get_moment().unwrap().minute(), 17);
-        assert_eq!(calc_res.get_moment().unwrap().second(), 00);
+        assert_eq!(calc_res.get_moment().unwrap().second(), 0);
     }
 
     #[test]

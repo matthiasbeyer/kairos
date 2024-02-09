@@ -123,7 +123,7 @@ impl<I, M> Iterator for FilterIter<I, M>
 }
 
 pub trait EveryFilter<M: Matcher> : Iterator<Item = Result<TimeType>> + Sized {
-    fn every(self, M) -> FilterIter<Self, M>;
+    fn every(self, matcher: M) -> FilterIter<Self, M>;
 }
 
 impl<I, M> EveryFilter<M> for I
@@ -171,7 +171,7 @@ impl<I, M> Iterator for WithoutIter<I, M>
 }
 
 pub trait WithoutFilter<M: Matcher> : Iterator<Item = Result<TimeType>> + Sized {
-    fn without(self, M) -> WithoutIter<Self, M>;
+    fn without(self, matcher: M) -> WithoutIter<Self, M>;
 }
 
 impl<I, M> WithoutFilter<M> for I
@@ -221,7 +221,7 @@ impl<I> Iterator for UntilIter<I>
 }
 
 pub trait Until : Iterator<Item = Result<TimeType>> + Sized {
-    fn until(self, NaiveDateTime) -> UntilIter<Self>;
+    fn until(self, ending: NaiveDateTime) -> UntilIter<Self>;
 }
 
 impl<I> Until for I
@@ -247,7 +247,7 @@ impl<I> TimesIter<I>
     fn new(i: I, times: i64) -> TimesIter<I> {
         TimesIter {
             inner: i,
-            times: times,
+            times,
             count: 0,
         }
     }
@@ -269,7 +269,7 @@ impl<I> Iterator for TimesIter<I>
 }
 
 pub trait Times : Iterator<Item = Result<TimeType>> + Sized {
-    fn times(self, i64) -> TimesIter<Self>;
+    fn times(self, times: i64) -> TimesIter<Self>;
 }
 
 impl<I> Times for I
@@ -422,7 +422,7 @@ pub mod extensions {
         use chrono::NaiveDate as ND;
 
         fn ymd_hms(y: i32, m: u32, d: u32, h: u32, mi: u32, s: u32) -> TT {
-            TT::moment(ND::from_ymd(y, m, d).and_hms(h, mi, s))
+            TT::moment(ND::from_ymd_opt(y, m, d).unwrap().and_hms_opt(h, mi, s).unwrap())
         }
 
         #[test]
@@ -569,12 +569,11 @@ mod test_until {
 
     #[test]
     fn test_until() {
-        let yesterday = (TimeType::today() - TimeType::days(1))
+        let yesterday = *(TimeType::today() - TimeType::days(1))
             .calculate()
             .unwrap()
             .get_moment()
-            .unwrap()
-            .clone();
+            .unwrap();
 
         let v = TimeType::today()
             .daily(1)
@@ -587,12 +586,11 @@ mod test_until {
 
     #[test]
     fn test_until_1() {
-        let end = (TimeType::today() + TimeType::days(1))
+        let end = *(TimeType::today() + TimeType::days(1))
             .calculate()
             .unwrap()
             .get_moment()
-            .unwrap()
-            .clone();
+            .unwrap();
 
         let v = TimeType::today()
             .daily(1)
@@ -605,12 +603,11 @@ mod test_until {
 
     #[test]
     fn test_until_2() {
-        let end = (TimeType::today() + TimeType::days(2))
+        let end = *(TimeType::today() + TimeType::days(2))
             .calculate()
             .unwrap()
             .get_moment()
-            .unwrap()
-            .clone();
+            .unwrap();
 
         let v = TimeType::today()
             .hourly(1)

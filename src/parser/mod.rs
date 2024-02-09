@@ -70,7 +70,7 @@ pub fn parse(s: &str) -> Result<Parsed> {
     match do_parse(s.as_bytes()) {
         IResult::Done(_, Ok(o))              => Ok(o),
         IResult::Done(_, Err(e))             => Err(e),
-        IResult::Error(e)                    => Err(e).map_err(From::from),
+        IResult::Error(e)                    => Err(From::from(e)),
         IResult::Incomplete(Needed::Unknown) => Err(Error::UnknownParserError),
         IResult::Incomplete(Needed::Size(_)) => Err(Error::UnknownParserError),
 

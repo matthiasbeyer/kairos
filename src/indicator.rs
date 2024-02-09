@@ -21,16 +21,16 @@ pub enum Day {
     Sunday,
 }
 
-impl Into<::chrono::Weekday> for Day {
-    fn into(self) -> ::chrono::Weekday {
-        match self {
-            Day::Monday    => ::chrono::Weekday::Mon,
-            Day::Tuesday   => ::chrono::Weekday::Tue,
-            Day::Wednesday => ::chrono::Weekday::Wed,
-            Day::Thursday  => ::chrono::Weekday::Thu,
-            Day::Friday    => ::chrono::Weekday::Fri,
-            Day::Saturday  => ::chrono::Weekday::Sat,
-            Day::Sunday    => ::chrono::Weekday::Sun,
+impl From<Day> for chrono::Weekday {
+    fn from(val: Day) -> Self {
+        match val {
+            Day::Monday    => chrono::Weekday::Mon,
+            Day::Tuesday   => chrono::Weekday::Tue,
+            Day::Wednesday => chrono::Weekday::Wed,
+            Day::Thursday  => chrono::Weekday::Thu,
+            Day::Friday    => chrono::Weekday::Fri,
+            Day::Saturday  => chrono::Weekday::Sat,
+            Day::Sunday    => chrono::Weekday::Sun,
         }
     }
 }
@@ -51,9 +51,9 @@ pub enum Month {
     December,
 }
 
-impl Into<u32> for Month {
-    fn into(self) -> u32 {
-        match self {
+impl From<Month> for u32 {
+    fn from(val: Month) -> Self {
+        match val {
             Month::January   =>  1,
             Month::February  =>  2,
             Month::March     =>  3,

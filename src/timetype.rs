@@ -98,36 +98,24 @@ impl TimeType {
     }
 
     pub fn is_a_amount(&self) -> bool {
-        match *self {
-            TimeType::Seconds(_) |
+        matches!(self, TimeType::Seconds(_) |
             TimeType::Minutes(_) |
             TimeType::Hours(_)   |
             TimeType::Days(_)    |
             TimeType::Months(_)  |
-            TimeType::Years(_)   => true,
-            _                    => false,
-        }
+            TimeType::Years(_))
     }
 
     pub fn is_moment(&self) -> bool {
-        match *self {
-            TimeType::Moment(_) => true,
-            _                   => false,
-        }
+        matches!(self, TimeType::Moment(_))
     }
 
     pub fn is_addition(&self) -> bool {
-        match *self {
-            TimeType::Addition(_, _) => true,
-            _                        => false,
-        }
+        matches!(self, TimeType::Addition(_, _))
     }
 
     pub fn is_subtraction(&self) -> bool {
-        match *self {
-            TimeType::Subtraction(_, _) => true,
-            _                           => false,
-        }
+        matches!(self, TimeType::Subtraction(_, _))
     }
 
     pub fn seconds(i: i64) -> TimeType {
@@ -381,8 +369,8 @@ impl TimeType {
     }
 
     pub fn get_moment(&self) -> Option<&NaiveDateTime> {
-        match *self {
-            TimeType::Moment(ref m) => Some(&m),
+        match self {
+            TimeType::Moment(m) => Some(m),
             _                   => None,
         }
     }
@@ -482,9 +470,9 @@ fn end_of_year(tt: TimeType) -> Result<TimeType> {
         els @ TT::Addition(_, _)    |
         els @ TT::Subtraction(_, _) => Err(Error::CannotCalculateEndOfYearOn(els)),
         TT::Moment(m) => NaiveDate::from_ymd_opt(m.year(), 12, 31)
-            .map(|nd| nd.and_hms(0, 0, 0))
+            .and_then(|nd| nd.and_hms_opt(0, 0, 0))
             .map(TT::moment)
-            .ok_or(Error::OutOfBounds(m.year() as i32, 12, 31, 0, 0, 0))
+            .ok_or(Error::OutOfBounds(m.year(), 12, 31, 0, 0, 0))
             .map_err(Error::from),
 
         TT::EndOfYear(e)   => do_calculate(*e),
@@ -514,9 +502,9 @@ fn end_of_month(tt: TimeType) -> Result<TimeType> {
         TT::Moment(m)    => {
             let last_day = get_num_of_days_in_month(m.year() as i64, m.month() as i64) as u32;
             NaiveDate::from_ymd_opt(m.year(), m.month(), last_day)
-                .map(|nd| nd.and_hms(0, 0, 0))
+                .and_then(|nd| nd.and_hms_opt(0, 0, 0))
                 .map(TT::moment)
-                .ok_or(Error::OutOfBounds(m.year() as i32, m.month() as u32, last_day, 0, 0, 0))
+                .ok_or(Error::OutOfBounds(m.year(), m.month(), last_day, 0, 0, 0))
                 .map_err(Error::from)
         },
         TT::EndOfYear(e)   => do_calculate(*e),
@@ -544,9 +532,9 @@ fn end_of_day(tt: TimeType) -> Result<TimeType> {
         els @ TT::Addition(_, _)    |
         els @ TT::Subtraction(_, _) => Err(Error::CannotCalculateEndOfMonthOn(els)),
         TT::Moment(m) => NaiveDate::from_ymd_opt(m.year(), m.month(), m.day())
-            .map(|nd| nd.and_hms(23, 59, 59))
+            .and_then(|nd| nd.and_hms_opt(23, 59, 59))
             .map(TT::moment)
-            .ok_or(Error::OutOfBounds(m.year() as i32, m.month() as u32, m.day() as u32, 23, 59, 59))
+            .ok_or(Error::OutOfBounds(m.year(), m.month(), m.day(), 23, 59, 59))
             .map_err(Error::from),
         TT::EndOfYear(e)   => do_calculate(*e),
         TT::EndOfMonth(e)  => do_calculate(*e),
@@ -575,7 +563,7 @@ fn end_of_hour(tt: TimeType) -> Result<TimeType> {
         TT::Moment(m)    => NaiveDate::from_ymd_opt(m.year(), m.month(), m.day())
             .and_then(|nd| nd.and_hms_opt(m.hour(), 59, 59))
             .map(TT::moment)
-            .ok_or(Error::OutOfBounds(m.year() as i32, m.month() as u32, m.day() as u32, m.hour() as u32, 59, 59))
+            .ok_or(Error::OutOfBounds(m.year(), m.month(), m.day(), m.hour(), 59, 59))
             .map_err(Error::from),
         TT::EndOfYear(e)   => do_calculate(*e),
         TT::EndOfMonth(e)  => do_calculate(*e),
@@ -604,7 +592,7 @@ fn end_of_minute(tt: TimeType) -> Result<TimeType> {
         TT::Moment(m)    => NaiveDate::from_ymd_opt(m.year(), m.month(), m.day())
             .and_then(|nd| nd.and_hms_opt(m.hour(), m.minute(), 59))
             .map(TT::moment)
-            .ok_or(Error::OutOfBounds(m.year() as i32, m.month() as u32, m.day() as u32, m.hour() as u32, m.minute() as u32, 59 as u32))
+            .ok_or(Error::OutOfBounds(m.year(), m.month(), m.day(), m.hour(), m.minute(), 59))
             .map_err(Error::from),
         TT::EndOfYear(e)   => do_calculate(*e),
         TT::EndOfMonth(e)  => do_calculate(*e),
@@ -614,6 +602,7 @@ fn end_of_minute(tt: TimeType) -> Result<TimeType> {
     }
 }
 
+#[allow(clippy::boxed_local)]
 fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
@@ -897,6 +886,7 @@ fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
     }
 }
 
+#[allow(clippy::boxed_local)]
 fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
     use timetype::TimeType as TT;
 
@@ -1196,7 +1186,7 @@ mod tests {
                 assert_eq!(0, a.get_seconds());
                 assert_eq!(1, b.get_seconds());
             }
-            _ => assert!(false, "Addition failed, returned non-Addition type"),
+            _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
 
@@ -1216,10 +1206,10 @@ mod tests {
                         assert_eq!(1, b.get_seconds());
                         assert_eq!(2, c.get_seconds());
                     },
-                    _ => assert!(false, "Addition failed, returned non-Addition type"),
+                    _ => panic!("Addition failed, returned non-Addition type"),
                 }
             }
-            _ => assert!(false, "Addition failed, returned non-Addition type"),
+            _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
 
@@ -1235,7 +1225,7 @@ mod tests {
                 assert_eq!(5, a.get_seconds());
                 assert_eq!(3, b.get_seconds());
             }
-            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+            _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
 
@@ -1255,10 +1245,10 @@ mod tests {
                         assert_eq!(2, b.get_seconds());
                         assert_eq!(1, c.get_seconds());
                     },
-                    _ => assert!(false, "Subtraction failed"),
+                    _ => panic!("Subtraction failed"),
                 }
             }
-            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+            _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
 
@@ -1328,7 +1318,7 @@ mod tests {
                 assert_eq!(0, a.get_minutes());
                 assert_eq!(1, b.get_minutes());
             }
-            _ => assert!(false, "Addition failed, returned non-Addition type"),
+            _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
 
@@ -1348,10 +1338,10 @@ mod tests {
                         assert_eq!(1, b.get_minutes());
                         assert_eq!(2, c.get_minutes());
                     },
-                    _ => assert!(false, "Addition failed, returned non-Addition type"),
+                    _ => panic!("Addition failed, returned non-Addition type"),
                 }
             }
-            _ => assert!(false, "Addition failed, returned non-Addition type"),
+            _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
 
@@ -1367,7 +1357,7 @@ mod tests {
                 assert_eq!(5, a.get_minutes());
                 assert_eq!(3, b.get_minutes());
             }
-            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+            _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
 
@@ -1387,10 +1377,10 @@ mod tests {
                         assert_eq!(2, b.get_minutes());
                         assert_eq!(1, c.get_minutes());
                     },
-                    _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+                    _ => panic!("Subtraction failed, returned non-Subtraction type"),
                 }
             }
-            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+            _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
 
@@ -1460,7 +1450,7 @@ mod tests {
                 assert_eq!(0, a.get_days());
                 assert_eq!(1, b.get_days());
             }
-            _ => assert!(false, "Addition failed, returned non-Addition type"),
+            _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
 
@@ -1480,10 +1470,10 @@ mod tests {
                         assert_eq!(1, b.get_days());
                         assert_eq!(2, c.get_days());
                     },
-                    _ => assert!(false, "Addition failed, wrong type"),
+                    _ => panic!("Addition failed, wrong type"),
                 }
             }
-            _ => assert!(false, "Addition failed, returned non-Addition type"),
+            _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
 
@@ -1499,7 +1489,7 @@ mod tests {
                 assert_eq!(5, a.get_days());
                 assert_eq!(3, b.get_days());
             }
-            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+            _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
 
@@ -1519,10 +1509,10 @@ mod tests {
                         assert_eq!(2, b.get_days());
                         assert_eq!(1, c.get_days());
                     },
-                    _ => assert!(false, "Subtraction failed, wrong type"),
+                    _ => panic!("Subtraction failed, wrong type"),
                 }
             }
-            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+            _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
 
@@ -1592,7 +1582,7 @@ mod tests {
                 assert_eq!(0, a.get_months());
                 assert_eq!(1, b.get_months());
             }
-            _ => assert!(false, "Addition failed, returned non-Addition type"),
+            _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
 
@@ -1612,10 +1602,10 @@ mod tests {
                         assert_eq!(1, b.get_months());
                         assert_eq!(2, c.get_months());
                     },
-                    _ => assert!(false, "Addition failed, wrong type"),
+                    _ => panic!("Addition failed, wrong type"),
                 }
             }
-            _ => assert!(false, "Addition failed, returned non-Addition type"),
+            _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
 
@@ -1631,7 +1621,7 @@ mod tests {
                 assert_eq!(5, a.get_months());
                 assert_eq!(3, b.get_months());
             }
-            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+            _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
 
@@ -1651,10 +1641,10 @@ mod tests {
                         assert_eq!(2, b.get_months());
                         assert_eq!(1, c.get_months());
                     },
-                    _ => assert!(false, "Subtraction failed, wrong type"),
+                    _ => panic!("Subtraction failed, wrong type"),
                 }
             }
-            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+            _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
 
@@ -1724,7 +1714,7 @@ mod tests {
                 assert_eq!(0, a.get_years());
                 assert_eq!(1, b.get_years());
             }
-            _ => assert!(false, "Addition failed, returned non-Addition type"),
+            _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
 
@@ -1744,10 +1734,10 @@ mod tests {
                         assert_eq!(1, b.get_years());
                         assert_eq!(2, c.get_years());
                     },
-                    _ => assert!(false, "Addition failed, wrong type"),
+                    _ => panic!("Addition failed, wrong type"),
                 }
             }
-            _ => assert!(false, "Addition failed, returned non-Addition type"),
+            _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
 
@@ -1763,7 +1753,7 @@ mod tests {
                 assert_eq!(5, a.get_years());
                 assert_eq!(3, b.get_years());
             }
-            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+            _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
 
@@ -1783,10 +1773,10 @@ mod tests {
                         assert_eq!(2, b.get_years());
                         assert_eq!(1, c.get_years());
                     },
-                    _ => assert!(false, "Subtraction failed, wrong type"),
+                    _ => panic!("Subtraction failed, wrong type"),
                 }
             }
-            _ => assert!(false, "Subtraction failed, returned non-Subtraction type"),
+            _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
 
@@ -1890,33 +1880,27 @@ mod tests {
     #[test]
     fn test_add_moment_to_seconds() {
         let a = TT::seconds(3);
-        let b = TT::moment(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11));
+        let b = TT::moment(NaiveDate::from_ymd_opt(2016, 7, 8).expect("Static time").and_hms_opt(9, 10, 11).expect("Static time"));
 
         let res = (a + b).calculate();
 
         assert!(res.is_err());
         let res = res.unwrap_err();
 
-        assert!(match res {
-            Error::CannotAdd(..) => true,
-            _ => false,
-        });
+        assert!(matches!(res, Error::CannotAdd(..)));
     }
 
     #[test]
     fn test_subtract_moment_from_seconds() {
         let a = TT::seconds(3);
-        let b = TT::moment(NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11));
+        let b = TT::moment(NaiveDate::from_ymd_opt(2016, 7, 8).expect("Static time").and_hms_opt(9, 10, 11).expect("Static time"));
 
         let res = (a - b).calculate();
 
         assert!(res.is_err());
         let res = res.unwrap_err();
 
-        assert!(match res {
-            Error::CannotSub(..) => true,
-            _ => false,
-        });
+        assert!(matches!(res, Error::CannotSub(..)));
     }
 
 }
@@ -2040,7 +2024,6 @@ mod timetype_value_tests {
 
 #[cfg(test)]
 mod moment_plus_amount_tests {
-    use env_logger;
     use super::TimeType as TT;
     use chrono::NaiveDate;
 
@@ -2057,6 +2040,7 @@ mod moment_plus_amount_tests {
                 let base = TT::moment($base);
                 debug!("Using base = {:?}", base);
                 debug!("           + {:?}", $amount);
+                #[allow(clippy::redundant_closure_call)]
                 let result = $op(base, $amount).calculate();
                 debug!("        -> = {:?}", result);
                 assert!(result.is_ok(), "Operation failed: {:?}", result);
@@ -2108,250 +2092,252 @@ mod moment_plus_amount_tests {
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_zero_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(0);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(1);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 1);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 1).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_too_much_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(62);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 2);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 1, 2).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(2);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 2, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 2, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_too_much_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(65);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 5, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(1, 5, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_minutes_in_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(62);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 2);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 1, 2).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(14);
-        expected = NaiveDate::from_ymd(2001, 3, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 3, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_years;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::years(62);
-        expected = NaiveDate::from_ymd(2062, 1, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2062, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_year;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::years(1) + TT::months(1);
-        expected = NaiveDate::from_ymd(2001, 2, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 2, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_month;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
 
         // As we calculate 1 month + 1 day first, we end up adding 31 days to the base
         amount   = TT::months(1) + TT::days(1);
 
         // and therefor this results in the date 2000-02-01
         // This is not that inuitive, of course.
-        expected = NaiveDate::from_ymd(2000, 2, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 2, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_day;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(1) + TT::hours(1);
-        expected = NaiveDate::from_ymd(2000, 1, 2).and_hms(1, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 2).expect("Static time").and_hms_opt(1, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_hour;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(1) + TT::minutes(1);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 1, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(1, 1, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_minute;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(1) + TT::seconds(1);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 1);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 1, 1).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_invalid_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(13);
-        expected = NaiveDate::from_ymd(2001, 2, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 2, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_invalid_days;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(31);
-        expected = NaiveDate::from_ymd(2000, 2, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 2, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_invalid_hours;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(25);
-        expected = NaiveDate::from_ymd(2000, 1, 2).and_hms(1, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 2).expect("Static time").and_hms_opt(1, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_invalid_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(61);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 1, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(1, 1, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_invalid_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(61);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 1);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 1, 1).expect("Static time");
     }
 
     generate_test_moment_minus_amount! {
         name     = test_moment_minus_nothing;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(0);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_minus_amount! {
         name     = test_moment_minus_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(1);
-        expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(1999, 12, 31).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_minus_amount! {
         name     = test_moment_minus_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(12);
-        expected = NaiveDate::from_ymd(1999, 1, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(1999, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_minute_in_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(130);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 2, 10);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 2, 10).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_hour_in_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(130);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(2, 10, 00);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(2, 10, 00).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_day_in_hours_1;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(50);
-        expected = NaiveDate::from_ymd(2000, 1, 3).and_hms(2, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 3).expect("Static time").and_hms_opt(2, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_day_in_hours_2;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(170);
-        expected = NaiveDate::from_ymd(2000, 1, 8).and_hms(2, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 8).expect("Static time").and_hms_opt(2, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_month_in_days_1;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(80);
-        expected = NaiveDate::from_ymd(2000, 3,21).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 3,21).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_month_in_days_2;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(120);
-        expected = NaiveDate::from_ymd(2000, 4,30).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 4,30).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_month_in_days_3;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(150);
-        expected = NaiveDate::from_ymd(2000, 5,30).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 5,30).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_year_in_months_1;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(15);
-        expected = NaiveDate::from_ymd(2001, 4, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 4, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_year_in_months_2;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(25);
-        expected = NaiveDate::from_ymd(2002, 2, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2002, 2, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_year_in_months_3;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(78);
-        expected = NaiveDate::from_ymd(2006, 7, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2006, 7, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_year_in_months_4;
-        base     = NaiveDate::from_ymd(2000,10,31).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000,10,31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(4);
-        expected = NaiveDate::from_ymd(2001, 3, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 3, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_year_in_months_5;
-        base     = NaiveDate::from_ymd(2000,10,31).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000,10,31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(5);
-        expected = NaiveDate::from_ymd(2001, 4, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 4, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount! {
         name     = test_moment_plus_more_than_one_year_in_months_6;
-        base     = NaiveDate::from_ymd(2000,10,31).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000,10,31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(4) + TT::months(1);
-        expected = NaiveDate::from_ymd(2001, 4, 1).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 4, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 }
 
 #[cfg(test)]
 mod test_time_adjustments {
+    #![allow(clippy::identity_op)]
+
     use super::adjust_times_add;
     use super::adjust_times_sub;
 
@@ -2533,6 +2519,7 @@ mod test_end_of_year {
             #[test]
             fn $name() {
                 let base = TT::moment($base);
+                #[allow(clippy::redundant_closure_call)]
                 let result = $op(base, $amount).end_of_year().calculate();
                 assert!(result.is_ok(), "Operation failed: {:?}", result);
                 let result = result.unwrap();
@@ -2583,154 +2570,154 @@ mod test_end_of_year {
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_zero_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(0);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(1);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_too_much_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(62);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(2);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_too_much_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(65);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_minutes_in_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(62);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(14);
-        expected = NaiveDate::from_ymd(2001, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_years;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::years(62);
-        expected = NaiveDate::from_ymd(2062, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2062, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_more_than_one_year;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::years(1) + TT::months(1);
-        expected = NaiveDate::from_ymd(2001, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_more_than_one_month;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
 
         // As we calculate 1 month + 1 day first, we end up adding 31 days to the base
         amount   = TT::months(1) + TT::days(1);
 
         // and therefor this results in the date 2000-02-01
         // This is not that inuitive, of course.
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_more_than_one_day;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(1) + TT::hours(1);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_more_than_one_hour;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(1) + TT::minutes(1);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_more_than_one_minute;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(1) + TT::seconds(1);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_invalid_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(13);
-        expected = NaiveDate::from_ymd(2001, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_invalid_days;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(31);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_invalid_hours;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(25);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_invalid_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(61);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_year! {
         name     = test_moment_plus_invalid_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(61);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_year! {
         name     = test_moment_minus_nothing;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(0);
-        expected = NaiveDate::from_ymd(2000, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_year! {
         name     = test_moment_minus_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(1);
-        expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(00, 00, 00);
+        expected = NaiveDate::from_ymd_opt(1999, 12, 31).expect("Static time").and_hms_opt(00, 00, 00).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_year! {
         name     = test_moment_minus_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(12);
-        expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(1999, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
 }
@@ -2751,6 +2738,7 @@ mod test_end_of_month {
             #[test]
             fn $name() {
                 let base = TT::moment($base);
+                #[allow(clippy::redundant_closure_call)]
                 let result = $op(base, $amount).end_of_month().calculate();
                 assert!(result.is_ok(), "Operation failed: {:?}", result);
                 let result = result.unwrap();
@@ -2801,154 +2789,154 @@ mod test_end_of_month {
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_zero_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(0);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(1);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_too_much_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(62);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(2);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_too_much_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(65);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_minutes_in_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(62);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(14);
-        expected = NaiveDate::from_ymd(2001, 3, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 3, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_years;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::years(62);
-        expected = NaiveDate::from_ymd(2062, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2062, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_more_than_one_year;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::years(1) + TT::months(1);
-        expected = NaiveDate::from_ymd(2001, 2, 28).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 2, 28).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_more_than_one_month;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
 
         // As we calculate 1 month + 1 day first, we end up adding 31 days to the base
         amount   = TT::months(1) + TT::days(1);
 
         // and therefor this results in the date 2000-02-01
         // This is not that inuitive, of course.
-        expected = NaiveDate::from_ymd(2000, 2, 29).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 2, 29).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_more_than_one_day;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(1) + TT::hours(1);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_more_than_one_hour;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(1) + TT::minutes(1);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_more_than_one_minute;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(1) + TT::seconds(1);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_invalid_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(13);
-        expected = NaiveDate::from_ymd(2001, 2, 28).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2001, 2, 28).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_invalid_days;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(31);
-        expected = NaiveDate::from_ymd(2000, 2, 29).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 2, 29).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_invalid_hours;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(25);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_invalid_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(61);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_month! {
         name     = test_moment_plus_invalid_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(61);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_month! {
         name     = test_moment_minus_nothing;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(0);
-        expected = NaiveDate::from_ymd(2000, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_month! {
         name     = test_moment_minus_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(1);
-        expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(00, 00, 00);
+        expected = NaiveDate::from_ymd_opt(1999, 12, 31).expect("Static time").and_hms_opt(00, 00, 00).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_month! {
         name     = test_moment_minus_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(12);
-        expected = NaiveDate::from_ymd(1999, 1, 31).and_hms(0, 0, 0);
+        expected = NaiveDate::from_ymd_opt(1999, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
 
 }
@@ -2970,6 +2958,7 @@ mod test_end_of_day {
             #[test]
             fn $name() {
                 let base = TT::moment($base);
+                #[allow(clippy::redundant_closure_call)]
                 let result = $op(base, $amount).end_of_day().calculate();
                 assert!(result.is_ok(), "Operation failed: {:?}", result);
                 let result = result.unwrap();
@@ -3020,154 +3009,154 @@ mod test_end_of_day {
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_zero_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(0);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(1);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_too_much_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(62);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(2);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_too_much_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(65);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_minutes_in_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(62);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(14);
-        expected = NaiveDate::from_ymd(2001, 3, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2001, 3, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_years;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::years(62);
-        expected = NaiveDate::from_ymd(2062, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2062, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_more_than_one_year;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::years(1) + TT::months(1);
-        expected = NaiveDate::from_ymd(2001, 2, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2001, 2, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_more_than_one_month;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
 
         // As we calculate 1 month + 1 day first, we end up adding 31 days to the base
         amount   = TT::months(1) + TT::days(1);
 
         // and therefor this results in the date 2000-02-01
         // This is not that inuitive, of course.
-        expected = NaiveDate::from_ymd(2000, 2, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 2, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_more_than_one_day;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(1) + TT::hours(1);
-        expected = NaiveDate::from_ymd(2000, 1, 2).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 2).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_more_than_one_hour;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(1) + TT::minutes(1);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_more_than_one_minute;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(1) + TT::seconds(1);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_invalid_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(13);
-        expected = NaiveDate::from_ymd(2001, 2, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2001, 2, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_invalid_days;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(31);
-        expected = NaiveDate::from_ymd(2000, 2, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 2, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_invalid_hours;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(25);
-        expected = NaiveDate::from_ymd(2000, 1, 2).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 2).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_invalid_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(61);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_day! {
         name     = test_moment_plus_invalid_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(61);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_day! {
         name     = test_moment_minus_nothing;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(0);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_day! {
         name     = test_moment_minus_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(1);
-        expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(1999, 12, 31).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_day! {
         name     = test_moment_minus_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(12);
-        expected = NaiveDate::from_ymd(1999, 1, 1).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(1999, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
 }
@@ -3188,6 +3177,7 @@ mod test_end_of_hour {
             #[test]
             fn $name() {
                 let base = TT::moment($base);
+                #[allow(clippy::redundant_closure_call)]
                 let result = $op(base, $amount).end_of_hour().calculate();
                 assert!(result.is_ok(), "Operation failed: {:?}", result);
                 let result = result.unwrap();
@@ -3238,154 +3228,154 @@ mod test_end_of_hour {
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_zero_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(0);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(1);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_too_much_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(62);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(2);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_too_much_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(65);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(1, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_minutes_in_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(62);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(14);
-        expected = NaiveDate::from_ymd(2001, 3, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2001, 3, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_years;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::years(62);
-        expected = NaiveDate::from_ymd(2062, 1, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2062, 1, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_more_than_one_year;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::years(1) + TT::months(1);
-        expected = NaiveDate::from_ymd(2001, 2, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2001, 2, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_more_than_one_month;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
 
         // As we calculate 1 month + 1 day first, we end up adding 31 days to the base
         amount   = TT::months(1) + TT::days(1);
 
         // and therefor this results in the date 2000-02-01
         // This is not that inuitive, of course.
-        expected = NaiveDate::from_ymd(2000, 2, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 2, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_more_than_one_day;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(1) + TT::hours(1);
-        expected = NaiveDate::from_ymd(2000, 1, 2).and_hms(1, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 2).expect("Static time").and_hms_opt(1, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_more_than_one_hour;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(1) + TT::minutes(1);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(1, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_more_than_one_minute;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(1) + TT::seconds(1);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_invalid_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(13);
-        expected = NaiveDate::from_ymd(2001, 2, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2001, 2, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_invalid_days;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(31);
-        expected = NaiveDate::from_ymd(2000, 2, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 2, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_invalid_hours;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(25);
-        expected = NaiveDate::from_ymd(2000, 1, 2).and_hms(1, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 2).expect("Static time").and_hms_opt(1, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_invalid_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(61);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(1, 59, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_hour! {
         name     = test_moment_plus_invalid_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(61);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_hour! {
         name     = test_moment_minus_nothing;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(0);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_hour! {
         name     = test_moment_minus_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(1);
-        expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(1999, 12, 31).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_hour! {
         name     = test_moment_minus_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(12);
-        expected = NaiveDate::from_ymd(1999, 1, 1).and_hms(0, 59, 59);
+        expected = NaiveDate::from_ymd_opt(1999, 1, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
 
 }
@@ -3406,6 +3396,7 @@ mod test_end_of_minute {
             #[test]
             fn $name() {
                 let base = TT::moment($base);
+                #[allow(clippy::redundant_closure_call)]
                 let result = $op(base, $amount).end_of_minute().calculate();
                 assert!(result.is_ok(), "Operation failed: {:?}", result);
                 let result = result.unwrap();
@@ -3456,154 +3447,154 @@ mod test_end_of_minute {
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_zero_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(0);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(1);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_too_much_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(62);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 1, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(2);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 2, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 2, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_too_much_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(65);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 5, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(1, 5, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_minutes_in_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(62);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 1, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(14);
-        expected = NaiveDate::from_ymd(2001, 3, 1).and_hms(0, 0, 59);
+        expected = NaiveDate::from_ymd_opt(2001, 3, 1).expect("Static time").and_hms_opt(0, 0, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_years;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::years(62);
-        expected = NaiveDate::from_ymd(2062, 1, 1).and_hms(0, 0, 59);
+        expected = NaiveDate::from_ymd_opt(2062, 1, 1).expect("Static time").and_hms_opt(0, 0, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_more_than_one_year;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::years(1) + TT::months(1);
-        expected = NaiveDate::from_ymd(2001, 2, 1).and_hms(0, 0, 59);
+        expected = NaiveDate::from_ymd_opt(2001, 2, 1).expect("Static time").and_hms_opt(0, 0, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_more_than_one_month;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
 
         // As we calculate 1 month + 1 day first, we end up adding 31 days to the base
         amount   = TT::months(1) + TT::days(1);
 
         // and therefor this results in the date 2000-02-01
         // This is not that inuitive, of course.
-        expected = NaiveDate::from_ymd(2000, 2, 1).and_hms(0, 0, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 2, 1).expect("Static time").and_hms_opt(0, 0, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_more_than_one_day;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(1) + TT::hours(1);
-        expected = NaiveDate::from_ymd(2000, 1, 2).and_hms(1, 0, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 2).expect("Static time").and_hms_opt(1, 0, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_more_than_one_hour;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(1) + TT::minutes(1);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 1, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(1, 1, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_more_than_one_minute;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(1) + TT::seconds(1);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 1, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_invalid_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(13);
-        expected = NaiveDate::from_ymd(2001, 2, 1).and_hms(0, 0, 59);
+        expected = NaiveDate::from_ymd_opt(2001, 2, 1).expect("Static time").and_hms_opt(0, 0, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_invalid_days;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::days(31);
-        expected = NaiveDate::from_ymd(2000, 2, 1).and_hms(0, 0, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 2, 1).expect("Static time").and_hms_opt(0, 0, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_invalid_hours;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::hours(25);
-        expected = NaiveDate::from_ymd(2000, 1, 2).and_hms(1, 0, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 2).expect("Static time").and_hms_opt(1, 0, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_invalid_minutes;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::minutes(61);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 1, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(1, 1, 59).expect("Static time");
     }
 
     generate_test_moment_plus_amount_and_end_of_minute! {
         name     = test_moment_plus_invalid_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(61);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 1, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 1, 59).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_minute! {
         name     = test_moment_minus_nothing;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(0);
-        expected = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 59);
+        expected = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 59).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_minute! {
         name     = test_moment_minus_seconds;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::seconds(1);
-        expected = NaiveDate::from_ymd(1999, 12, 31).and_hms(23, 59, 59);
+        expected = NaiveDate::from_ymd_opt(1999, 12, 31).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
 
     generate_test_moment_minus_amount_and_end_of_minute! {
         name     = test_moment_minus_months;
-        base     = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        base     = NaiveDate::from_ymd_opt(2000, 1, 1).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
         amount   = TT::months(12);
-        expected = NaiveDate::from_ymd(1999, 1, 1).and_hms(0, 0, 59);
+        expected = NaiveDate::from_ymd_opt(1999, 1, 1).expect("Static time").and_hms_opt(0, 0, 59).expect("Static time");
     }
 
 }
@@ -3615,7 +3606,7 @@ mod test_is_a {
     use indicator::Day;
 
     fn ymd(y: i32, m: u32, d: u32) -> TT {
-        TT::moment(ND::from_ymd(y, m, d).and_hms(0, 0, 0))
+        TT::moment(ND::from_ymd_opt(y, m, d).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time"))
     }
 
     #[test]
@@ -3668,7 +3659,7 @@ mod test_is_in {
     use indicator::Month;
 
     fn ymd(y: i32, m: u32, d: u32) -> TT {
-        TT::moment(ND::from_ymd(y, m, d).and_hms(0, 0, 0))
+        TT::moment(ND::from_ymd_opt(y, m, d).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time"))
     }
 
     #[test]
