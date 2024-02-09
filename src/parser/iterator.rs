@@ -1,4 +1,9 @@
-use nom::whitespace::sp;
+use nom::branch::alt;
+use nom::bytes::complete::tag;
+use nom::character::complete::{multispace0, multispace1};
+use nom::combinator::{complete, map, opt};
+use nom::IResult;
+use nom::sequence::tuple;
 
 use error::Result;
 use error::Error;
@@ -7,21 +12,18 @@ use timetype::IntoTimeType;
 use timetype;
 use iter;
 
-named!(pub iter_spec<Iterspec>, alt_complete!(
-    tag!("secondly") => { |_| Iterspec::Secondly } |
-    tag!("minutely") => { |_| Iterspec::Minutely } |
-    tag!("hourly")   => { |_| Iterspec::Hourly } |
-    tag!("daily")    => { |_| Iterspec::Daily } |
-    tag!("weekly")   => { |_| Iterspec::Weekly } |
-    tag!("monthly")  => { |_| Iterspec::Monthly } |
-    tag!("yearly")   => { |_| Iterspec::Yearly } |
-    do_parse!(
-        tag!("every") >>
-        number:integer >>
-        unit:unit_parser >>
-        (Iterspec::Every(number, unit))
-    )
-));
+pub fn iter_spec(i: &[u8]) -> IResult<&[u8], Iterspec> {
+    complete(alt((
+        map(tag("secondly"), |_| Iterspec::Secondly),
+        map(tag("minutely"), |_| Iterspec::Minutely),
+        map(tag("hourly"),   |_| Iterspec::Hourly),
+        map(tag("daily"),    |_| Iterspec::Daily),
+        map(tag("weekly"),   |_| Iterspec::Weekly),
+        map(tag("monthly"),  |_| Iterspec::Monthly),
+        map(tag("yearly"),   |_| Iterspec::Yearly),
+        map(tuple((tag("every"), integer, unit_parser)), |(_, number, unit)| Iterspec::Every(number, unit))
+    )))(i)
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Iterspec {
@@ -35,18 +37,18 @@ pub enum Iterspec {
     Every(i64, Unit),
 }
 
-named!(pub until_spec<UntilSpec>, alt_complete!(
-    do_parse!(
-        tag!("until") >> sp >>
-        exact: exact_date_parser >>
-        (UntilSpec::Exact(exact))
-    ) |
-    do_parse!(
-        num: integer >> sp >>
-        tag!("times") >>
-        (UntilSpec::Times(num))
-    )
-));
+pub fn until_spec(i: &[u8]) -> IResult<&[u8], UntilSpec> {
+    complete(alt((
+        map(
+            tuple((tag("until"), multispace1, exact_date_parser)),
+            |(_, _, exact)| UntilSpec::Exact(exact)
+        ),
+        map(
+            tuple((integer, multispace1, tag("times"))),
+            |(num, _, _)| UntilSpec::Times(num)
+        )
+    )))(i)
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum UntilSpec {
@@ -54,12 +56,12 @@ pub enum UntilSpec {
     Times(i64)
 }
 
-named!(pub iterator<Iterator>, do_parse!(
-    opt!(sp) >> d: date         >>
-    opt!(sp) >> spec: iter_spec >>
-    opt!(sp) >> until: opt!(complete!(until_spec)) >>
-    (Iterator(d, spec, until))
-));
+pub fn iterator(i: &[u8]) -> IResult<&[u8], Iterator> {
+    map(
+        tuple((multispace0, date, multispace0, iter_spec, multispace0, opt(complete(until_spec)))),
+        |(_, d, _, spec, _, until)| { Iterator(d, spec, until) },
+    )(i)
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Iterator(Date, Iterspec, Option<UntilSpec>);
@@ -149,7 +151,6 @@ impl<I> ::std::iter::Iterator for UserIterator<I>
 #[cfg(test)]
 mod tests {
     use std::iter::Iterator;
-    use nom::IResult;
     use super::*;
 
     use chrono::Timelike;
@@ -157,20 +158,20 @@ mod tests {
 
     #[test]
     fn test_iterspec() {
-        assert_eq!(iter_spec(&b"secondly"[..]), IResult::Done(&b""[..], Iterspec::Secondly));
-        assert_eq!(iter_spec(&b"minutely"[..]), IResult::Done(&b""[..], Iterspec::Minutely));
-        assert_eq!(iter_spec(&b"hourly"[..]), IResult::Done(&b""[..], Iterspec::Hourly));
-        assert_eq!(iter_spec(&b"daily"[..]), IResult::Done(&b""[..], Iterspec::Daily));
-        assert_eq!(iter_spec(&b"weekly"[..]), IResult::Done(&b""[..], Iterspec::Weekly));
-        assert_eq!(iter_spec(&b"monthly"[..]), IResult::Done(&b""[..], Iterspec::Monthly));
-        assert_eq!(iter_spec(&b"yearly"[..]), IResult::Done(&b""[..], Iterspec::Yearly));
-        assert_eq!(iter_spec(&b"every 5min"[..]), IResult::Done(&b""[..], Iterspec::Every(5, Unit::Minute)));
+        assert_eq!(iter_spec(&b"secondly"[..]), Ok((&b""[..], Iterspec::Secondly)));
+        assert_eq!(iter_spec(&b"minutely"[..]), Ok((&b""[..], Iterspec::Minutely)));
+        assert_eq!(iter_spec(&b"hourly"[..]), Ok((&b""[..], Iterspec::Hourly)));
+        assert_eq!(iter_spec(&b"daily"[..]), Ok((&b""[..], Iterspec::Daily)));
+        assert_eq!(iter_spec(&b"weekly"[..]), Ok((&b""[..], Iterspec::Weekly)));
+        assert_eq!(iter_spec(&b"monthly"[..]), Ok((&b""[..], Iterspec::Monthly)));
+        assert_eq!(iter_spec(&b"yearly"[..]), Ok((&b""[..], Iterspec::Yearly)));
+        assert_eq!(iter_spec(&b"every 5min"[..]), Ok((&b""[..], Iterspec::Every(5, Unit::Minute))));
     }
 
     #[test]
     fn test_iterator_1() {
         let res = iterator(&b"2017-01-01 hourly"[..]);
-        assert!(res.is_done(), "Not done: {:?}", res);
+        assert!(res.is_ok(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -194,7 +195,7 @@ mod tests {
     #[test]
     fn test_iterator_2() {
         let res = iterator(&b"2017-01-01 every 2mins"[..]);
-        assert!(res.is_done(), "Not done: {:?}", res);
+        assert!(res.is_ok(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -218,7 +219,7 @@ mod tests {
     #[test]
     fn test_iterator_3() {
         let res = iterator(&b"2017-01-01 daily"[..]);
-        assert!(res.is_done(), "Not done: {:?}", res);
+        assert!(res.is_ok(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -242,7 +243,7 @@ mod tests {
     #[test]
     fn test_iterator_4() {
         let res = iterator(&b"2017-01-01 weekly"[..]);
-        assert!(res.is_done(), "Not done: {:?}", res);
+        assert!(res.is_ok(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -266,7 +267,7 @@ mod tests {
     #[test]
     fn test_until_spec_1() {
         let res = until_spec(&b"until 2017-01-01T05:00:00"[..]);
-        assert!(res.is_done(), "Not done: {:?}", res);
+        assert!(res.is_ok(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
     }
@@ -274,7 +275,7 @@ mod tests {
     #[test]
     fn test_until_iterator_1() {
         let res = iterator(&b"2017-01-01 hourly until 2017-01-01T05:00:00"[..]);
-        assert!(res.is_done(), "Not done: {:?}", res);
+        assert!(res.is_ok(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -305,7 +306,7 @@ mod tests {
     #[test]
     fn test_until_iterator_2() {
         let res = iterator(&b"2017-01-01 every 2mins until 2017-01-01T00:10:00"[..]);
-        assert!(res.is_done(), "Not done: {:?}", res);
+        assert!(res.is_ok(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -335,7 +336,7 @@ mod tests {
     #[test]
     fn test_until_iterator_3() {
         let res = iterator(&b"2017-01-01 daily until 2017-01-05"[..]);
-        assert!(res.is_done(), "Not done: {:?}", res);
+        assert!(res.is_ok(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 
@@ -365,7 +366,7 @@ mod tests {
     #[test]
     fn test_until_iterator_4() {
         let res = iterator(&b"2017-01-01 weekly until 2017-01-14"[..]);
-        assert!(res.is_done(), "Not done: {:?}", res);
+        assert!(res.is_ok(), "Not done: {:?}", res);
         let (_, i) = res.unwrap();
         println!("{:#?}", i);
 

@@ -43,7 +43,8 @@
 //! Be warned!
 //!
 
-use nom::Needed;
+use nom::branch::alt;
+use nom::combinator::{complete, map};
 use nom::IResult;
 
 mod timetype;
@@ -53,27 +54,27 @@ use error::Result;
 use error::Error;
 use iter::Iter;
 use timetype::IntoTimeType;
-use parser::timetype::timetype;
-use parser::iterator::iterator;
+use parser::timetype::{timetype};
+use parser::iterator::{iterator};
 
 pub enum Parsed {
-    Iterator(Result<::parser::iterator::UserIterator<Iter>>),
+    Iterator(Result<iterator::UserIterator<Iter>>),
     TimeType(::timetype::TimeType)
 }
 
-named!(do_parse<Result<Parsed>>, alt_complete!(
-    do_parse!(it: iterator >> (Ok(Parsed::Iterator(it.into_user_iterator())))) |
-    do_parse!(tt: timetype >> (tt.into_timetype().map(Parsed::TimeType)))
-));
+fn do_parse(input: &[u8]) -> IResult<&[u8], Result<Parsed>> {
+    complete(alt((
+        map(iterator, |it| (Ok(Parsed::Iterator(it.into_user_iterator())))),
+        map(timetype, |tt| tt.into_timetype().map(Parsed::TimeType)),
+    )))(input)
+}
 
 pub fn parse(s: &str) -> Result<Parsed> {
     match do_parse(s.as_bytes()) {
-        IResult::Done(_, Ok(o))              => Ok(o),
-        IResult::Done(_, Err(e))             => Err(e),
-        IResult::Error(e)                    => Err(From::from(e)),
-        IResult::Incomplete(Needed::Unknown) => Err(Error::UnknownParserError),
-        IResult::Incomplete(Needed::Size(_)) => Err(Error::UnknownParserError),
-
+        Ok((_, Ok(o))) => Ok(o),
+        Ok((_, Err(e))) => Err(e),
+        Err(nom::Err::Error(e) | nom::Err::Failure(e)) => Err(Error::NomError(e.code.description().to_string())),
+        Err(nom::Err::Incomplete(_)) => Err(Error::UnknownParserError),
     }
 }
 

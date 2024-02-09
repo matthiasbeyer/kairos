@@ -3,7 +3,6 @@
 extern crate thiserror;
 extern crate chrono;
 
-#[macro_use]
 extern crate nom;
 extern crate iso8601;
 
