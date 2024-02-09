@@ -47,24 +47,25 @@ use nom::branch::alt;
 use nom::combinator::{complete, map};
 use nom::IResult;
 
-mod timetype;
-mod iterator;
+use iterator::iterator;
+use timetype::timetype;
 
-use error::Result;
-use error::Error;
-use iter::Iter;
-use timetype::IntoTimeType;
-use parser::timetype::{timetype};
-use parser::iterator::{iterator};
+use crate::error::Error;
+use crate::error::Result;
+use crate::iter::Iter;
+use crate::timetype::IntoTimeType;
+
+mod iterator;
+mod timetype;
 
 pub enum Parsed {
     Iterator(Result<iterator::UserIterator<Iter>>),
-    TimeType(::timetype::TimeType)
+    TimeType(crate::timetype::TimeType),
 }
 
 fn do_parse(input: &[u8]) -> IResult<&[u8], Result<Parsed>> {
     complete(alt((
-        map(iterator, |it| (Ok(Parsed::Iterator(it.into_user_iterator())))),
+        map(iterator, |it| Ok(Parsed::Iterator(it.into_user_iterator()))),
         map(timetype, |tt| tt.into_timetype().map(Parsed::TimeType)),
     )))(input)
 }
@@ -77,4 +78,3 @@ pub fn parse(s: &str) -> Result<Parsed> {
         Err(nom::Err::Incomplete(_)) => Err(Error::UnknownParserError),
     }
 }
-

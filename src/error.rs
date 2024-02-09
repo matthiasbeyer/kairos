@@ -1,12 +1,11 @@
-use timetype::TimeType;
-
 use thiserror::Error;
+
+use crate::timetype::TimeType;
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Debug, Clone, Eq, PartialEq, Error)]
 pub enum Error {
-
     #[error("Unknown Error")]
     UnknownError,
 
@@ -46,4 +45,3 @@ pub enum Error {
     #[error("Tokenizer error")]
     NomError(String),
 }
-

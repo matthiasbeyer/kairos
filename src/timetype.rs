@@ -1,20 +1,20 @@
 //! The module for the TimeType
 //!
 
-use chrono::NaiveDateTime;
-use chrono::NaiveDate;
-use chrono::Datelike;
-use chrono::Timelike;
-
 use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Sub;
 use std::ops::SubAssign;
 
-use error::Result;
-use error::Error;
-use indicator::{Day, Month};
-use util::*;
+use chrono::Datelike;
+use chrono::NaiveDate;
+use chrono::NaiveDateTime;
+use chrono::Timelike;
+
+use crate::error::Error;
+use crate::error::Result;
+use crate::indicator::{Day, Month};
+use crate::util::*;
 
 /// A Type of Time, currently based on chrono::NaiveDateTime
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -91,19 +91,21 @@ impl SubAssign for TimeType {
 /// full month.
 ///
 impl TimeType {
-
-    /// Alias for `TimeType::moment(::chrono::offset::Local::now().naive_local())`
+    /// Alias for `TimeType::moment(chrono::offset::Local::now().naive_local())`
     pub fn today() -> TimeType {
-        TimeType::moment(::chrono::offset::Local::now().naive_local())
+        TimeType::moment(chrono::offset::Local::now().naive_local())
     }
 
     pub fn is_a_amount(&self) -> bool {
-        matches!(self, TimeType::Seconds(_) |
-            TimeType::Minutes(_) |
-            TimeType::Hours(_)   |
-            TimeType::Days(_)    |
-            TimeType::Months(_)  |
-            TimeType::Years(_))
+        matches!(
+            self,
+            TimeType::Seconds(_)
+                | TimeType::Minutes(_)
+                | TimeType::Hours(_)
+                | TimeType::Days(_)
+                | TimeType::Months(_)
+                | TimeType::Years(_)
+        )
     }
 
     pub fn is_moment(&self) -> bool {
@@ -230,11 +232,11 @@ impl TimeType {
         match *self {
             TimeType::Seconds(d) => d,
             TimeType::Minutes(d) => d * 60,
-            TimeType::Hours(d)   => d * 60 * 60,
-            TimeType::Days(d)    => d * 60 * 60 * 24,
-            TimeType::Months(d)  => d * 60 * 60 * 24 * 30,
-            TimeType::Years(d)   => d * 60 * 60 * 24 * 30 * 12,
-            _                    => 0
+            TimeType::Hours(d) => d * 60 * 60,
+            TimeType::Days(d) => d * 60 * 60 * 24,
+            TimeType::Months(d) => d * 60 * 60 * 24 * 30,
+            TimeType::Years(d) => d * 60 * 60 * 24 * 30 * 12,
+            _ => 0,
         }
     }
 
@@ -256,11 +258,11 @@ impl TimeType {
         match *self {
             TimeType::Seconds(s) => s / 60,
             TimeType::Minutes(d) => d,
-            TimeType::Hours(d)   => d * 60,
-            TimeType::Days(d)    => d * 60 * 24,
-            TimeType::Months(d)  => d * 60 * 24 * 30,
-            TimeType::Years(d)   => d * 60 * 24 * 30 * 12,
-            _ => 0
+            TimeType::Hours(d) => d * 60,
+            TimeType::Days(d) => d * 60 * 24,
+            TimeType::Months(d) => d * 60 * 24 * 30,
+            TimeType::Years(d) => d * 60 * 24 * 30 * 12,
+            _ => 0,
         }
     }
 
@@ -282,11 +284,11 @@ impl TimeType {
         match *self {
             TimeType::Seconds(s) => s / 60 / 60,
             TimeType::Minutes(d) => d / 60,
-            TimeType::Hours(d)   => d,
-            TimeType::Days(d)    => d * 24,
-            TimeType::Months(d)  => d * 24 * 30,
-            TimeType::Years(d)   => d * 24 * 30 * 12,
-            _ => 0
+            TimeType::Hours(d) => d,
+            TimeType::Days(d) => d * 24,
+            TimeType::Months(d) => d * 24 * 30,
+            TimeType::Years(d) => d * 24 * 30 * 12,
+            _ => 0,
         }
     }
 
@@ -308,11 +310,11 @@ impl TimeType {
         match *self {
             TimeType::Seconds(s) => s / 24 / 60 / 60,
             TimeType::Minutes(d) => d / 24 / 60,
-            TimeType::Hours(d)   => d / 24,
-            TimeType::Days(d)    => d,
-            TimeType::Months(d)  => d * 30,
-            TimeType::Years(d)   => d * 30 * 12,
-            _ => 0
+            TimeType::Hours(d) => d / 24,
+            TimeType::Days(d) => d,
+            TimeType::Months(d) => d * 30,
+            TimeType::Years(d) => d * 30 * 12,
+            _ => 0,
         }
     }
 
@@ -334,11 +336,11 @@ impl TimeType {
         match *self {
             TimeType::Seconds(s) => s / 30 / 24 / 60 / 60,
             TimeType::Minutes(d) => d / 30 / 24 / 60,
-            TimeType::Hours(d)   => d / 30 / 24,
-            TimeType::Days(d)    => d / 30,
-            TimeType::Months(d)  => d,
-            TimeType::Years(d)   => d * 12,
-            _ => 0
+            TimeType::Hours(d) => d / 30 / 24,
+            TimeType::Days(d) => d / 30,
+            TimeType::Months(d) => d,
+            TimeType::Years(d) => d * 12,
+            _ => 0,
         }
     }
 
@@ -360,18 +362,18 @@ impl TimeType {
         match *self {
             TimeType::Seconds(s) => s / 12 / 30 / 24 / 60 / 60,
             TimeType::Minutes(d) => d / 12 / 30 / 24 / 60,
-            TimeType::Hours(d)   => d / 12 / 30 / 24,
-            TimeType::Days(d)    => d / 12 / 30,
-            TimeType::Months(d)  => d / 12,
-            TimeType::Years(d)   => d,
-            _ => 0
+            TimeType::Hours(d) => d / 12 / 30 / 24,
+            TimeType::Days(d) => d / 12 / 30,
+            TimeType::Months(d) => d / 12,
+            TimeType::Years(d) => d,
+            _ => 0,
         }
     }
 
     pub fn get_moment(&self) -> Option<&NaiveDateTime> {
         match self {
             TimeType::Moment(m) => Some(m),
-            _                   => None,
+            _ => None,
         }
     }
 
@@ -382,7 +384,7 @@ impl TimeType {
 
         match *self {
             TT::Moment(m) => Ok(m.weekday() == d.into()),
-            _             => Err(Error::CannotCompareDayTo(self.name())),
+            _ => Err(Error::CannotCompareDayTo(self.name())),
         }
     }
 
@@ -393,7 +395,7 @@ impl TimeType {
 
         match *self {
             TT::Moment(m) => Ok(m.month() == month.into()),
-            _             => Err(Error::CannotCompareMonthTo(self.name())),
+            _ => Err(Error::CannotCompareMonthTo(self.name())),
         }
     }
 
@@ -402,27 +404,26 @@ impl TimeType {
         use self::TimeType as TT;
 
         match *self {
-            TT::Addition(..)    => "Addition",
-            TT::Days(..)        => "Days",
-            TT::EndOfDay(..)    => "EndOfDay",
-            TT::EndOfHour(..)   => "EndOfHour",
+            TT::Addition(..) => "Addition",
+            TT::Days(..) => "Days",
+            TT::EndOfDay(..) => "EndOfDay",
+            TT::EndOfHour(..) => "EndOfHour",
             TT::EndOfMinute(..) => "EndOfMinute",
-            TT::EndOfMonth(..)  => "EndOfMonth",
-            TT::EndOfYear(..)   => "EndOfYear",
-            TT::Hours(..)       => "Hours",
-            TT::Minutes(..)     => "Minutes",
-            TT::Moment(..)      => "Moment",
-            TT::Months(..)      => "Months",
-            TT::Seconds(..)     => "Seconds",
+            TT::EndOfMonth(..) => "EndOfMonth",
+            TT::EndOfYear(..) => "EndOfYear",
+            TT::Hours(..) => "Hours",
+            TT::Minutes(..) => "Minutes",
+            TT::Moment(..) => "Moment",
+            TT::Months(..) => "Months",
+            TT::Seconds(..) => "Seconds",
             TT::Subtraction(..) => "Subtraction",
-            TT::Years(..)       => "Years",
+            TT::Years(..) => "Years",
         }
     }
 
     pub fn calculate(self) -> Result<TimeType> {
         do_calculate(self)
     }
-
 }
 
 /// Helper trait for converting things into a TimeType object
@@ -439,17 +440,17 @@ impl IntoTimeType for TimeType {
 }
 
 fn do_calculate(tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Addition(a, b)     => add(a, b),
-        TT::Subtraction(a, b)  => sub(a, b),
-        TT::EndOfYear(inner)   => end_of_year(*inner),
-        TT::EndOfMonth(inner)  => end_of_month(*inner),
-        TT::EndOfDay(inner)    => end_of_day(*inner),
-        TT::EndOfHour(inner)   => end_of_hour(*inner),
+        TT::Addition(a, b) => add(a, b),
+        TT::Subtraction(a, b) => sub(a, b),
+        TT::EndOfYear(inner) => end_of_year(*inner),
+        TT::EndOfMonth(inner) => end_of_month(*inner),
+        TT::EndOfDay(inner) => end_of_day(*inner),
+        TT::EndOfHour(inner) => end_of_hour(*inner),
         TT::EndOfMinute(inner) => end_of_minute(*inner),
-        x                      => Ok(x)
+        x => Ok(x),
     }
 }
 
@@ -458,27 +459,27 @@ fn do_calculate(tt: TimeType) -> Result<TimeType> {
 ///
 /// Calling a end-of-year on a end-of-year yields end-of-year applied only once.
 fn end_of_year(tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match do_calculate(tt)? {
-        els @ TT::Seconds(_)        |
-        els @ TT::Minutes(_)        |
-        els @ TT::Hours(_)          |
-        els @ TT::Days(_)           |
-        els @ TT::Months(_)         |
-        els @ TT::Years(_)          |
-        els @ TT::Addition(_, _)    |
-        els @ TT::Subtraction(_, _) => Err(Error::CannotCalculateEndOfYearOn(els)),
+        els @ TT::Seconds(_)
+        | els @ TT::Minutes(_)
+        | els @ TT::Hours(_)
+        | els @ TT::Days(_)
+        | els @ TT::Months(_)
+        | els @ TT::Years(_)
+        | els @ TT::Addition(_, _)
+        | els @ TT::Subtraction(_, _) => Err(Error::CannotCalculateEndOfYearOn(els)),
         TT::Moment(m) => NaiveDate::from_ymd_opt(m.year(), 12, 31)
             .and_then(|nd| nd.and_hms_opt(0, 0, 0))
             .map(TT::moment)
             .ok_or(Error::OutOfBounds(m.year(), 12, 31, 0, 0, 0))
             .map_err(Error::from),
 
-        TT::EndOfYear(e)   => do_calculate(*e),
-        TT::EndOfMonth(e)  => do_calculate(*e),
-        TT::EndOfDay(e)    => do_calculate(*e),
-        TT::EndOfHour(e)   => do_calculate(*e),
+        TT::EndOfYear(e) => do_calculate(*e),
+        TT::EndOfMonth(e) => do_calculate(*e),
+        TT::EndOfDay(e) => do_calculate(*e),
+        TT::EndOfHour(e) => do_calculate(*e),
         TT::EndOfMinute(e) => do_calculate(*e),
     }
 }
@@ -488,18 +489,18 @@ fn end_of_year(tt: TimeType) -> Result<TimeType> {
 ///
 /// Calling a end-of-month on a end-of-month yields end-of-month applied only once.
 fn end_of_month(tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match do_calculate(tt)? {
-        els @ TT::Seconds(_)        |
-        els @ TT::Minutes(_)        |
-        els @ TT::Hours(_)          |
-        els @ TT::Days(_)           |
-        els @ TT::Months(_)         |
-        els @ TT::Years(_)          |
-        els @ TT::Addition(_, _)    |
-        els @ TT::Subtraction(_, _) => Err(Error::CannotCalculateEndOfMonthOn(els)),
-        TT::Moment(m)    => {
+        els @ TT::Seconds(_)
+        | els @ TT::Minutes(_)
+        | els @ TT::Hours(_)
+        | els @ TT::Days(_)
+        | els @ TT::Months(_)
+        | els @ TT::Years(_)
+        | els @ TT::Addition(_, _)
+        | els @ TT::Subtraction(_, _) => Err(Error::CannotCalculateEndOfMonthOn(els)),
+        TT::Moment(m) => {
             let last_day = get_num_of_days_in_month(m.year() as i64, m.month() as i64) as u32;
             NaiveDate::from_ymd_opt(m.year(), m.month(), last_day)
                 .and_then(|nd| nd.and_hms_opt(0, 0, 0))
@@ -507,10 +508,10 @@ fn end_of_month(tt: TimeType) -> Result<TimeType> {
                 .ok_or(Error::OutOfBounds(m.year(), m.month(), last_day, 0, 0, 0))
                 .map_err(Error::from)
         },
-        TT::EndOfYear(e)   => do_calculate(*e),
-        TT::EndOfMonth(e)  => do_calculate(*e),
-        TT::EndOfDay(e)    => do_calculate(*e),
-        TT::EndOfHour(e)   => do_calculate(*e),
+        TT::EndOfYear(e) => do_calculate(*e),
+        TT::EndOfMonth(e) => do_calculate(*e),
+        TT::EndOfDay(e) => do_calculate(*e),
+        TT::EndOfHour(e) => do_calculate(*e),
         TT::EndOfMinute(e) => do_calculate(*e),
     }
 }
@@ -520,26 +521,26 @@ fn end_of_month(tt: TimeType) -> Result<TimeType> {
 ///
 /// Calling a end-of-day on a end-of-day yields end-of-month applied only once.
 fn end_of_day(tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match do_calculate(tt)? {
-        els @ TT::Seconds(_)        |
-        els @ TT::Minutes(_)        |
-        els @ TT::Hours(_)          |
-        els @ TT::Days(_)           |
-        els @ TT::Months(_)         |
-        els @ TT::Years(_)          |
-        els @ TT::Addition(_, _)    |
-        els @ TT::Subtraction(_, _) => Err(Error::CannotCalculateEndOfMonthOn(els)),
+        els @ TT::Seconds(_)
+        | els @ TT::Minutes(_)
+        | els @ TT::Hours(_)
+        | els @ TT::Days(_)
+        | els @ TT::Months(_)
+        | els @ TT::Years(_)
+        | els @ TT::Addition(_, _)
+        | els @ TT::Subtraction(_, _) => Err(Error::CannotCalculateEndOfMonthOn(els)),
         TT::Moment(m) => NaiveDate::from_ymd_opt(m.year(), m.month(), m.day())
             .and_then(|nd| nd.and_hms_opt(23, 59, 59))
             .map(TT::moment)
             .ok_or(Error::OutOfBounds(m.year(), m.month(), m.day(), 23, 59, 59))
             .map_err(Error::from),
-        TT::EndOfYear(e)   => do_calculate(*e),
-        TT::EndOfMonth(e)  => do_calculate(*e),
-        TT::EndOfDay(e)    => do_calculate(*e),
-        TT::EndOfHour(e)   => do_calculate(*e),
+        TT::EndOfYear(e) => do_calculate(*e),
+        TT::EndOfMonth(e) => do_calculate(*e),
+        TT::EndOfDay(e) => do_calculate(*e),
+        TT::EndOfHour(e) => do_calculate(*e),
         TT::EndOfMinute(e) => do_calculate(*e),
     }
 }
@@ -549,26 +550,26 @@ fn end_of_day(tt: TimeType) -> Result<TimeType> {
 ///
 /// Calling a end-of-hour on a end-of-hour yields end-of-month applied only once.
 fn end_of_hour(tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match do_calculate(tt)? {
-        els @ TT::Seconds(_)        |
-        els @ TT::Minutes(_)        |
-        els @ TT::Hours(_)          |
-        els @ TT::Days(_)           |
-        els @ TT::Months(_)         |
-        els @ TT::Years(_)          |
-        els @ TT::Addition(_, _)    |
-        els @ TT::Subtraction(_, _) => Err(Error::CannotCalculateEndOfMonthOn(els)),
-        TT::Moment(m)    => NaiveDate::from_ymd_opt(m.year(), m.month(), m.day())
+        els @ TT::Seconds(_)
+        | els @ TT::Minutes(_)
+        | els @ TT::Hours(_)
+        | els @ TT::Days(_)
+        | els @ TT::Months(_)
+        | els @ TT::Years(_)
+        | els @ TT::Addition(_, _)
+        | els @ TT::Subtraction(_, _) => Err(Error::CannotCalculateEndOfMonthOn(els)),
+        TT::Moment(m) => NaiveDate::from_ymd_opt(m.year(), m.month(), m.day())
             .and_then(|nd| nd.and_hms_opt(m.hour(), 59, 59))
             .map(TT::moment)
             .ok_or(Error::OutOfBounds(m.year(), m.month(), m.day(), m.hour(), 59, 59))
             .map_err(Error::from),
-        TT::EndOfYear(e)   => do_calculate(*e),
-        TT::EndOfMonth(e)  => do_calculate(*e),
-        TT::EndOfDay(e)    => do_calculate(*e),
-        TT::EndOfHour(e)   => do_calculate(*e),
+        TT::EndOfYear(e) => do_calculate(*e),
+        TT::EndOfMonth(e) => do_calculate(*e),
+        TT::EndOfDay(e) => do_calculate(*e),
+        TT::EndOfHour(e) => do_calculate(*e),
         TT::EndOfMinute(e) => do_calculate(*e),
     }
 }
@@ -578,33 +579,40 @@ fn end_of_hour(tt: TimeType) -> Result<TimeType> {
 ///
 /// Calling a end-of-minute on a end-of-minute yields end-of-month applied only once.
 fn end_of_minute(tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match do_calculate(tt)? {
-        els @ TT::Seconds(_)        |
-        els @ TT::Minutes(_)        |
-        els @ TT::Hours(_)          |
-        els @ TT::Days(_)           |
-        els @ TT::Months(_)         |
-        els @ TT::Years(_)          |
-        els @ TT::Addition(_, _)    |
-        els @ TT::Subtraction(_, _) => Err(Error::CannotCalculateEndOfMonthOn(els)),
-        TT::Moment(m)    => NaiveDate::from_ymd_opt(m.year(), m.month(), m.day())
+        els @ TT::Seconds(_)
+        | els @ TT::Minutes(_)
+        | els @ TT::Hours(_)
+        | els @ TT::Days(_)
+        | els @ TT::Months(_)
+        | els @ TT::Years(_)
+        | els @ TT::Addition(_, _)
+        | els @ TT::Subtraction(_, _) => Err(Error::CannotCalculateEndOfMonthOn(els)),
+        TT::Moment(m) => NaiveDate::from_ymd_opt(m.year(), m.month(), m.day())
             .and_then(|nd| nd.and_hms_opt(m.hour(), m.minute(), 59))
             .map(TT::moment)
-            .ok_or(Error::OutOfBounds(m.year(), m.month(), m.day(), m.hour(), m.minute(), 59))
+            .ok_or(Error::OutOfBounds(
+                m.year(),
+                m.month(),
+                m.day(),
+                m.hour(),
+                m.minute(),
+                59,
+            ))
             .map_err(Error::from),
-        TT::EndOfYear(e)   => do_calculate(*e),
-        TT::EndOfMonth(e)  => do_calculate(*e),
-        TT::EndOfDay(e)    => do_calculate(*e),
-        TT::EndOfHour(e)   => do_calculate(*e),
+        TT::EndOfYear(e) => do_calculate(*e),
+        TT::EndOfMonth(e) => do_calculate(*e),
+        TT::EndOfDay(e) => do_calculate(*e),
+        TT::EndOfHour(e) => do_calculate(*e),
         TT::EndOfMinute(e) => do_calculate(*e),
     }
 }
 
 #[allow(clippy::boxed_local)]
 fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match (*a, *b) {
         (TT::Moment(mom), thing) => add_to_moment(mom, thing),
@@ -612,20 +620,14 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
 
         (TT::Seconds(a), other) => add_to_seconds(a, other),
         (TT::Minutes(a), other) => add_to_minutes(a, other),
-        (TT::Hours(a), other)   => add_to_hours(a, other),
-        (TT::Days(a), other)    => add_to_days(a, other),
-        (TT::Months(a), other)  => add_to_months(a, other),
-        (TT::Years(a), other)   => add_to_years(a, other),
+        (TT::Hours(a), other) => add_to_hours(a, other),
+        (TT::Days(a), other) => add_to_days(a, other),
+        (TT::Months(a), other) => add_to_months(a, other),
+        (TT::Years(a), other) => add_to_years(a, other),
 
-        (TT::Addition(a, b), other)      => add(a, b)
-            .map(Box::new)
-            .and_then(|bx| add(bx, Box::new(other))),
-        (other, TT::Addition(a, b))      => add(a, b)
-            .map(Box::new)
-            .and_then(|bx| add(Box::new(other), bx)),
-        (TT::Subtraction(a, b), other) => sub(a, b)
-            .map(Box::new)
-            .and_then(|bx| add(Box::new(other), bx)),
+        (TT::Addition(a, b), other) => add(a, b).map(Box::new).and_then(|bx| add(bx, Box::new(other))),
+        (other, TT::Addition(a, b)) => add(a, b).map(Box::new).and_then(|bx| add(Box::new(other), bx)),
+        (TT::Subtraction(a, b), other) => sub(a, b).map(Box::new).and_then(|bx| add(Box::new(other), bx)),
         (other, TT::Subtraction(a, b)) => do_calculate(*a)
             .map(Box::new)
             .and_then(|bx| add(Box::new(other), bx))
@@ -650,264 +652,270 @@ fn add(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
 }
 
 fn add_to_seconds(amount: i64, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => Ok(TT::Seconds(a + amount)),
-        TT::Minutes(a)        => Ok(TT::Seconds(a * 60 + amount)),
-        TT::Hours(a)          => Ok(TT::Seconds(a * 60 * 60 + amount)),
-        TT::Days(a)           => Ok(TT::Seconds(a * 60 * 60 * 24 + amount)),
-        TT::Months(a)         => Ok(TT::Seconds(a * 60 * 60 * 24 * 30 + amount)),
-        TT::Years(a)          => Ok(TT::Seconds(a * 60 * 60 * 24 * 30 * 12 + amount)),
-        TT::Moment(m)         => Err(Error::CannotAdd(TT::Seconds(amount), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => add_to_seconds(amount, add(b, c)?),
+        TT::Seconds(a) => Ok(TT::Seconds(a + amount)),
+        TT::Minutes(a) => Ok(TT::Seconds(a * 60 + amount)),
+        TT::Hours(a) => Ok(TT::Seconds(a * 60 * 60 + amount)),
+        TT::Days(a) => Ok(TT::Seconds(a * 60 * 60 * 24 + amount)),
+        TT::Months(a) => Ok(TT::Seconds(a * 60 * 60 * 24 * 30 + amount)),
+        TT::Years(a) => Ok(TT::Seconds(a * 60 * 60 * 24 * 30 * 12 + amount)),
+        TT::Moment(m) => Err(Error::CannotAdd(TT::Seconds(amount), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotAdd(TT::Seconds(amount), TT::EndOfMinute(e))),
+        TT::Addition(b, c) => add_to_seconds(amount, add(b, c)?),
         TT::Subtraction(b, c) => add_to_seconds(amount, sub(b, c)?),
     }
 }
 
 fn add_to_minutes(amount: i64, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => Ok(TT::Seconds(a + amount * 60)),
-        TT::Minutes(a)        => Ok(TT::Minutes(a + amount)),
-        TT::Hours(a)          => Ok(TT::Minutes(a * 60 + amount)),
-        TT::Days(a)           => Ok(TT::Minutes(a * 60 * 24 + amount)),
-        TT::Months(a)         => Ok(TT::Minutes(a * 60 * 24 * 30 + amount)),
-        TT::Years(a)          => Ok(TT::Minutes(a * 60 * 24 * 30 * 12 + amount)),
-        TT::Moment(m)         => Err(Error::CannotAdd(TT::Minutes(amount), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => add_to_minutes(amount, add(b, c)?),
+        TT::Seconds(a) => Ok(TT::Seconds(a + amount * 60)),
+        TT::Minutes(a) => Ok(TT::Minutes(a + amount)),
+        TT::Hours(a) => Ok(TT::Minutes(a * 60 + amount)),
+        TT::Days(a) => Ok(TT::Minutes(a * 60 * 24 + amount)),
+        TT::Months(a) => Ok(TT::Minutes(a * 60 * 24 * 30 + amount)),
+        TT::Years(a) => Ok(TT::Minutes(a * 60 * 24 * 30 * 12 + amount)),
+        TT::Moment(m) => Err(Error::CannotAdd(TT::Minutes(amount), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotAdd(TT::Minutes(amount), TT::EndOfMinute(e))),
+        TT::Addition(b, c) => add_to_minutes(amount, add(b, c)?),
         TT::Subtraction(b, c) => add_to_minutes(amount, sub(b, c)?),
     }
 }
 
 fn add_to_hours(amount: i64, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => Ok(TT::Seconds(a + amount * 60 * 60)),
-        TT::Minutes(a)        => Ok(TT::Minutes(a + amount * 60)),
-        TT::Hours(a)          => Ok(TT::Hours(  a + amount)),
-        TT::Days(a)           => Ok(TT::Hours(  a * 24 + amount)),
-        TT::Months(a)         => Ok(TT::Hours(  a * 24 * 30 + amount)),
-        TT::Years(a)          => Ok(TT::Hours(  a * 24 * 30 * 12 + amount)),
-        TT::Moment(m)         => Err(Error::CannotAdd(TT::Hours(amount), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => add_to_hours(amount, add(b, c)?),
+        TT::Seconds(a) => Ok(TT::Seconds(a + amount * 60 * 60)),
+        TT::Minutes(a) => Ok(TT::Minutes(a + amount * 60)),
+        TT::Hours(a) => Ok(TT::Hours(a + amount)),
+        TT::Days(a) => Ok(TT::Hours(a * 24 + amount)),
+        TT::Months(a) => Ok(TT::Hours(a * 24 * 30 + amount)),
+        TT::Years(a) => Ok(TT::Hours(a * 24 * 30 * 12 + amount)),
+        TT::Moment(m) => Err(Error::CannotAdd(TT::Hours(amount), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotAdd(TT::Hours(amount), TT::EndOfMinute(e))),
+        TT::Addition(b, c) => add_to_hours(amount, add(b, c)?),
         TT::Subtraction(b, c) => add_to_hours(amount, sub(b, c)?),
     }
 }
 
 fn add_to_days(amount: i64, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => Ok(TT::Seconds(a + amount * 24 * 60 * 60)),
-        TT::Minutes(a)        => Ok(TT::Minutes(a + amount * 24 * 60)),
-        TT::Hours(a)          => Ok(TT::Hours(  a + amount * 24)),
-        TT::Days(a)           => Ok(TT::Days(   a + amount)),
-        TT::Months(a)         => Ok(TT::Days(   a * 30 + amount)),
-        TT::Years(a)          => Ok(TT::Days(   a * 30 * 12 + amount)),
-        TT::Moment(m)         => Err(Error::CannotAdd(TT::Days(amount), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => add_to_days(amount, add(b, c)?),
+        TT::Seconds(a) => Ok(TT::Seconds(a + amount * 24 * 60 * 60)),
+        TT::Minutes(a) => Ok(TT::Minutes(a + amount * 24 * 60)),
+        TT::Hours(a) => Ok(TT::Hours(a + amount * 24)),
+        TT::Days(a) => Ok(TT::Days(a + amount)),
+        TT::Months(a) => Ok(TT::Days(a * 30 + amount)),
+        TT::Years(a) => Ok(TT::Days(a * 30 * 12 + amount)),
+        TT::Moment(m) => Err(Error::CannotAdd(TT::Days(amount), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotAdd(TT::Days(amount), TT::EndOfMinute(e))),
+        TT::Addition(b, c) => add_to_days(amount, add(b, c)?),
         TT::Subtraction(b, c) => add_to_days(amount, sub(b, c)?),
     }
 }
 
 fn add_to_months(amount: i64, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => Ok(TT::Seconds(a + amount * 30 * 24 * 60 * 60)),
-        TT::Minutes(a)        => Ok(TT::Minutes(a + amount * 30 * 24 * 60)),
-        TT::Hours(a)          => Ok(TT::Hours(  a + amount * 30 * 24)),
-        TT::Days(a)           => Ok(TT::Days(   a + amount * 30)),
-        TT::Months(a)         => Ok(TT::Months( a + amount)),
-        TT::Years(a)          => Ok(TT::Months( a * 12 + amount)),
-        TT::Moment(m)         => Err(Error::CannotAdd(TT::Months(amount), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => add_to_months(amount, add(b, c)?),
+        TT::Seconds(a) => Ok(TT::Seconds(a + amount * 30 * 24 * 60 * 60)),
+        TT::Minutes(a) => Ok(TT::Minutes(a + amount * 30 * 24 * 60)),
+        TT::Hours(a) => Ok(TT::Hours(a + amount * 30 * 24)),
+        TT::Days(a) => Ok(TT::Days(a + amount * 30)),
+        TT::Months(a) => Ok(TT::Months(a + amount)),
+        TT::Years(a) => Ok(TT::Months(a * 12 + amount)),
+        TT::Moment(m) => Err(Error::CannotAdd(TT::Months(amount), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotAdd(TT::Months(amount), TT::EndOfMinute(e))),
+        TT::Addition(b, c) => add_to_months(amount, add(b, c)?),
         TT::Subtraction(b, c) => add_to_months(amount, sub(b, c)?),
     }
 }
 
 fn add_to_years(amount: i64, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => Ok(TT::Seconds(a + amount * 12 * 30 * 24 * 60 * 60)),
-        TT::Minutes(a)        => Ok(TT::Minutes(a + amount * 12 * 30 * 24 * 60)),
-        TT::Hours(a)          => Ok(TT::Hours(  a + amount * 12 * 30 * 24)),
-        TT::Days(a)           => Ok(TT::Days(   a + amount * 12 * 30)),
-        TT::Months(a)         => Ok(TT::Months( a + amount * 12)),
-        TT::Years(a)          => Ok(TT::Years(  a + amount)),
-        TT::Moment(m)         => Err(Error::CannotAdd(TT::Years(amount), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => add_to_years(amount, add(b, c)?),
+        TT::Seconds(a) => Ok(TT::Seconds(a + amount * 12 * 30 * 24 * 60 * 60)),
+        TT::Minutes(a) => Ok(TT::Minutes(a + amount * 12 * 30 * 24 * 60)),
+        TT::Hours(a) => Ok(TT::Hours(a + amount * 12 * 30 * 24)),
+        TT::Days(a) => Ok(TT::Days(a + amount * 12 * 30)),
+        TT::Months(a) => Ok(TT::Months(a + amount * 12)),
+        TT::Years(a) => Ok(TT::Years(a + amount)),
+        TT::Moment(m) => Err(Error::CannotAdd(TT::Years(amount), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotAdd(TT::Years(amount), TT::EndOfMinute(e))),
+        TT::Addition(b, c) => add_to_years(amount, add(b, c)?),
         TT::Subtraction(b, c) => add_to_years(amount, sub(b, c)?),
     }
 }
 
 fn add_to_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => {
-            let y  = mom.year() as i64;
+        TT::Seconds(a) => {
+            let y = mom.year() as i64;
             let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
+            let d = mom.day() as i64;
+            let h = mom.hour() as i64;
             let mi = mom.minute() as i64;
-            let s  = mom.second() as i64 + a;
+            let s = mom.second() as i64 + a;
 
             let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(Error::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32))
+                .ok_or(Error::OutOfBounds(
+                    y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32,
+                ))
                 .map_err(Error::from)?;
             Ok(TimeType::moment(tt))
         },
-        TT::Minutes(a)        => {
-            let y  = mom.year() as i64;
+        TT::Minutes(a) => {
+            let y = mom.year() as i64;
             let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
+            let d = mom.day() as i64;
+            let h = mom.hour() as i64;
             let mi = mom.minute() as i64 + a;
-            let s  = mom.second() as i64;
+            let s = mom.second() as i64;
 
             let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(Error::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32))
+                .ok_or(Error::OutOfBounds(
+                    y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32,
+                ))
                 .map_err(Error::from)?;
             Ok(TimeType::moment(tt))
         },
-        TT::Hours(a)          => {
-            let y  = mom.year() as i64;
+        TT::Hours(a) => {
+            let y = mom.year() as i64;
             let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64 + a;
+            let d = mom.day() as i64;
+            let h = mom.hour() as i64 + a;
             let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
+            let s = mom.second() as i64;
 
             let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(Error::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32))
+                .ok_or(Error::OutOfBounds(
+                    y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32,
+                ))
                 .map_err(Error::from)?;
             Ok(TimeType::moment(tt))
         },
-        TT::Days(a)           => {
-            let y  = mom.year() as i64;
+        TT::Days(a) => {
+            let y = mom.year() as i64;
             let mo = mom.month() as i64;
-            let d  = mom.day() as i64 + a;
-            let h  = mom.hour() as i64;
+            let d = mom.day() as i64 + a;
+            let h = mom.hour() as i64;
             let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
+            let s = mom.second() as i64;
 
             let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(Error::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32))
+                .ok_or(Error::OutOfBounds(
+                    y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32,
+                ))
                 .map_err(Error::from)?;
             Ok(TimeType::moment(tt))
         },
-        TT::Months(a)         => {
-            let y  = mom.year() as i64;
+        TT::Months(a) => {
+            let y = mom.year() as i64;
             let mo = mom.month() as i64 + a;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
+            let d = mom.day() as i64;
+            let h = mom.hour() as i64;
             let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
+            let s = mom.second() as i64;
 
             let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(Error::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32))
+                .ok_or(Error::OutOfBounds(
+                    y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32,
+                ))
                 .map_err(Error::from)?;
             Ok(TimeType::moment(tt))
         },
-        TT::Years(a)          => {
-            let y  = mom.year() as i64 + a;
+        TT::Years(a) => {
+            let y = mom.year() as i64 + a;
             let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
+            let d = mom.day() as i64;
+            let h = mom.hour() as i64;
             let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
+            let s = mom.second() as i64;
 
             let (y, mo, d, h, mi, s) = adjust_times_add(y, mo, d, h, mi, s);
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(Error::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32))
+                .ok_or(Error::OutOfBounds(
+                    y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32,
+                ))
                 .map_err(Error::from)?;
             Ok(TimeType::moment(tt))
         },
-        TT::Moment(m)         => Err(Error::CannotAdd(TT::Moment(mom), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfMinute(e))),
-        TT::Addition(a, b)    => add_to_moment(mom, add(a, b)?),
+        TT::Moment(m) => Err(Error::CannotAdd(TT::Moment(mom), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotAdd(TT::Moment(mom), TT::EndOfMinute(e))),
+        TT::Addition(a, b) => add_to_moment(mom, add(a, b)?),
         TT::Subtraction(a, b) => add_to_moment(mom, sub(a, b)?),
     }
 }
 
 #[allow(clippy::boxed_local)]
 fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match (*a, *b) {
         (TT::Moment(mom), thing) => sub_from_moment(mom, thing),
-        (TT::Seconds(a), other)  => sub_from_seconds(a, other),
-        (TT::Minutes(a), other)  => sub_from_minutes(a, other),
-        (TT::Hours(a), other)    => sub_from_hours(a, other),
-        (TT::Days(a), other)     => sub_from_days(a, other),
-        (TT::Months(a), other)   => sub_from_months(a, other),
-        (TT::Years(a), other)    => sub_from_years(a, other),
+        (TT::Seconds(a), other) => sub_from_seconds(a, other),
+        (TT::Minutes(a), other) => sub_from_minutes(a, other),
+        (TT::Hours(a), other) => sub_from_hours(a, other),
+        (TT::Days(a), other) => sub_from_days(a, other),
+        (TT::Months(a), other) => sub_from_months(a, other),
+        (TT::Years(a), other) => sub_from_years(a, other),
 
-        (TT::Subtraction(a, b), other)   => sub(a, b)
-            .map(Box::new)
-            .and_then(|bx| sub(bx, Box::new(other))),
-        (other, TT::Subtraction(a, b))   => sub(a, b)
-            .map(Box::new)
-            .and_then(|bx| sub(Box::new(other), bx)),
-        (TT::Addition(a, b), other) => add(a, b)
-            .map(Box::new)
-            .and_then(|bx| sub(bx, Box::new(other))),
+        (TT::Subtraction(a, b), other) => sub(a, b).map(Box::new).and_then(|bx| sub(bx, Box::new(other))),
+        (other, TT::Subtraction(a, b)) => sub(a, b).map(Box::new).and_then(|bx| sub(Box::new(other), bx)),
+        (TT::Addition(a, b), other) => add(a, b).map(Box::new).and_then(|bx| sub(bx, Box::new(other))),
         (other, TT::Addition(a, b)) => do_calculate(*a)
             .map(Box::new)
             .and_then(|bx| sub(Box::new(other), bx))
@@ -932,238 +940,250 @@ fn sub(a: Box<TimeType>, b: Box<TimeType>) -> Result<TimeType> {
 }
 
 fn sub_from_seconds(amount: i64, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => Ok(TT::Seconds(amount - a)),
-        TT::Minutes(a)        => Ok(TT::Seconds(amount - a * 60)),
-        TT::Hours(a)          => Ok(TT::Seconds(amount - a * 60 * 60)),
-        TT::Days(a)           => Ok(TT::Seconds(amount - a * 60 * 60 * 24)),
-        TT::Months(a)         => Ok(TT::Seconds(amount - a * 60 * 60 * 24 * 30)),
-        TT::Years(a)          => Ok(TT::Seconds(amount - a * 60 * 60 * 24 * 30 * 12)),
-        TT::Moment(m)         => Err(Error::CannotSub(TT::Seconds(amount), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => sub_from_seconds(amount, add(b, c)?),
+        TT::Seconds(a) => Ok(TT::Seconds(amount - a)),
+        TT::Minutes(a) => Ok(TT::Seconds(amount - a * 60)),
+        TT::Hours(a) => Ok(TT::Seconds(amount - a * 60 * 60)),
+        TT::Days(a) => Ok(TT::Seconds(amount - a * 60 * 60 * 24)),
+        TT::Months(a) => Ok(TT::Seconds(amount - a * 60 * 60 * 24 * 30)),
+        TT::Years(a) => Ok(TT::Seconds(amount - a * 60 * 60 * 24 * 30 * 12)),
+        TT::Moment(m) => Err(Error::CannotSub(TT::Seconds(amount), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotSub(TT::Seconds(amount), TT::EndOfMinute(e))),
+        TT::Addition(b, c) => sub_from_seconds(amount, add(b, c)?),
         TT::Subtraction(b, c) => sub_from_seconds(amount, sub(b, c)?),
     }
 }
 
 fn sub_from_minutes(amount: i64, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => Ok(TT::Seconds(amount * 60 - a)),
-        TT::Minutes(a)        => Ok(TT::Minutes(amount - a)),
-        TT::Hours(a)          => Ok(TT::Minutes(amount - a * 60)),
-        TT::Days(a)           => Ok(TT::Minutes(amount - a * 60 * 24)),
-        TT::Months(a)         => Ok(TT::Minutes(amount - a * 60 * 24 * 30)),
-        TT::Years(a)          => Ok(TT::Minutes(amount - a * 60 * 24 * 30 * 12)),
-        TT::Moment(m)         => Err(Error::CannotSub(TT::Minutes(amount), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => sub_from_minutes(amount, add(b, c)?),
+        TT::Seconds(a) => Ok(TT::Seconds(amount * 60 - a)),
+        TT::Minutes(a) => Ok(TT::Minutes(amount - a)),
+        TT::Hours(a) => Ok(TT::Minutes(amount - a * 60)),
+        TT::Days(a) => Ok(TT::Minutes(amount - a * 60 * 24)),
+        TT::Months(a) => Ok(TT::Minutes(amount - a * 60 * 24 * 30)),
+        TT::Years(a) => Ok(TT::Minutes(amount - a * 60 * 24 * 30 * 12)),
+        TT::Moment(m) => Err(Error::CannotSub(TT::Minutes(amount), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotSub(TT::Minutes(amount), TT::EndOfMinute(e))),
+        TT::Addition(b, c) => sub_from_minutes(amount, add(b, c)?),
         TT::Subtraction(b, c) => sub_from_minutes(amount, sub(b, c)?),
     }
 }
 
 fn sub_from_hours(amount: i64, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => Ok(TT::Seconds(amount * 60 * 60 - a)),
-        TT::Minutes(a)        => Ok(TT::Minutes(amount * 60 - a)),
-        TT::Hours(a)          => Ok(TT::Hours(amount -   a)),
-        TT::Days(a)           => Ok(TT::Hours(amount -   a * 24)),
-        TT::Months(a)         => Ok(TT::Hours(amount -   a * 24 * 30)),
-        TT::Years(a)          => Ok(TT::Hours(amount -   a * 24 * 30 * 12)),
-        TT::Moment(m)         => Err(Error::CannotSub(TT::Hours(amount), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => sub_from_hours(amount, add(b, c)?),
+        TT::Seconds(a) => Ok(TT::Seconds(amount * 60 * 60 - a)),
+        TT::Minutes(a) => Ok(TT::Minutes(amount * 60 - a)),
+        TT::Hours(a) => Ok(TT::Hours(amount - a)),
+        TT::Days(a) => Ok(TT::Hours(amount - a * 24)),
+        TT::Months(a) => Ok(TT::Hours(amount - a * 24 * 30)),
+        TT::Years(a) => Ok(TT::Hours(amount - a * 24 * 30 * 12)),
+        TT::Moment(m) => Err(Error::CannotSub(TT::Hours(amount), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotSub(TT::Hours(amount), TT::EndOfMinute(e))),
+        TT::Addition(b, c) => sub_from_hours(amount, add(b, c)?),
         TT::Subtraction(b, c) => sub_from_hours(amount, sub(b, c)?),
     }
 }
 
 fn sub_from_days(amount: i64, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => Ok(TT::Seconds(amount * 24 * 60 * 60 - a)),
-        TT::Minutes(a)        => Ok(TT::Minutes(amount * 24 * 60 - a)),
-        TT::Hours(a)          => Ok(TT::Hours(amount * 24 -   a)),
-        TT::Days(a)           => Ok(TT::Days(amount -    a)),
-        TT::Months(a)         => Ok(TT::Days(amount -    a * 30)),
-        TT::Years(a)          => Ok(TT::Days(amount -    a * 30 * 12)),
-        TT::Moment(m)         => Err(Error::CannotSub(TT::Days(amount), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotSub(TT::Days(amount), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotSub(TT::Days(amount), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Days(amount), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Days(amount), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Days(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => sub_from_days(amount, add(b, c)?),
+        TT::Seconds(a) => Ok(TT::Seconds(amount * 24 * 60 * 60 - a)),
+        TT::Minutes(a) => Ok(TT::Minutes(amount * 24 * 60 - a)),
+        TT::Hours(a) => Ok(TT::Hours(amount * 24 - a)),
+        TT::Days(a) => Ok(TT::Days(amount - a)),
+        TT::Months(a) => Ok(TT::Days(amount - a * 30)),
+        TT::Years(a) => Ok(TT::Days(amount - a * 30 * 12)),
+        TT::Moment(m) => Err(Error::CannotSub(TT::Days(amount), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotSub(TT::Days(amount), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotSub(TT::Days(amount), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotSub(TT::Days(amount), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotSub(TT::Days(amount), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotSub(TT::Days(amount), TT::EndOfMinute(e))),
+        TT::Addition(b, c) => sub_from_days(amount, add(b, c)?),
         TT::Subtraction(b, c) => sub_from_days(amount, sub(b, c)?),
     }
 }
 
 fn sub_from_months(amount: i64, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => Ok(TT::Seconds(amount * 30 * 24 * 60 * 60 - a)),
-        TT::Minutes(a)        => Ok(TT::Minutes(amount * 30 * 24 * 60 - a)),
-        TT::Hours(a)          => Ok(TT::Hours(amount * 30 * 24 -   a)),
-        TT::Days(a)           => Ok(TT::Days(amount * 30 -    a)),
-        TT::Months(a)         => Ok(TT::Months(amount -  a)),
-        TT::Years(a)          => Ok(TT::Months(amount -  a * 12)),
-        TT::Moment(m)         => Err(Error::CannotSub(TT::Months(amount), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotSub(TT::Months(amount), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotSub(TT::Months(amount), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Months(amount), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Months(amount), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Months(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => sub_from_months(amount, add(b, c)?),
+        TT::Seconds(a) => Ok(TT::Seconds(amount * 30 * 24 * 60 * 60 - a)),
+        TT::Minutes(a) => Ok(TT::Minutes(amount * 30 * 24 * 60 - a)),
+        TT::Hours(a) => Ok(TT::Hours(amount * 30 * 24 - a)),
+        TT::Days(a) => Ok(TT::Days(amount * 30 - a)),
+        TT::Months(a) => Ok(TT::Months(amount - a)),
+        TT::Years(a) => Ok(TT::Months(amount - a * 12)),
+        TT::Moment(m) => Err(Error::CannotSub(TT::Months(amount), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotSub(TT::Months(amount), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotSub(TT::Months(amount), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotSub(TT::Months(amount), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotSub(TT::Months(amount), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotSub(TT::Months(amount), TT::EndOfMinute(e))),
+        TT::Addition(b, c) => sub_from_months(amount, add(b, c)?),
         TT::Subtraction(b, c) => sub_from_months(amount, sub(b, c)?),
     }
 }
 
 fn sub_from_years(amount: i64, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => Ok(TT::Seconds(amount * 12 * 30 * 24 * 60 * 60 - a)),
-        TT::Minutes(a)        => Ok(TT::Minutes(amount * 12 * 30 * 24 * 60 - a)),
-        TT::Hours(a)          => Ok(TT::Hours(amount * 12 * 30 * 24 -   a)),
-        TT::Days(a)           => Ok(TT::Days(amount * 12 * 30 -    a)),
-        TT::Months(a)         => Ok(TT::Months(amount * 12 -  a)),
-        TT::Years(a)          => Ok(TT::Years(amount -   a)),
-        TT::Moment(m)         => Err(Error::CannotSub(TT::Years(amount), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotSub(TT::Years(amount), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotSub(TT::Years(amount), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Years(amount), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Years(amount), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Years(amount), TT::EndOfMinute(e))),
-        TT::Addition(b, c)    => sub_from_years(amount, add(b, c)?),
+        TT::Seconds(a) => Ok(TT::Seconds(amount * 12 * 30 * 24 * 60 * 60 - a)),
+        TT::Minutes(a) => Ok(TT::Minutes(amount * 12 * 30 * 24 * 60 - a)),
+        TT::Hours(a) => Ok(TT::Hours(amount * 12 * 30 * 24 - a)),
+        TT::Days(a) => Ok(TT::Days(amount * 12 * 30 - a)),
+        TT::Months(a) => Ok(TT::Months(amount * 12 - a)),
+        TT::Years(a) => Ok(TT::Years(amount - a)),
+        TT::Moment(m) => Err(Error::CannotSub(TT::Years(amount), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotSub(TT::Years(amount), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotSub(TT::Years(amount), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotSub(TT::Years(amount), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotSub(TT::Years(amount), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotSub(TT::Years(amount), TT::EndOfMinute(e))),
+        TT::Addition(b, c) => sub_from_years(amount, add(b, c)?),
         TT::Subtraction(b, c) => sub_from_years(amount, sub(b, c)?),
     }
 }
 
 fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     match tt {
-        TT::Seconds(a)        => {
-            let y  = mom.year() as i64;
+        TT::Seconds(a) => {
+            let y = mom.year() as i64;
             let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
+            let d = mom.day() as i64;
+            let h = mom.hour() as i64;
             let mi = mom.minute() as i64;
-            let s  = mom.second() as i64 - a;
+            let s = mom.second() as i64 - a;
 
             let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(Error::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32))
+                .ok_or(Error::OutOfBounds(
+                    y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32,
+                ))
                 .map_err(Error::from)?;
             Ok(TimeType::moment(tt))
         },
-        TT::Minutes(a)        => {
-            let y  = mom.year() as i64;
+        TT::Minutes(a) => {
+            let y = mom.year() as i64;
             let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
+            let d = mom.day() as i64;
+            let h = mom.hour() as i64;
             let mi = mom.minute() as i64 - a;
-            let s  = mom.second() as i64;
+            let s = mom.second() as i64;
 
             let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(Error::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32))
+                .ok_or(Error::OutOfBounds(
+                    y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32,
+                ))
                 .map_err(Error::from)?;
             Ok(TimeType::moment(tt))
         },
-        TT::Hours(a)          => {
-            let y  = mom.year() as i64;
+        TT::Hours(a) => {
+            let y = mom.year() as i64;
             let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64 - a;
+            let d = mom.day() as i64;
+            let h = mom.hour() as i64 - a;
             let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
+            let s = mom.second() as i64;
 
             let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(Error::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32))
+                .ok_or(Error::OutOfBounds(
+                    y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32,
+                ))
                 .map_err(Error::from)?;
             Ok(TimeType::moment(tt))
         },
-        TT::Days(a)           => {
-            let y  = mom.year() as i64;
+        TT::Days(a) => {
+            let y = mom.year() as i64;
             let mo = mom.month() as i64;
-            let d  = mom.day() as i64 - a;
-            let h  = mom.hour() as i64;
+            let d = mom.day() as i64 - a;
+            let h = mom.hour() as i64;
             let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
+            let s = mom.second() as i64;
 
             let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(Error::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32))
+                .ok_or(Error::OutOfBounds(
+                    y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32,
+                ))
                 .map_err(Error::from)?;
             Ok(TimeType::moment(tt))
         },
-        TT::Months(a)         => {
-            let y  = mom.year() as i64;
+        TT::Months(a) => {
+            let y = mom.year() as i64;
             let mo = mom.month() as i64 - a;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
+            let d = mom.day() as i64;
+            let h = mom.hour() as i64;
             let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
+            let s = mom.second() as i64;
 
             let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(Error::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32))
+                .ok_or(Error::OutOfBounds(
+                    y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32,
+                ))
                 .map_err(Error::from)?;
             Ok(TimeType::moment(tt))
         },
-        TT::Years(a)          => {
-            let y  = mom.year() as i64 - a;
+        TT::Years(a) => {
+            let y = mom.year() as i64 - a;
             let mo = mom.month() as i64;
-            let d  = mom.day() as i64;
-            let h  = mom.hour() as i64;
+            let d = mom.day() as i64;
+            let h = mom.hour() as i64;
             let mi = mom.minute() as i64;
-            let s  = mom.second() as i64;
+            let s = mom.second() as i64;
 
             let (y, mo, d, h, mi, s) = adjust_times_sub(y, mo, d, h, mi, s);
 
             let tt = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
                 .and_then(|nd| nd.and_hms_opt(h as u32, mi as u32, s as u32))
-                .ok_or(Error::OutOfBounds(y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32))
+                .ok_or(Error::OutOfBounds(
+                    y as i32, mo as u32, h as u32, h as u32, mi as u32, s as u32,
+                ))
                 .map_err(Error::from)?;
             Ok(TimeType::moment(tt))
         },
-        TT::Moment(m)         => Err(Error::CannotSub(TT::Moment(mom), TT::Moment(m))),
-        TT::EndOfYear(e)      => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfYear(e))),
-        TT::EndOfMonth(e)     => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfMonth(e))),
-        TT::EndOfDay(e)       => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfDay(e))),
-        TT::EndOfHour(e)      => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfHour(e))),
-        TT::EndOfMinute(e)    => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfMinute(e))),
-        TT::Addition(a, b)    => sub_from_moment(mom, add(a, b)?),
+        TT::Moment(m) => Err(Error::CannotSub(TT::Moment(mom), TT::Moment(m))),
+        TT::EndOfYear(e) => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfYear(e))),
+        TT::EndOfMonth(e) => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfMonth(e))),
+        TT::EndOfDay(e) => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfDay(e))),
+        TT::EndOfHour(e) => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfHour(e))),
+        TT::EndOfMinute(e) => Err(Error::CannotSub(TT::Moment(mom), TT::EndOfMinute(e))),
+        TT::Addition(a, b) => sub_from_moment(mom, add(a, b)?),
         TT::Subtraction(a, b) => sub_from_moment(mom, sub(a, b)?),
     }
 }
@@ -1171,8 +1191,10 @@ fn sub_from_moment(mom: NaiveDateTime, tt: TimeType) -> Result<TimeType> {
 #[cfg(test)]
 mod tests {
     use chrono::NaiveDate;
+
+    use crate::error::Error;
+
     use super::TimeType as TT;
-    use error::Error;
 
     #[test]
     fn test_addition_of_seconds() {
@@ -1185,7 +1207,7 @@ mod tests {
             TT::Addition(a, b) => {
                 assert_eq!(0, a.get_seconds());
                 assert_eq!(1, b.get_seconds());
-            }
+            },
             _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
@@ -1199,16 +1221,14 @@ mod tests {
         let d = a + b + c;
 
         match d {
-            TT::Addition(add, c) => {
-                match *add {
-                    TT::Addition(ref a, ref b) => {
-                        assert_eq!(0, a.get_seconds());
-                        assert_eq!(1, b.get_seconds());
-                        assert_eq!(2, c.get_seconds());
-                    },
-                    _ => panic!("Addition failed, returned non-Addition type"),
-                }
-            }
+            TT::Addition(add, c) => match *add {
+                TT::Addition(ref a, ref b) => {
+                    assert_eq!(0, a.get_seconds());
+                    assert_eq!(1, b.get_seconds());
+                    assert_eq!(2, c.get_seconds());
+                },
+                _ => panic!("Addition failed, returned non-Addition type"),
+            },
             _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
@@ -1224,7 +1244,7 @@ mod tests {
             TT::Subtraction(a, b) => {
                 assert_eq!(5, a.get_seconds());
                 assert_eq!(3, b.get_seconds());
-            }
+            },
             _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
@@ -1238,16 +1258,14 @@ mod tests {
         let d = a - b - c;
 
         match d {
-            TT::Subtraction(sub, c) => {
-                match *sub {
-                    TT::Subtraction(ref a, ref b) => {
-                        assert_eq!(3, a.get_seconds());
-                        assert_eq!(2, b.get_seconds());
-                        assert_eq!(1, c.get_seconds());
-                    },
-                    _ => panic!("Subtraction failed"),
-                }
-            }
+            TT::Subtraction(sub, c) => match *sub {
+                TT::Subtraction(ref a, ref b) => {
+                    assert_eq!(3, a.get_seconds());
+                    assert_eq!(2, b.get_seconds());
+                    assert_eq!(1, c.get_seconds());
+                },
+                _ => panic!("Subtraction failed"),
+            },
             _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
@@ -1317,7 +1335,7 @@ mod tests {
             TT::Addition(a, b) => {
                 assert_eq!(0, a.get_minutes());
                 assert_eq!(1, b.get_minutes());
-            }
+            },
             _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
@@ -1331,16 +1349,14 @@ mod tests {
         let d = a + b + c;
 
         match d {
-            TT::Addition(ref add, ref c) => {
-                match **add {
-                    TT::Addition(ref a, ref b) => {
-                        assert_eq!(0, a.get_minutes());
-                        assert_eq!(1, b.get_minutes());
-                        assert_eq!(2, c.get_minutes());
-                    },
-                    _ => panic!("Addition failed, returned non-Addition type"),
-                }
-            }
+            TT::Addition(ref add, ref c) => match **add {
+                TT::Addition(ref a, ref b) => {
+                    assert_eq!(0, a.get_minutes());
+                    assert_eq!(1, b.get_minutes());
+                    assert_eq!(2, c.get_minutes());
+                },
+                _ => panic!("Addition failed, returned non-Addition type"),
+            },
             _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
@@ -1356,7 +1372,7 @@ mod tests {
             TT::Subtraction(a, b) => {
                 assert_eq!(5, a.get_minutes());
                 assert_eq!(3, b.get_minutes());
-            }
+            },
             _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
@@ -1370,16 +1386,14 @@ mod tests {
         let d = a - b - c;
 
         match d {
-            TT::Subtraction(sub, c) => {
-                match *sub {
-                    TT::Subtraction(ref a, ref b) => {
-                        assert_eq!(3, a.get_minutes());
-                        assert_eq!(2, b.get_minutes());
-                        assert_eq!(1, c.get_minutes());
-                    },
-                    _ => panic!("Subtraction failed, returned non-Subtraction type"),
-                }
-            }
+            TT::Subtraction(sub, c) => match *sub {
+                TT::Subtraction(ref a, ref b) => {
+                    assert_eq!(3, a.get_minutes());
+                    assert_eq!(2, b.get_minutes());
+                    assert_eq!(1, c.get_minutes());
+                },
+                _ => panic!("Subtraction failed, returned non-Subtraction type"),
+            },
             _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
@@ -1449,7 +1463,7 @@ mod tests {
             TT::Addition(a, b) => {
                 assert_eq!(0, a.get_days());
                 assert_eq!(1, b.get_days());
-            }
+            },
             _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
@@ -1463,16 +1477,14 @@ mod tests {
         let d = a + b + c;
 
         match d {
-            TT::Addition(add, c) => {
-                match *add {
-                    TT::Addition(ref a, ref b) => {
-                        assert_eq!(0, a.get_days());
-                        assert_eq!(1, b.get_days());
-                        assert_eq!(2, c.get_days());
-                    },
-                    _ => panic!("Addition failed, wrong type"),
-                }
-            }
+            TT::Addition(add, c) => match *add {
+                TT::Addition(ref a, ref b) => {
+                    assert_eq!(0, a.get_days());
+                    assert_eq!(1, b.get_days());
+                    assert_eq!(2, c.get_days());
+                },
+                _ => panic!("Addition failed, wrong type"),
+            },
             _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
@@ -1488,7 +1500,7 @@ mod tests {
             TT::Subtraction(a, b) => {
                 assert_eq!(5, a.get_days());
                 assert_eq!(3, b.get_days());
-            }
+            },
             _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
@@ -1502,16 +1514,14 @@ mod tests {
         let d = a - b - c;
 
         match d {
-            TT::Subtraction(sub, c) => {
-                match *sub {
-                    TT::Subtraction(ref a, ref b) => {
-                        assert_eq!(3, a.get_days());
-                        assert_eq!(2, b.get_days());
-                        assert_eq!(1, c.get_days());
-                    },
-                    _ => panic!("Subtraction failed, wrong type"),
-                }
-            }
+            TT::Subtraction(sub, c) => match *sub {
+                TT::Subtraction(ref a, ref b) => {
+                    assert_eq!(3, a.get_days());
+                    assert_eq!(2, b.get_days());
+                    assert_eq!(1, c.get_days());
+                },
+                _ => panic!("Subtraction failed, wrong type"),
+            },
             _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
@@ -1581,7 +1591,7 @@ mod tests {
             TT::Addition(a, b) => {
                 assert_eq!(0, a.get_months());
                 assert_eq!(1, b.get_months());
-            }
+            },
             _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
@@ -1595,16 +1605,14 @@ mod tests {
         let d = a + b + c;
 
         match d {
-            TT::Addition(add, c) => {
-                match *add {
-                    TT::Addition(ref a, ref b) => {
-                        assert_eq!(0, a.get_months());
-                        assert_eq!(1, b.get_months());
-                        assert_eq!(2, c.get_months());
-                    },
-                    _ => panic!("Addition failed, wrong type"),
-                }
-            }
+            TT::Addition(add, c) => match *add {
+                TT::Addition(ref a, ref b) => {
+                    assert_eq!(0, a.get_months());
+                    assert_eq!(1, b.get_months());
+                    assert_eq!(2, c.get_months());
+                },
+                _ => panic!("Addition failed, wrong type"),
+            },
             _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
@@ -1620,7 +1628,7 @@ mod tests {
             TT::Subtraction(a, b) => {
                 assert_eq!(5, a.get_months());
                 assert_eq!(3, b.get_months());
-            }
+            },
             _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
@@ -1634,16 +1642,14 @@ mod tests {
         let d = a - b - c;
 
         match d {
-            TT::Subtraction(sub, c) => {
-                match *sub {
-                    TT::Subtraction(ref a, ref b) => {
-                        assert_eq!(3, a.get_months());
-                        assert_eq!(2, b.get_months());
-                        assert_eq!(1, c.get_months());
-                    },
-                    _ => panic!("Subtraction failed, wrong type"),
-                }
-            }
+            TT::Subtraction(sub, c) => match *sub {
+                TT::Subtraction(ref a, ref b) => {
+                    assert_eq!(3, a.get_months());
+                    assert_eq!(2, b.get_months());
+                    assert_eq!(1, c.get_months());
+                },
+                _ => panic!("Subtraction failed, wrong type"),
+            },
             _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
@@ -1713,7 +1719,7 @@ mod tests {
             TT::Addition(a, b) => {
                 assert_eq!(0, a.get_years());
                 assert_eq!(1, b.get_years());
-            }
+            },
             _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
@@ -1727,16 +1733,14 @@ mod tests {
         let d = a + b + c;
 
         match d {
-            TT::Addition(add, c) => {
-                match *add {
-                    TT::Addition(ref a, ref b) => {
-                        assert_eq!(0, a.get_years());
-                        assert_eq!(1, b.get_years());
-                        assert_eq!(2, c.get_years());
-                    },
-                    _ => panic!("Addition failed, wrong type"),
-                }
-            }
+            TT::Addition(add, c) => match *add {
+                TT::Addition(ref a, ref b) => {
+                    assert_eq!(0, a.get_years());
+                    assert_eq!(1, b.get_years());
+                    assert_eq!(2, c.get_years());
+                },
+                _ => panic!("Addition failed, wrong type"),
+            },
             _ => panic!("Addition failed, returned non-Addition type"),
         }
     }
@@ -1752,7 +1756,7 @@ mod tests {
             TT::Subtraction(a, b) => {
                 assert_eq!(5, a.get_years());
                 assert_eq!(3, b.get_years());
-            }
+            },
             _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
@@ -1766,16 +1770,14 @@ mod tests {
         let d = a - b - c;
 
         match d {
-            TT::Subtraction(sub, c) => {
-                match *sub {
-                    TT::Subtraction(ref a, ref b) => {
-                        assert_eq!(3, a.get_years());
-                        assert_eq!(2, b.get_years());
-                        assert_eq!(1, c.get_years());
-                    },
-                    _ => panic!("Subtraction failed, wrong type"),
-                }
-            }
+            TT::Subtraction(sub, c) => match *sub {
+                TT::Subtraction(ref a, ref b) => {
+                    assert_eq!(3, a.get_years());
+                    assert_eq!(2, b.get_years());
+                    assert_eq!(1, c.get_years());
+                },
+                _ => panic!("Subtraction failed, wrong type"),
+            },
             _ => panic!("Subtraction failed, returned non-Subtraction type"),
         }
     }
@@ -1880,7 +1882,12 @@ mod tests {
     #[test]
     fn test_add_moment_to_seconds() {
         let a = TT::seconds(3);
-        let b = TT::moment(NaiveDate::from_ymd_opt(2016, 7, 8).expect("Static time").and_hms_opt(9, 10, 11).expect("Static time"));
+        let b = TT::moment(
+            NaiveDate::from_ymd_opt(2016, 7, 8)
+                .expect("Static time")
+                .and_hms_opt(9, 10, 11)
+                .expect("Static time"),
+        );
 
         let res = (a + b).calculate();
 
@@ -1893,7 +1900,12 @@ mod tests {
     #[test]
     fn test_subtract_moment_from_seconds() {
         let a = TT::seconds(3);
-        let b = TT::moment(NaiveDate::from_ymd_opt(2016, 7, 8).expect("Static time").and_hms_opt(9, 10, 11).expect("Static time"));
+        let b = TT::moment(
+            NaiveDate::from_ymd_opt(2016, 7, 8)
+                .expect("Static time")
+                .and_hms_opt(9, 10, 11)
+                .expect("Static time"),
+        );
 
         let res = (a - b).calculate();
 
@@ -1902,12 +1914,11 @@ mod tests {
 
         assert!(matches!(res, Error::CannotSub(..)));
     }
-
 }
 
 #[cfg(test)]
 mod test_add_and_sub_mixed {
-    use timetype::TimeType as TT;
+    use crate::timetype::TimeType as TT;
 
     #[test]
     fn test_add_then_sub() {
@@ -2018,14 +2029,13 @@ mod timetype_value_tests {
         assert_eq!(59 * 12, t.get_months());
         assert_eq!(59, t.get_years());
     }
-
-
 }
 
 #[cfg(test)]
 mod moment_plus_amount_tests {
-    use super::TimeType as TT;
     use chrono::NaiveDate;
+
+    use super::TimeType as TT;
 
     macro_rules! generate_test_moment_operator_amount{
         {
@@ -2038,11 +2048,11 @@ mod moment_plus_amount_tests {
             #[test]
             fn $name() {
                 let base = TT::moment($base);
-                debug!("Using base = {:?}", base);
-                debug!("           + {:?}", $amount);
+                ::log::debug!("Using base = {:?}", base);
+                ::log::debug!("           + {:?}", $amount);
                 #[allow(clippy::redundant_closure_call)]
                 let result = $op(base, $amount).calculate();
-                debug!("        -> = {:?}", result);
+                ::log::debug!("        -> = {:?}", result);
                 assert!(result.is_ok(), "Operation failed: {:?}", result);
                 let result = result.unwrap();
                 let expected = $exp;
@@ -2500,13 +2510,13 @@ mod test_time_adjustments {
             s  :    0 +  0 =>    0;
         }
     }
-
 }
 
 #[cfg(test)]
 mod test_end_of_year {
-    use super::TimeType as TT;
     use chrono::NaiveDate;
+
+    use super::TimeType as TT;
 
     macro_rules! generate_test_moment_operator_amount_and_end_of_year {
         {
@@ -2719,13 +2729,13 @@ mod test_end_of_year {
         amount   = TT::months(12);
         expected = NaiveDate::from_ymd_opt(1999, 12, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
-
 }
 
 #[cfg(test)]
 mod test_end_of_month {
-    use super::TimeType as TT;
     use chrono::NaiveDate;
+
+    use super::TimeType as TT;
 
     macro_rules! generate_test_moment_operator_amount_and_end_of_month {
         {
@@ -2938,14 +2948,13 @@ mod test_end_of_month {
         amount   = TT::months(12);
         expected = NaiveDate::from_ymd_opt(1999, 1, 31).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time");
     }
-
 }
-
 
 #[cfg(test)]
 mod test_end_of_day {
-    use super::TimeType as TT;
     use chrono::NaiveDate;
+
+    use super::TimeType as TT;
 
     macro_rules! generate_test_moment_operator_amount_and_end_of_day {
         {
@@ -3158,13 +3167,13 @@ mod test_end_of_day {
         amount   = TT::months(12);
         expected = NaiveDate::from_ymd_opt(1999, 1, 1).expect("Static time").and_hms_opt(23, 59, 59).expect("Static time");
     }
-
 }
 
 #[cfg(test)]
 mod test_end_of_hour {
-    use super::TimeType as TT;
     use chrono::NaiveDate;
+
+    use super::TimeType as TT;
 
     macro_rules! generate_test_moment_operator_amount_and_end_of_hour {
         {
@@ -3377,13 +3386,13 @@ mod test_end_of_hour {
         amount   = TT::months(12);
         expected = NaiveDate::from_ymd_opt(1999, 1, 1).expect("Static time").and_hms_opt(0, 59, 59).expect("Static time");
     }
-
 }
 
 #[cfg(test)]
 mod test_end_of_minute {
-    use super::TimeType as TT;
     use chrono::NaiveDate;
+
+    use super::TimeType as TT;
 
     macro_rules! generate_test_moment_operator_amount_and_end_of_minute {
         {
@@ -3596,17 +3605,23 @@ mod test_end_of_minute {
         amount   = TT::months(12);
         expected = NaiveDate::from_ymd_opt(1999, 1, 1).expect("Static time").and_hms_opt(0, 0, 59).expect("Static time");
     }
-
 }
 
 #[cfg(test)]
 mod test_is_a {
-    use super::TimeType as TT;
     use chrono::NaiveDate as ND;
-    use indicator::Day;
+
+    use crate::indicator::Day;
+
+    use super::TimeType as TT;
 
     fn ymd(y: i32, m: u32, d: u32) -> TT {
-        TT::moment(ND::from_ymd_opt(y, m, d).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time"))
+        TT::moment(
+            ND::from_ymd_opt(y, m, d)
+                .expect("Static time")
+                .and_hms_opt(0, 0, 0)
+                .expect("Static time"),
+        )
     }
 
     #[test]
@@ -3649,17 +3664,23 @@ mod test_is_a {
     fn test_is_a_7() {
         assert!(ymd(2000, 1, 1).is_a(Day::Sunday).unwrap());
     }
-
 }
 
 #[cfg(test)]
 mod test_is_in {
-    use super::TimeType as TT;
     use chrono::NaiveDate as ND;
-    use indicator::Month;
+
+    use crate::indicator::Month;
+
+    use super::TimeType as TT;
 
     fn ymd(y: i32, m: u32, d: u32) -> TT {
-        TT::moment(ND::from_ymd_opt(y, m, d).expect("Static time").and_hms_opt(0, 0, 0).expect("Static time"))
+        TT::moment(
+            ND::from_ymd_opt(y, m, d)
+                .expect("Static time")
+                .and_hms_opt(0, 0, 0)
+                .expect("Static time"),
+        )
     }
 
     #[test]
@@ -3732,6 +3753,4 @@ mod test_is_in {
     fn test_is_in_12() {
         assert!(ymd(2000, 1, 1).is_in(Month::December).unwrap());
     }
-
 }
-

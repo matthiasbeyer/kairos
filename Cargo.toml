@@ -1,6 +1,7 @@
 [package]
 name = "kairos"
 version = "0.3.0"
+edition = "2021"
 authors = ["Matthias Beyer <mail@beyermatthias.de>"]
 
 description = "A library on top of chrono to calculate times and dates ergonomically"
