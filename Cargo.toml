@@ -17,7 +17,7 @@ nom = "3"
 iso8601 = "0.2"
 thiserror = "1"
 
-filters = { version  = "0.3", optional = true }
+filters = { version  = "0.4", optional = true }
 
 [dev-dependencies]
 env_logger = "0.11"
