@@ -20,7 +20,7 @@ thiserror = "1"
 filters = { version  = "0.3", optional = true }
 
 [dev-dependencies]
-env_logger = "0.4"
+env_logger = "0.11"
 log        = "0.4"
 
 [features]

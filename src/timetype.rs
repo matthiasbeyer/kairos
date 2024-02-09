@@ -2054,8 +2054,6 @@ mod moment_plus_amount_tests {
         } => {
             #[test]
             fn $name() {
-                let _ = env_logger::init();
-
                 let base = TT::moment($base);
                 debug!("Using base = {:?}", base);
                 debug!("           + {:?}", $amount);
