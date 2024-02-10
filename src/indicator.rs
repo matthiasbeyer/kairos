@@ -1,14 +1,12 @@
 #[cfg(feature = "with-filters")]
+use chrono::Datelike;
+#[cfg(feature = "with-filters")]
 use filters::filter::Filter;
-
 #[cfg(feature = "with-filters")]
 use filters::filter::IntoFilter;
 
 #[cfg(feature = "with-filters")]
-use timetype::TimeType;
-
-#[cfg(feature = "with-filters")]
-use chrono::Datelike;
+use crate::timetype::TimeType;
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
 pub enum Day {
@@ -21,16 +19,16 @@ pub enum Day {
     Sunday,
 }
 
-impl Into<::chrono::Weekday> for Day {
-    fn into(self) -> ::chrono::Weekday {
-        match self {
-            Day::Monday    => ::chrono::Weekday::Mon,
-            Day::Tuesday   => ::chrono::Weekday::Tue,
-            Day::Wednesday => ::chrono::Weekday::Wed,
-            Day::Thursday  => ::chrono::Weekday::Thu,
-            Day::Friday    => ::chrono::Weekday::Fri,
-            Day::Saturday  => ::chrono::Weekday::Sat,
-            Day::Sunday    => ::chrono::Weekday::Sun,
+impl From<Day> for chrono::Weekday {
+    fn from(val: Day) -> Self {
+        match val {
+            Day::Monday => chrono::Weekday::Mon,
+            Day::Tuesday => chrono::Weekday::Tue,
+            Day::Wednesday => chrono::Weekday::Wed,
+            Day::Thursday => chrono::Weekday::Thu,
+            Day::Friday => chrono::Weekday::Fri,
+            Day::Saturday => chrono::Weekday::Sat,
+            Day::Sunday => chrono::Weekday::Sun,
         }
     }
 }
@@ -51,21 +49,21 @@ pub enum Month {
     December,
 }
 
-impl Into<u32> for Month {
-    fn into(self) -> u32 {
-        match self {
-            Month::January   =>  1,
-            Month::February  =>  2,
-            Month::March     =>  3,
-            Month::April     =>  4,
-            Month::May       =>  5,
-            Month::June      =>  6,
-            Month::July      =>  7,
-            Month::August    =>  8,
-            Month::September =>  9,
-            Month::October   => 10,
-            Month::November  => 11,
-            Month::December  => 12,
+impl From<Month> for u32 {
+    fn from(val: Month) -> Self {
+        match val {
+            Month::January => 1,
+            Month::February => 2,
+            Month::March => 3,
+            Month::April => 4,
+            Month::May => 5,
+            Month::June => 6,
+            Month::July => 7,
+            Month::August => 8,
+            Month::September => 9,
+            Month::October => 10,
+            Month::November => 11,
+            Month::December => 12,
         }
     }
 }
@@ -76,7 +74,9 @@ pub struct DayFilter(Day);
 #[cfg(feature = "with-filters")]
 impl Filter<TimeType> for DayFilter {
     fn filter(&self, tt: &TimeType) -> bool {
-        tt.get_moment().map(|mom| mom.weekday() == self.0.clone().into()).unwrap_or(false)
+        tt.get_moment()
+            .map(|mom| mom.weekday() == self.0.clone().into())
+            .unwrap_or(false)
     }
 }
 
@@ -87,9 +87,7 @@ impl IntoFilter<TimeType> for Day {
     fn into_filter(self) -> Self::IntoFilt {
         DayFilter(self)
     }
-
 }
-
 
 #[cfg(feature = "with-filters")]
 pub struct MonthFilter(Month);
@@ -97,7 +95,9 @@ pub struct MonthFilter(Month);
 #[cfg(feature = "with-filters")]
 impl Filter<TimeType> for MonthFilter {
     fn filter(&self, tt: &TimeType) -> bool {
-        tt.get_moment().map(|mom| mom.month() == self.0.clone().into()).unwrap_or(false)
+        tt.get_moment()
+            .map(|mom| mom.month() == self.0.clone().into())
+            .unwrap_or(false)
     }
 }
 
@@ -108,6 +108,4 @@ impl IntoFilter<TimeType> for Month {
     fn into_filter(self) -> Self::IntoFilt {
         MonthFilter(self)
     }
-
 }
-

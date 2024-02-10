@@ -1,6 +1,7 @@
 [package]
 name = "kairos"
 version = "0.3.0"
+edition = "2021"
 authors = ["Matthias Beyer <mail@beyermatthias.de>"]
 
 description = "A library on top of chrono to calculate times and dates ergonomically"
@@ -13,14 +14,14 @@ repository    = "https://git.beyermatthi.as/kairos"
 
 [dependencies]
 chrono = "0.4"
-nom = "3"
-iso8601 = "0.2"
+nom = "7"
+iso8601 = "0.6"
 thiserror = "1"
 
-filters = { version  = "0.3", optional = true }
+filters = { version  = "0.4", optional = true }
 
 [dev-dependencies]
-env_logger = "0.4"
+env_logger = "0.11"
 log        = "0.4"
 
 [features]

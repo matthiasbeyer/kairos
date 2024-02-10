@@ -3,10 +3,10 @@
 
 use chrono::NaiveDateTime;
 
-use error::Result;
-use error::Error;
-use timetype::TimeType;
-use matcher::Matcher;
+use crate::error::Error;
+use crate::error::Result;
+use crate::matcher::Matcher;
+use crate::timetype::TimeType;
 
 #[derive(Debug)]
 pub struct Iter {
@@ -23,13 +23,12 @@ pub struct Iter {
 // Performing the computation on the yielded `TimeType` instances can be done by transforming this
 // iterator into a `CalculatingIter`.
 impl Iter {
-
     pub fn build(base: NaiveDateTime, inc: TimeType) -> Result<Iter> {
         if !inc.is_a_amount() {
             Err(Error::ArgumentErrorNotAnAmount(inc))
         } else {
             Ok(Iter {
-                base:      TimeType::moment(base),
+                base: TimeType::moment(base),
                 increment: inc,
                 had_first: false,
             })
@@ -53,14 +52,10 @@ impl Iter {
     }
 
     fn recalculate(&mut self) -> Result<()> {
-        self.base
-            .clone()
-            .calculate()
-            .map(|res| {
-                self.base = res;
-            })
+        self.base.clone().calculate().map(|res| {
+            self.base = res;
+        })
     }
-
 }
 
 /// # Warning
@@ -84,17 +79,18 @@ impl Iterator for Iter {
             Some(self.skip().map(|_| self.base.clone()))
         }
     }
-
 }
 
 #[derive(Debug)]
 pub struct FilterIter<I, M>(I, M)
-    where I: Iterator<Item = Result<TimeType>>,
-          M: Matcher;
+where
+    I: Iterator<Item = Result<TimeType>>,
+    M: Matcher;
 
 impl<I, M> FilterIter<I, M>
-    where I: Iterator<Item = Result<TimeType>>,
-          M: Matcher
+where
+    I: Iterator<Item = Result<TimeType>>,
+    M: Matcher,
 {
     fn new(i: I, m: M) -> FilterIter<I, M> {
         FilterIter(i, m)
@@ -102,33 +98,35 @@ impl<I, M> FilterIter<I, M>
 }
 
 impl<I, M> Iterator for FilterIter<I, M>
-    where I: Iterator<Item = Result<TimeType>>,
-          M: Matcher
+where
+    I: Iterator<Item = Result<TimeType>>,
+    M: Matcher,
 {
     type Item = Result<TimeType>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             match self.0.next() {
-                None        => return None,
+                None => return None,
                 Some(Err(e)) => return Some(Err(e)),
                 Some(Ok(tt)) => match self.1.matches(&tt) {
                     Ok(false) => continue,
-                    Ok(true)  => return Some(Ok(tt)),
-                    Err(e)    => return Some(Err(e)),
-                }
+                    Ok(true) => return Some(Ok(tt)),
+                    Err(e) => return Some(Err(e)),
+                },
             }
         }
     }
 }
 
-pub trait EveryFilter<M: Matcher> : Iterator<Item = Result<TimeType>> + Sized {
-    fn every(self, M) -> FilterIter<Self, M>;
+pub trait EveryFilter<M: Matcher>: Iterator<Item = Result<TimeType>> + Sized {
+    fn every(self, matcher: M) -> FilterIter<Self, M>;
 }
 
 impl<I, M> EveryFilter<M> for I
-    where I: Iterator<Item = Result<TimeType>>,
-          M: Matcher
+where
+    I: Iterator<Item = Result<TimeType>>,
+    M: Matcher,
 {
     fn every(self, matcher: M) -> FilterIter<Self, M> {
         FilterIter::new(self, matcher)
@@ -137,12 +135,14 @@ impl<I, M> EveryFilter<M> for I
 
 #[derive(Debug)]
 pub struct WithoutIter<I, M>(I, M)
-    where I: Iterator<Item = Result<TimeType>>,
-          M: Matcher;
+where
+    I: Iterator<Item = Result<TimeType>>,
+    M: Matcher;
 
 impl<I, M> WithoutIter<I, M>
-    where I: Iterator<Item = Result<TimeType>>,
-          M: Matcher
+where
+    I: Iterator<Item = Result<TimeType>>,
+    M: Matcher,
 {
     fn new(i: I, m: M) -> WithoutIter<I, M> {
         WithoutIter(i, m)
@@ -150,33 +150,35 @@ impl<I, M> WithoutIter<I, M>
 }
 
 impl<I, M> Iterator for WithoutIter<I, M>
-    where I: Iterator<Item = Result<TimeType>>,
-          M: Matcher
+where
+    I: Iterator<Item = Result<TimeType>>,
+    M: Matcher,
 {
     type Item = Result<TimeType>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             match self.0.next() {
-                None        => return None,
+                None => return None,
                 Some(Err(e)) => return Some(Err(e)),
                 Some(Ok(tt)) => match self.1.matches(&tt) {
                     Ok(false) => return Some(Ok(tt)),
-                    Ok(true)  => continue,
-                    Err(e)    => return Some(Err(e)),
-                }
+                    Ok(true) => continue,
+                    Err(e) => return Some(Err(e)),
+                },
             }
         }
     }
 }
 
-pub trait WithoutFilter<M: Matcher> : Iterator<Item = Result<TimeType>> + Sized {
-    fn without(self, M) -> WithoutIter<Self, M>;
+pub trait WithoutFilter<M: Matcher>: Iterator<Item = Result<TimeType>> + Sized {
+    fn without(self, matcher: M) -> WithoutIter<Self, M>;
 }
 
 impl<I, M> WithoutFilter<M> for I
-    where I: Iterator<Item = Result<TimeType>>,
-          M: Matcher
+where
+    I: Iterator<Item = Result<TimeType>>,
+    M: Matcher,
 {
     fn without(self, matcher: M) -> WithoutIter<Self, M> {
         WithoutIter::new(self, matcher)
@@ -185,10 +187,12 @@ impl<I, M> WithoutFilter<M> for I
 
 #[derive(Debug)]
 pub struct UntilIter<I>(I, NaiveDateTime)
-    where I: Iterator<Item = Result<TimeType>>;
+where
+    I: Iterator<Item = Result<TimeType>>;
 
 impl<I> UntilIter<I>
-    where I: Iterator<Item = Result<TimeType>>
+where
+    I: Iterator<Item = Result<TimeType>>,
 {
     fn new(i: I, date: NaiveDateTime) -> UntilIter<I> {
         UntilIter(i, date)
@@ -196,36 +200,40 @@ impl<I> UntilIter<I>
 }
 
 impl<I> Iterator for UntilIter<I>
-    where I: Iterator<Item = Result<TimeType>>
+where
+    I: Iterator<Item = Result<TimeType>>,
 {
     type Item = Result<TimeType>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.0.next() {
-            None         => None,
+            None => None,
             Some(Err(e)) => Some(Err(e)),
             Some(Ok(tt)) => match tt.calculate() {
                 Err(e) => Some(Err(e)),
-                Ok(tt) => if tt.is_moment() {
-                    if tt.get_moment().unwrap() < &self.1 {
-                        Some(Ok(tt))
+                Ok(tt) => {
+                    if tt.is_moment() {
+                        if tt.get_moment().unwrap() < &self.1 {
+                            Some(Ok(tt))
+                        } else {
+                            None
+                        }
                     } else {
-                        None
+                        Some(Err(Error::ArgumentErrorNotAMoment(tt.name())))
                     }
-                } else {
-                    Some(Err(Error::ArgumentErrorNotAMoment(tt.name())))
-                }
-            }
+                },
+            },
         }
     }
 }
 
-pub trait Until : Iterator<Item = Result<TimeType>> + Sized {
-    fn until(self, NaiveDateTime) -> UntilIter<Self>;
+pub trait Until: Iterator<Item = Result<TimeType>> + Sized {
+    fn until(self, ending: NaiveDateTime) -> UntilIter<Self>;
 }
 
 impl<I> Until for I
-    where I: Iterator<Item = Result<TimeType>>
+where
+    I: Iterator<Item = Result<TimeType>>,
 {
     fn until(self, ending: NaiveDateTime) -> UntilIter<Self> {
         UntilIter::new(self, ending)
@@ -234,7 +242,8 @@ impl<I> Until for I
 
 #[derive(Debug)]
 pub struct TimesIter<I>
-    where I: Iterator<Item = Result<TimeType>>
+where
+    I: Iterator<Item = Result<TimeType>>,
 {
     inner: I,
     times: i64,
@@ -242,19 +251,21 @@ pub struct TimesIter<I>
 }
 
 impl<I> TimesIter<I>
-    where I: Iterator<Item = Result<TimeType>>
+where
+    I: Iterator<Item = Result<TimeType>>,
 {
     fn new(i: I, times: i64) -> TimesIter<I> {
         TimesIter {
             inner: i,
-            times: times,
+            times,
             count: 0,
         }
     }
 }
 
 impl<I> Iterator for TimesIter<I>
-    where I: Iterator<Item = Result<TimeType>>
+where
+    I: Iterator<Item = Result<TimeType>>,
 {
     type Item = Result<TimeType>;
 
@@ -268,12 +279,13 @@ impl<I> Iterator for TimesIter<I>
     }
 }
 
-pub trait Times : Iterator<Item = Result<TimeType>> + Sized {
-    fn times(self, i64) -> TimesIter<Self>;
+pub trait Times: Iterator<Item = Result<TimeType>> + Sized {
+    fn times(self, times: i64) -> TimesIter<Self>;
 }
 
 impl<I> Times for I
-    where I: Iterator<Item = Result<TimeType>>
+where
+    I: Iterator<Item = Result<TimeType>>,
 {
     fn times(self, times: i64) -> TimesIter<Self> {
         TimesIter::new(self, times)
@@ -281,10 +293,11 @@ impl<I> Times for I
 }
 
 pub mod extensions {
-    use timetype::TimeType as TT;
+    use crate::error::Error;
+    use crate::error::Result;
+    use crate::timetype::TimeType as TT;
+
     use super::Iter;
-    use error::Result;
-    use error::Error;
 
     pub trait Minutely {
         fn minutely(self, i: i64) -> Result<Iter>;
@@ -298,7 +311,7 @@ pub mod extensions {
         fn daily(self, i: i64) -> Result<Iter>;
     }
 
-    pub trait Weekly : Sized {
+    pub trait Weekly: Sized {
         fn weekly(self, i: i64) -> Result<Iter>;
     }
 
@@ -315,7 +328,6 @@ pub mod extensions {
     }
 
     impl Minutely for TT {
-
         fn minutely(self, i: i64) -> Result<Iter> {
             match self {
                 TT::Moment(mom) => {
@@ -326,11 +338,9 @@ pub mod extensions {
                 _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
-
     }
 
     impl Hourly for TT {
-
         fn hourly(self, i: i64) -> Result<Iter> {
             match self {
                 TT::Moment(mom) => {
@@ -341,11 +351,9 @@ pub mod extensions {
                 _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
-
     }
 
     impl Daily for TT {
-
         fn daily(self, i: i64) -> Result<Iter> {
             match self {
                 TT::Moment(mom) => {
@@ -356,11 +364,9 @@ pub mod extensions {
                 _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
-
     }
 
     impl Weekly for TT {
-
         /// Conveniance function over `Daily::daily( n * 7 )`
         fn weekly(self, i: i64) -> Result<Iter> {
             match self {
@@ -372,11 +378,9 @@ pub mod extensions {
                 _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
-
     }
 
     impl Monthly for TT {
-
         fn monthly(self, i: i64) -> Result<Iter> {
             match self {
                 TT::Moment(mom) => {
@@ -387,11 +391,9 @@ pub mod extensions {
                 _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
-
     }
 
     impl Yearly for TT {
-
         fn yearly(self, i: i64) -> Result<Iter> {
             match self {
                 TT::Moment(mom) => {
@@ -402,9 +404,7 @@ pub mod extensions {
                 _ => Err(Error::ArgumentErrorNotAnAmount(self)),
             }
         }
-
     }
-
 
     impl Every for TT {
         fn every(self, inc: TT) -> Result<Iter> {
@@ -417,12 +417,14 @@ pub mod extensions {
 
     #[cfg(test)]
     mod tests {
-        use super::*;
-        use timetype::TimeType as TT;
         use chrono::NaiveDate as ND;
 
+        use crate::timetype::TimeType as TT;
+
+        use super::*;
+
         fn ymd_hms(y: i32, m: u32, d: u32, h: u32, mi: u32, s: u32) -> TT {
-            TT::moment(ND::from_ymd(y, m, d).and_hms(h, mi, s))
+            TT::moment(ND::from_ymd_opt(y, m, d).unwrap().and_hms_opt(h, mi, s).unwrap())
         }
 
         #[test]
@@ -465,9 +467,9 @@ pub mod extensions {
 
             assert_eq!(ymd_hms(2000, 1, 1, 1, 0, 0), *minutes[0].as_ref().unwrap());
             assert_eq!(ymd_hms(2000, 1, 8, 1, 0, 0), *minutes[1].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1,15, 1, 0, 0), *minutes[2].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1,22, 1, 0, 0), *minutes[3].as_ref().unwrap());
-            assert_eq!(ymd_hms(2000, 1,29, 1, 0, 0), *minutes[4].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 15, 1, 0, 0), *minutes[2].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 22, 1, 0, 0), *minutes[3].as_ref().unwrap());
+            assert_eq!(ymd_hms(2000, 1, 29, 1, 0, 0), *minutes[4].as_ref().unwrap());
         }
 
         #[test]
@@ -499,15 +501,13 @@ pub mod extensions {
             assert_eq!(ymd_hms(2003, 1, 1, 0, 0, 0), *minutes[3].as_ref().unwrap());
             assert_eq!(ymd_hms(2004, 1, 1, 0, 0, 0), *minutes[4].as_ref().unwrap());
         }
-
     }
-
 }
 
 #[cfg(test)]
 mod type_tests {
-    use super::*;
     use super::extensions::*;
+    use super::*;
 
     #[test]
     fn test_iterator_every_once() {
@@ -515,7 +515,7 @@ mod type_tests {
         let _ = TimeType::today()
             .yearly(1)
             .unwrap()
-            .every(::indicator::Day::Monday);
+            .every(crate::indicator::Day::Monday);
     }
 
     #[test]
@@ -524,17 +524,18 @@ mod type_tests {
         let _ = TimeType::today()
             .yearly(1) // collecting makes us stack-overflow because of the heavy filtering!
             .unwrap()
-            .every(::indicator::Day::Monday)
-            .every(::indicator::Month::January);
+            .every(crate::indicator::Day::Monday)
+            .every(crate::indicator::Month::January);
     }
 }
 
 #[cfg(all(feature = "with-filters", test))]
 mod type_tests_filter_interface {
-    use super::*;
-    use super::extensions::*;
     use filters::filter::Filter;
     use filters::filter::IntoFilter;
+
+    use super::extensions::*;
+    use super::*;
 
     #[test]
     fn test_compile() {
@@ -542,7 +543,11 @@ mod type_tests_filter_interface {
         let _ = TimeType::today()
             .daily(1)
             .unwrap()
-            .every(::indicator::Day::Monday.into_filter().or(::indicator::Month::January))
+            .every(
+                crate::indicator::Day::Monday
+                    .into_filter()
+                    .or(crate::indicator::Month::January),
+            )
             .take(12)
             .collect::<Vec<_>>();
     }
@@ -554,8 +559,8 @@ mod type_tests_filter_interface {
             .daily(1)
             .unwrap()
             .take(20)
-            .every(::indicator::Day::Monday)
-            .without(::indicator::Day::Monday)
+            .every(crate::indicator::Day::Monday)
+            .without(crate::indicator::Day::Monday)
             .collect::<Vec<_>>();
 
         assert_eq!(0, v.len());
@@ -564,62 +569,45 @@ mod type_tests_filter_interface {
 
 #[cfg(test)]
 mod test_until {
-    use super::*;
     use super::extensions::*;
+    use super::*;
 
     #[test]
     fn test_until() {
-        let yesterday = (TimeType::today() - TimeType::days(1))
+        let yesterday = *(TimeType::today() - TimeType::days(1))
             .calculate()
             .unwrap()
             .get_moment()
-            .unwrap()
-            .clone();
+            .unwrap();
 
-        let v = TimeType::today()
-            .daily(1)
-            .unwrap()
-            .until(yesterday)
-            .collect::<Vec<_>>();
+        let v = TimeType::today().daily(1).unwrap().until(yesterday).collect::<Vec<_>>();
 
         assert!(v.is_empty());
     }
 
     #[test]
     fn test_until_1() {
-        let end = (TimeType::today() + TimeType::days(1))
+        let end = *(TimeType::today() + TimeType::days(1))
             .calculate()
             .unwrap()
             .get_moment()
-            .unwrap()
-            .clone();
+            .unwrap();
 
-        let v = TimeType::today()
-            .daily(1)
-            .unwrap()
-            .until(end)
-            .collect::<Vec<_>>();
+        let v = TimeType::today().daily(1).unwrap().until(end).collect::<Vec<_>>();
 
         assert_eq!(v.len(), 1);
     }
 
     #[test]
     fn test_until_2() {
-        let end = (TimeType::today() + TimeType::days(2))
+        let end = *(TimeType::today() + TimeType::days(2))
             .calculate()
             .unwrap()
             .get_moment()
-            .unwrap()
-            .clone();
+            .unwrap();
 
-        let v = TimeType::today()
-            .hourly(1)
-            .unwrap()
-            .until(end)
-            .collect::<Vec<_>>();
+        let v = TimeType::today().hourly(1).unwrap().until(end).collect::<Vec<_>>();
 
         assert_eq!(v.len(), 48);
     }
-
 }
-
